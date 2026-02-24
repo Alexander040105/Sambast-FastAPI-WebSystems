@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sambast | Verify PIN</title>
+    <link rel="stylesheet" href="../../static/css/user/verifypin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="auth-page">
+
+    <div class="mobile-container">
+        <header class="header">
+            <span class="logo">LOGO</span>
+            <a href="setpin.html" class="back-btn">←</a>
+        </header>
+
+        <main class="auth-content">
+            <div class="text-group">
+                <h1 class="main-title">Verify your 4-digit PIN</h1>
+                <p class="sub-text">Please re-enter your PIN to confirm.</p>
+            </div>
+
+            <form class="auth-form" id="verifyPinForm">
+                <div class="pin-container">
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" required>
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" required>
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" required>
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" required>
+                </div>
+
+                <button type="submit" class="primary-btn">CONFIRM</button>
+            </form>
+        </main>
+
+        <footer class="auth-footer">
+            <p>Have an account? <a href="usersignin.html" class="accent-link">Sign-In</a></p>
+        </footer>
+    </div>
+
+    <script>
+        const inputs = document.querySelectorAll('.pin-container input');
+        const form = document.getElementById('verifyPinForm');
+
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+        });
+
+        // Verify PIN logic
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            let enteredPin = "";
+            inputs.forEach(input => enteredPin += input.value);
+            
+            const savedPin = localStorage.getItem('userPin');
+
+            if (enteredPin === savedPin) {
+                // If they match, go to success page
+                window.location.href = "success.html";
+            } else {
+                // If they don't match, alert and clear
+                alert("PINs do not match. Please try again.");
+                inputs.forEach(input => input.value = "");
+                inputs[0].focus();
+            }
+        });
+    </script>
+</body>
+</html>
