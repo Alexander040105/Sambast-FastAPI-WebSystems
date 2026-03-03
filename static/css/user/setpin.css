@@ -68,7 +68,7 @@ body, html {
 
 .pin-container {
     display: flex;
-    justify-content: space-between;
+    justify-content: center; /* Changed from space-between to center */
     gap: 12px;
     margin-bottom: 40px;
     width: 100%;
