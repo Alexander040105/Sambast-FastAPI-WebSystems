@@ -38,43 +38,6 @@
         </footer>
     </div>
 
-    <script>
-        const inputs = document.querySelectorAll('.pin-container input');
-        const form = document.getElementById('verifyPinForm');
-
-        inputs.forEach((input, index) => {
-            input.addEventListener('input', (e) => {
-                if (e.target.value.length === 1 && index < inputs.length - 1) {
-                    inputs[index + 1].focus();
-                }
-            });
-
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Backspace' && !e.target.value && index > 0) {
-                    inputs[index - 1].focus();
-                }
-            });
-        });
-
-        // Verify PIN logic
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            let enteredPin = "";
-            inputs.forEach(input => enteredPin += input.value);
-            
-            const savedPin = localStorage.getItem('userPin');
-
-            if (enteredPin === savedPin) {
-                // If they match, go to success page
-                window.location.href = "success.html";
-            } else {
-                // If they don't match, alert and clear
-                alert("PINs do not match. Please try again.");
-                inputs.forEach(input => input.value = "");
-                inputs[0].focus();
-            }
-        });
-    </script>
+    <script src="../../static/js/user/verifypin.js"></script>
 </body>
 </html>
