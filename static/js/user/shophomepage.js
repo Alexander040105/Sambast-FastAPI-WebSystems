@@ -1,0 +1,95 @@
+// Product Data
+var data = [
+    { id: 1, name: "Product A", cat: "Category 1", price: 500, desc: "Premium selection product description." },
+    { id: 2, name: "Product B", cat: "Category 1", price: 750, desc: "High quality item with best reviews." },
+    { id: 3, name: "Product C", cat: "Category 2", price: 1200, desc: "Luxury tier product for specialized use." },
+    { id: 4, name: "Product D", cat: "Category 3", price: 300, desc: "Budget friendly option for daily needs." }
+];
+
+// State Management
+var cartSet = new Set();
+var globalQty = 0;
+var globalPrice = 0;
+
+// Render Products to Grid
+function render(list) {
+    var grid = document.getElementById('itemGrid');
+    grid.innerHTML = "";
+    for (var i = 0; i < list.length; i++) {
+        var p = list[i];
+        var div = document.createElement('div');
+        div.className = "product-card";
+        div.id = "p-" + p.id;
+        div.innerHTML = `
+            <div class="flip-inner">
+                <div class="front-face" onclick="toggle(${p.id})">
+                    <div class="img-box">image</div>
+                    <p class="label-cat">${p.cat}</p>
+                    <h2 class="label-name">${p.name}</h2>
+                    <div class="input-row" onclick="event.stopPropagation()">
+                        <div class="select-box"><select><option>Kilo/Size</option></select></div>
+                        <div class="qty-box">
+                            <button onclick="qtyChange(${p.id},-1)">-</button>
+                            <span id="qval-${p.id}">1</span>
+                            <button onclick="qtyChange(${p.id},1)">+</button>
+                        </div>
+                    </div>
+                    <p class="label-price">Product Amount: ${p.price}</p>
+                    <div class="btn-row" onclick="event.stopPropagation()">
+                        <button class="cart-act" onclick="addCart(${p.id},${p.price})">CART</button>
+                        <button class="buy-act" onclick="window.location.href='buy.html?id=${p.id}'">BUY</button>
+                    </div>
+                </div>
+                <div class="back-face" onclick="toggle(${p.id})">
+                    <h3>${p.name}</h3>
+                    <p style="font-size:12px; margin-top:10px;">Description</p>
+                    <p style="font-size:10px; opacity:0.8; margin-top:5px;">${p.desc}</p>
+                </div>
+            </div>`;
+        grid.appendChild(div);
+    }
+}
+
+// UI Interaction Functions
+function toggle(id) { 
+    document.getElementById("p-" + id).classList.toggle('is-flipped'); 
+}
+
+function qtyChange(id, d) {
+    var el = document.getElementById("qval-" + id);
+    var v = parseInt(el.innerText) + d;
+    if (v >= 1) el.innerText = v;
+}
+
+function addCart(id, pr) {
+    var q = parseInt(document.getElementById("qval-" + id).innerText);
+    cartSet.add(id);
+    globalQty += q;
+    globalPrice += (pr * q);
+    
+    // Update UI elements
+    document.getElementById('cartCount').innerText = cartSet.size;
+    document.getElementById('btnQty').innerText = globalQty;
+    document.getElementById('subTotal').innerText = globalPrice;
+}
+
+// Navigation and Filtering
+function filterFn(cat, btn) {
+    var btns = document.querySelectorAll('.cat-pill');
+    btns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    var filtered = (cat === 'All') ? data : data.filter(x => x.cat === cat);
+    render(filtered);
+}
+
+function searchFn() {
+    var s = document.getElementById('productSearch').value.toLowerCase();
+    var results = data.filter(x => x.name.toLowerCase().includes(s));
+    render(results);
+}
+
+// Initial Load
+document.addEventListener('DOMContentLoaded', () => {
+    render(data);
+});
