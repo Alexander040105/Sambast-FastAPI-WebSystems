@@ -25,3 +25,21 @@ card.style.display="none";
 
 });
 });
+
+const menuBtn = document.getElementById("menuBtn");
+const sidebar = document.getElementById("sidebar");
+const closeBtn = document.getElementById("closeBtn");
+const overlay = document.getElementById("overlay");
+
+menuBtn.addEventListener("click", () => {
+sidebar.classList.add("open");
+overlay.classList.add("show");
+});
+
+closeBtn.addEventListener("click", closeMenu);
+overlay.addEventListener("click", closeMenu);
+
+function closeMenu(){
+sidebar.classList.remove("open");
+overlay.classList.remove("show");
+}
