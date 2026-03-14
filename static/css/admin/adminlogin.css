@@ -10,7 +10,7 @@
 body, html {
     height: 100%;
     font-family: 'Inter', -apple-system, sans-serif;
-    background-color: var(--bg-white);
+    background: color #d6d0c5;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
 }
@@ -57,6 +57,7 @@ body, html {
     font-size: 1.2rem;
     font-weight: 800;
     letter-spacing: -0.5px;
+    color: #1A323E;
 }
 
 .admin-name {
@@ -64,6 +65,8 @@ body, html {
     font-weight: 900;
     line-height: 0.9;
     letter-spacing: -2px;
+    color: #1A323E;
+
 }
 
 .auth-form { width: 100%; }
@@ -75,7 +78,7 @@ body, html {
     padding: 13px 25px; 
     border-radius: 50px;
     border: 1px solid #000;
-    background-color: var(--input-fill);
+    background-color: #F9F8F6;
     font-size: 0.85rem;
     font-weight: 600;
     outline: none;
@@ -86,7 +89,7 @@ body, html {
     margin-bottom: 30px;
     margin-left: 20px;
     font-size: 0.75rem;
-    color: #000;
+    color: #a6171c;
     text-decoration: none;
     font-weight: 700;
 }
@@ -94,7 +97,7 @@ body, html {
 .primary-btn {
     width: 100%;
     padding: 14px;
-    background-color: var(--btn-black);
+    background-color: #f1c045;
     color: white;
     border: none;
     border-radius: 50px;
