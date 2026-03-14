@@ -14,20 +14,23 @@
             <h1 class="brand-logo">LOGO</h1>
             <div class="nav-actions">
                 <div class="cart-wrapper" onclick="window.location.href='cart.html'">
-                    <span class="cart-icon">🛒</span>
+                    <span class="cart-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    </span>
                     <span class="cart-badge" id="cartCount">0</span>
                 </div>
-                <img src="../../static/img/user/user-male-circle.png" 
-                     class="user-avatar" 
-                     alt="User" 
-                     onclick="window.location.href='profile.html'">
+                <div class="user-avatar" onclick="window.location.href='profile.html'" style="cursor:pointer; display:flex; align-items:center;">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
             </div>
         </header>
 
         <section class="top-nav">
             <div class="search-container">
                 <input type="text" placeholder="Search Product" id="productSearch" onkeyup="searchFn()">
-                <span class="search-mag">🔍</span>
+                <span class="search-mag">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
             </div>
             <div class="filter-bar">
                 <button class="cat-pill active" onclick="filterFn('All', this)">All</button>
@@ -56,7 +59,9 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3>Order Status</h3>
-            <button class="close-modal" onclick="closeStatusModal()">×</button>
+            <button class="close-modal" onclick="closeStatusModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
         </div>
         <div class="modal-body">
             <div class="status-card">
