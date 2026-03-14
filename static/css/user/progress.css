@@ -3,6 +3,7 @@
     --fill-natural-beige: #D6D0C5; 
     --action-ruby-red: #A6171C;
     --text-pure-black: #000000;
+    --bg-footer-blue: #1A323E; /* Deep Navy Blue */
 }
 
 * {
@@ -38,34 +39,24 @@ body.progress-body {
     align-items: center;
 }
 
-.close-btn {
-    background: #fff;
-    border: 1px solid #ddd;
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    font-size: 20px;
-    cursor: pointer;
+/* MATCHED BACK BUTTON: Replacing the old Close Button style */
+.back-btn { 
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Necessary for the container positioning without moving the button */
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    text-decoration: none;
+    color: var(--text-pure-black);
+    transition: 0.2s;
+    cursor: pointer;
     position: relative;
     z-index: 999;
 }
 
-/* REFERENCED CONTAINER */
-.close-btn::before {
-    content: "";
-    position: absolute;
-    width: 32px;
-    height: 32px;
-    background-color: var(--fill-natural-beige);
-    border-radius: 50%;
-    z-index: -1;
-    top: 55%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+.back-btn:hover {
+    background: #eeeeee;
 }
 
 .help-btn {
@@ -85,7 +76,7 @@ body.progress-body {
     padding: 10px 0 120px;
 }
 
-/* STATUS BOX (Natural Beige Card) */
+/* STATUS BOX */
 .status-main-card {
     background: var(--fill-natural-beige); 
     margin: 0 16px 25px;
@@ -94,14 +85,15 @@ body.progress-body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-left: 8px solid var(--text-pure-black);
+    border-left: 8px solid var(--bg-footer-blue); /* Updated to Navy Blue */
 }
 
+/* Updated Preparing Text to Blue */
 #statusText {
     font-size: 22px;
     font-weight: 900;
     text-transform: uppercase;
-    color: var(--text-pure-black);
+    color: var(--bg-footer-blue); /* Changed to Deep Navy Blue */
 }
 
 .time-info p {
