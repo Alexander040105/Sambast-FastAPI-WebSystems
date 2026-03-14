@@ -2,7 +2,8 @@
     --bg-white: #F9F8F6; /* Antique Cream */
     --input-fill: #D6D0C5; /* Natural Beige */
     --btn-black: #A6171C; /* Ruby Red */
-    --accent-green: #A6171C; /* Ruby Red */
+    --accent-green: #A6171C;
+    --bg-footer-blue: #1A323E; 
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,7 +56,7 @@ body, html {
     letter-spacing: -1.2px; 
     margin-bottom: 40px;
     text-transform: uppercase;
-    color: #000000;
+    color: var(--bg-footer-blue);
 }
 
 .auth-form { width: 100%; }

@@ -3,8 +3,10 @@
     --fill-natural-beige: #D6D0C5; 
     --action-ruby-red: #A6171C;
     --text-pure-black: #000000;
+    --bg-footer-blue: #1A323E;
 }
 
+/* RESET */
 * {
     margin: 0;
     padding: 0;
@@ -35,41 +37,36 @@ html, body {
     gap: 15px;
 }
 
-.back-btn {
+/* UPDATED BACK BUTTON: Matches circular SVG hover style */
+.back-btn { 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     text-decoration: none;
     color: var(--text-pure-black);
-    font-size: 24px;
-    font-weight: bold;
-    /* Added to anchor the container without moving the arrow */
+    transition: 0.2s;
+    cursor: pointer;
     position: relative;
     z-index: 999;
 }
 
-/* Master Back Button Container */
-.back-btn::before {
-    content: "";
-    position: absolute;
-    width: 32px;
-    height: 32px;
-    background-color: var(--fill-natural-beige);
-    border-radius: 50%;
-    z-index: -1;
-    top: 55%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+.back-btn:hover {
+    background: #eeeeee;
 }
 
 .header-title {
     font-size: 1.2rem;
     font-weight: 700;
-    color: var(--text-pure-black);
+    color: var(--bg-footer-blue);
 }
 
 .history-list {
     flex: 1;
     padding: 0 16px 20px;
     overflow-y: auto;
-    -ms-overflow-style: none;
     scrollbar-width: none;
 }
 
@@ -85,7 +82,6 @@ html, body {
     gap: 15px;
     margin-bottom: 20px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    position: relative;
 }
 
 .item-img-placeholder {
@@ -109,7 +105,7 @@ html, body {
 .product-name {
     font-size: 18px;
     font-weight: 700;
-    color: var(--text-pure-black);
+    color: var(--bg-footer-blue);
 }
 
 .kilos-size {

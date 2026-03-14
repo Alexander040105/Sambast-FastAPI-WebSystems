@@ -114,7 +114,7 @@ body.shop-body {
 }
 
 .cat-pill.active {
-    background: #A6171C; 
+    background: #1A323E; 
     color: #ffffff; 
 }
 
@@ -186,7 +186,7 @@ body.shop-body {
     font-size: 14px;
     font-weight: 700;
     margin: 2px 0 6px;
-    color: #000000;
+    color: #1A323E;
 }
 
 .input-row {
@@ -205,8 +205,8 @@ body.shop-body {
     border-radius: 999px;
     padding: 6px 10px;
     font-size: 11px;
-    background: #1A323E; 
-    color: #ffffff; 
+    background: #F9F8F6; 
+    color: #000000; 
     outline: none;
 }
 
@@ -215,13 +215,13 @@ body.shop-body {
     align-items: center;
     justify-content: space-between;
     min-width: 78px;
-    background: #1A323E;
+    background: #F9F8F6;
     border-radius: 999px;
     padding: 4px 8px;
 }
 
 .qty-box span, .qty-box button {
-    color: #ffffff; 
+    color: #000000; 
 }
 
 .qty-box button {

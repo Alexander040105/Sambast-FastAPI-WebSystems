@@ -3,6 +3,8 @@
     --fill-natural-beige: #D6D0C5; 
     --action-ruby-red: #A6171C;
     --text-pure-black: #000000;
+    --bg-footer-blue: #1A323E;
+    --sunny: #F1C045;
 }
 
 /* RESET */
@@ -34,36 +36,31 @@ body.profile-body {
     margin-bottom: 45px;
 }
 
-.back-btn {
+/* UPDATED BACK BUTTON: Matched her circle SVG style */
+.back-btn { 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     background: none;
     border: none;
-    font-size: 24px;
-    font-weight: bold;
-    cursor: pointer;
     color: var(--text-pure-black);
-    /* Necessary to anchor the container */
+    transition: 0.2s;
+    cursor: pointer;
     position: relative;
     z-index: 999;
 }
 
-/* REFERENCED BACK BUTTON CONTAINER */
-.back-btn::before {
-    content: "";
-    position: absolute;
-    width: 32px;
-    height: 32px;
-    background-color: var(--fill-natural-beige);
-    border-radius: 50%;
-    z-index: -1;
-    top: 55%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+.back-btn:hover {
+    background: #eeeeee;
 }
 
 .header-title {
     font-size: 20px;
     font-weight: 800;
-    color: var(--text-pure-black);
+    color: var(--bg-footer-blue);
 }
 
 /* CONTENT & INPUTS */
@@ -81,10 +78,9 @@ body.profile-body {
     font-weight: 800;
     margin-bottom: 8px;
     margin-left: 15px;
-    color: var(--text-pure-black);
+    color: var(--bg-footer-blue);
 }
 
-/* Rounded containers - Updated to Natural Beige */
 .static-field, .editable-field, .menu-btn {
     width: 100%;
     background: var(--fill-natural-beige);
@@ -92,7 +88,7 @@ body.profile-body {
     border-radius: 50px; 
     font-size: 14px;
     font-weight: 700;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     border: none;
     display: flex;
     justify-content: space-between;
@@ -101,7 +97,7 @@ body.profile-body {
 }
 
 .static-field {
-    background: var(--fill-natural-beige);
+    background: #E8E4DD;
     opacity: 0.9;
 }
 
@@ -110,7 +106,7 @@ body.profile-body {
     border: none;
     font-size: 18px;
     cursor: pointer;
-    color: var(--text-pure-black);
+    color: var(--action-ruby-red);
 }
 
 /* MENU BUTTONS */
@@ -124,11 +120,13 @@ body.profile-body {
 .menu-btn {
     cursor: pointer;
     justify-content: center;
-    transition: background 0.2s;
+    background: var(--bg-footer-blue);
+    color: var(--bg-antique-cream);
+    transition: transform 0.1s;
 }
 
 .menu-btn:active {
-    background: #cccccc;
+    transform: scale(0.98);
 }
 
 /* FOOTER / LOGOUT */
@@ -139,17 +137,13 @@ body.profile-body {
 }
 
 .logout-btn {
-    background: var(--fill-natural-beige);
+    background: var(--action-ruby-red);
     border: none;
     padding: 12px 35px;
     border-radius: 50px;
     font-weight: 800;
     font-size: 12px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(166, 23, 28, 0.2);
     cursor: pointer;
-    color: var(--text-pure-black);
-}
-
-.logout-btn:active {
-    background: #c0c0c0;
+    color: #ffffff;
 }

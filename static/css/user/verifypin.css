@@ -3,6 +3,7 @@
     --fill-natural-beige: #D6D0C5; 
     --action-ruby-red: #A6171C;
     --text-pure-black: #000000;
+    --bg-footer-blue: #1A323E;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -41,35 +42,25 @@ body, html {
     color: var(--text-pure-black);
 }
 
-/* REFERENCED BACK BUTTON LAYOUT */
+/* UPDATED BACK BUTTON STYLE */
 .back-btn { 
-    text-decoration: none; 
-    color: var(--text-pure-black); 
-    font-size: 1.5rem; 
-    font-weight: 800; 
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    text-decoration: none;
+    color: var(--text-pure-black);
+    transition: 0.2s;
+    cursor: pointer;
     position: relative;
-    z-index: 999; 
-    pointer-events: auto !important;
-    width: 40px;
-    height: 40px;
-    margin-right: -10px; 
+    z-index: 999;
+    margin-right: -10px;
 }
 
-.back-btn::before {
-    content: "";
-    position: absolute;
-    width: 32px;
-    height: 32px;
-    background-color: var(--fill-natural-beige);
-    border-radius: 50%;
-    z-index: -1; 
-    top: 55%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+.back-btn:hover {
+    background: #eeeeee;
 }
 
 .auth-content {
@@ -93,7 +84,7 @@ body, html {
     letter-spacing: -0.8px;
     text-align: left;
     line-height: 1.2;
-    color: var(--text-pure-black);
+    color: var(--bg-footer-blue);
 }
 
 .sub-text {

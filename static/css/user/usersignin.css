@@ -3,6 +3,8 @@
     --fill-natural-beige: #D6D0C5; 
     --action-ruby-red: #A6171C;
     --text-pure-black: #000000;
+    --bg-footer-blue: #1A323E;
+    --sunny: #F1C045;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -53,7 +55,7 @@ body, html {
     letter-spacing: -1px; 
     margin-bottom: 40px;
     text-transform: uppercase;
-    color: var(--text-pure-black);
+    color: var(--bg-footer-blue);
 }
 
 .pin-container {
@@ -82,7 +84,7 @@ body, html {
     text-align: center;
     margin-top: 15px;
     font-size: 0.75rem;
-    color: var(--text-pure-black);
+    color: var(--action-ruby-red);
     text-decoration: none;
     font-weight: 600;
 }
