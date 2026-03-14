@@ -7,7 +7,7 @@
 }
 
 body {
-    background: #F9F8F6;
+    background: #d5d0c5;
 }
 
 /* Hide scrollbars */
@@ -29,6 +29,7 @@ body {
 .menu{
     font-size:22px;
     cursor:pointer;
+    color: #a6171c;
 }
 
 /* OVERLAY */
@@ -159,22 +160,32 @@ body {
     justify-content:space-between;
     align-items:center;
     margin-bottom:20px;
+    color: #1A323E;
 }
 
 .analytics-btn{
-    background:black;
-    color:white;
-    border:none;
+    display:flex;
+    align-items:center;
+    gap:8px;
     padding:8px 16px;
+    border:none;
     border-radius:20px;
-    font-size:12px;
+    background:#a6171c;
+    color:white;
+    font-weight:600;
     cursor:pointer;
 }
+
+.download-icon{
+    width:16px;
+    height:16px;
+}
+
 
 /* CARDS */
 
 .card{
-    background:#d9d9d9;
+    background:#F9F8F6;
     border-radius:18px;
     padding:20px;
     margin-bottom:20px;
