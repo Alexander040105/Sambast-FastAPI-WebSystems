@@ -11,36 +11,36 @@ body {
 
 /* HEADER */
 .header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:20px;
-font-weight:bold;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:20px;
+    font-weight:bold;
 }
 
 .menu{
-font-size:22px;
-cursor:pointer;
+    font-size:22px;
+    cursor:pointer;
 }
 
 /* OVERLAY */
 #overlay{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.3);
-backdrop-filter:blur(3px);
-opacity:0;
-pointer-events:none;
-transition:0.3s;
-z-index:5;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.3);
+    backdrop-filter:blur(3px);
+    opacity:0;
+    pointer-events:none;
+    transition:0.3s;
+    z-index:5;
 }
 
 #overlay.show{
-opacity:1;
-pointer-events:auto;
+    opacity:1;
+    pointer-events:auto;
 }
 
 /* SIDEBAR */
@@ -142,160 +142,159 @@ pointer-events:auto;
 /* INVENTORY PAGE */
 
 .inventory{
-padding:20px;
+    padding:20px;
 }
 
 .inventory-header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:15px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:15px;
 }
 
 .add-btn{
-background:black;
-color:white;
-border:none;
-padding:8px 16px;
-border-radius:20px;
-font-size:12px;
-cursor:pointer;
+    background:black;
+    color:white;
+    border:none;
+    padding:8px 16px;
+    border-radius:20px;
+    font-size:12px;
+    cursor:pointer;
 }
 
 /* SEARCH */
 .search-box{
-background:#e2dff0;
-border-radius:25px;
-padding:10px 15px;
-display:flex;
-align-items:center;
-margin-bottom:20px;
+    background:#e2dff0;
+    border-radius:25px;
+    padding:10px 15px;
+    display:flex;
+    align-items:center;
+    margin-bottom:20px;
 }
 
 .search-box input{
-border:none;
-background:none;
-outline:none;
-flex:1;
-font-size:14px;
+    border:none;
+    background:none;
+    outline:none;
+    flex:1;
+    font-size:14px;
 }
 
 .search-icon{
-font-size:16px;
+    font-size:16px;
 }
 
 /* INVENTORY CARD */
-
 .inventory-card{
-background:#d9d9d9;
-border-radius:12px;
-padding:15px;
-margin-bottom:15px;
+    background:#d9d9d9;
+    border-radius:12px;
+    padding:15px;
+    margin-bottom:15px;
 }
 
 .card-header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
 }
 
 .card-header .icons button{
-background:none;
-border:none;
-cursor:pointer;
-margin-left:5px;
-font-size:14px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    margin-left:5px;
+    font-size:14px;
 }
 
 .card-body{
-font-size:12px;
-color:#333;
-display:flex;
-flex-direction:column;
-gap:4px;
+    font-size:12px;
+    color:#333;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
 }
 
 /* MODAL */
 
 .modal{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.5);
-display:none;
-justify-content:center;
-align-items:center;
-z-index:50;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.5);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:50;
 }
 
 .modal.show{
-display:flex;
+    display:flex;
 }
 
 .modal-content{
-background:white;
-border-radius:15px;
-padding:20px;
-width:90%;
-max-width:400px;
+    background:white;
+    border-radius:15px;
+    padding:20px;
+    width:90%;
+    max-width:400px;
 }
 
 .modal-header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:15px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:15px;
 }
 
 .modal-header h2{
-font-size:16px;
+    font-size:16px;
 }
 
 .modal-header .close{
-cursor:pointer;
+    cursor:pointer;
 }
 
 .modal-body label{
-font-size:12px;
-margin-top:10px;
-display:block;
+    font-size:12px;
+    margin-top:10px;
+    display:block;
 }
 
 .modal-body input,
 .modal-body select,
 .modal-body textarea{
-width:100%;
-padding:10px 12px;
-margin-top:5px;
-border-radius:10px;
-border:1px solid #ccc;
-font-size:13px;
+    width:100%;
+    padding:10px 12px;
+    margin-top:5px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    font-size:13px;
 }
 
 .modal-body .flex-row{
-display:flex;
-gap:10px;
+    display:flex;
+    gap:10px;
 }
 
 .modal-body .flex-row div{
-flex:1;
+    flex:1;
 }
 
 .modal-body textarea{
-resize:none;
-height:60px;
+    resize:none;
+    height:60px;
 }
 
 .submit-btn{
-background:black;
-color:white;
-border:none;
-padding:10px;
-border-radius:25px;
-width:100%;
-margin-top:15px;
-cursor:pointer;
+    background:black;
+    color:white;
+    border:none;
+    padding:10px;
+    border-radius:25px;
+    width:100%;
+    margin-top:15px;
+    cursor:pointer;
 }

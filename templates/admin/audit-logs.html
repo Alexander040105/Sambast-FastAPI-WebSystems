@@ -1,123 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Audit</title>
-
-<link rel="stylesheet" href="../../static/css/admin/audit-logs.css">
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../static/css/admin/audit-logs.css">
 </head>
 
 <body>
 
-<header class="header">
-    <div class="logo">LOGO</div>
-    <div class="menu" id="menuBtn">&#9776;</div>
-</header>
+    <header class="header">
+        <div class="logo">LOGO</div>
+        <div class="menu" id="menuBtn">&#9776;</div>
+    </header>
 
-<!-- Overlay -->
-<div id="overlay"></div>
+    <!-- Overlay -->
+    <div id="overlay"></div>
 
-<!-- Sidebar -->
-<div class="sidebar" id="sidebar">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
 
-    <div class="close-btn" id="closeBtn">✕</div>
+        <div class="close-btn" id="closeBtn">✕</div>
 
-    <div class="sidebar-menu">
-        <ul class="nav-links">
-            <li><a href="profile.html">PROFILE</a></li>
-            <li><a href="orders.html">ORDERS</a></li>
-            <li><a href="inventory.html">INVENTORY</a></li>
-            <li class="active"><a href="audit-logs.html">AUDIT LOGS</a></li>
-            <li><a href="analytics.html">ANALYTICS</a></li>
-        </ul>
+        <div class="sidebar-menu">
+            <ul class="nav-links">
+                <li><a href="profile.html">PROFILE</a></li>
+                <li><a href="orders.html">ORDERS</a></li>
+                <li><a href="inventory.html">INVENTORY</a></li>
+                <li class="active"><a href="audit-logs.html">AUDIT LOGS</a></li>
+                <li><a href="analytics.html">ANALYTICS</a></li>
+            </ul>
+        </div>
+
+        <!-- LOGOUT BUTTON -->
+        <div class="logout-container">
+            <a href="logout.html" class="logout-btn">LOG-OUT</a>
+        </div>
+
     </div>
 
-    <!-- LOGOUT BUTTON -->
-    <div class="logout-container">
-        <a href="logout.html" class="logout-btn">LOG-OUT</a>
-    </div>
+    <section class="audit">
 
-</div>
+        <div class="audit-header">
+            <h1>AUDIT</h1>
+            <button class="audit-btn">
+            ⬇ AUDIT
+            </button>
+        </div>
 
-<section class="audit">
+        <!-- SEARCH BAR -->
+        <div class="search-box">
+            <input type="text" placeholder="Search Product">
+            <span class="search-icon">🔍</span>
+        </div>
 
-<div class="audit-header">
+        <!-- AUDIT CARDS -->
+        <div class="audit-card">
 
-<h1>AUDIT</h1>
+            <div class="card-header">
+                <strong>PRODUCT NAME</strong>
+                <span class="date">DATE<br>TIME</span>
+            </div>
 
-<button class="audit-btn">
-⬇ AUDIT
-</button>
+            <div class="card-body">
+                <div>CATEGORY</div>
+                <div class="info">CUSTOMER INFO</div>
+                <div class="info">KGS/SIZE PRODUCT</div>
+                <div class="info">QUANTITY</div>
+            </div>
 
-</div>
+            <div class="price">PRICE</div>
 
-<!-- SEARCH BAR -->
-
-<div class="search-box">
-<input type="text" placeholder="Search Product">
-<span class="search-icon">🔍</span>
-</div>
-
-<!-- AUDIT CARDS -->
-
-<div class="audit-card">
-
-<div class="card-header">
-<strong>PRODUCT NAME</strong>
-<span class="date">DATE<br>TIME</span>
-</div>
-
-<div class="card-body">
-<div>CATEGORY</div>
-<div class="info">CUSTOMER INFO</div>
-<div class="info">KGS/SIZE PRODUCT</div>
-<div class="info">QUANTITY</div>
-</div>
-
-<div class="price">PRICE</div>
-
-</div>
+        </div>
 
 
-<div class="audit-card">
-<div class="card-header">
-<strong>PRODUCT NAME</strong>
-<span class="date">DATE<br>TIME</span>
-</div>
+        <div class="audit-card">
+            <div class="card-header">
+                <strong>PRODUCT NAME</strong>
+                <span class="date">DATE<br>TIME</span>
+            </div>
 
-<div class="card-body">
-<div>CATEGORY</div>
-<div class="info">CUSTOMER INFO</div>
-<div class="info">KGS/SIZE PRODUCT</div>
-<div class="info">QUANTITY</div>
-</div>
+            <div class="card-body">
+                <div>CATEGORY</div>
+                <div class="info">CUSTOMER INFO</div>
+                <div class="info">KGS/SIZE PRODUCT</div>
+                <div class="info">QUANTITY</div>
+            </div>
 
-<div class="price">PRICE</div>
-</div>
-
-
-<div class="audit-card">
-<div class="card-header">
-<strong>PRODUCT NAME</strong>
-<span class="date">DATE<br>TIME</span>
-</div>
-
-<div class="card-body">
-<div>CATEGORY</div>
-<div class="info">CUSTOMER INFO</div>
-<div class="info">KGS/SIZE PRODUCT</div>
-<div class="info">QUANTITY</div>
-</div>
-
-<div class="price">PRICE</div>
-</div>
+            <div class="price">PRICE</div>
+        </div>
 
 
-</section>
+        <div class="audit-card">
+            <div class="card-header">
+                <strong>PRODUCT NAME</strong>
+                <span class="date">DATE<br>TIME</span>
+            </div>
 
-<script src="../../static/js/admin/audit-logs.js"></script>
+            <div class="card-body">
+                <div>CATEGORY</div>
+                <div class="info">CUSTOMER INFO</div>
+                <div class="info">KGS/SIZE PRODUCT</div>
+                <div class="info">QUANTITY</div>
+            </div>
+
+            <div class="price">PRICE</div>
+        </div>
+
+    </section>
+
+    <script src="../../static/js/admin/audit-logs.js"></script>
 
 </body>
 </html>
