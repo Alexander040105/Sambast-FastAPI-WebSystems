@@ -109,21 +109,27 @@ def home():
     return render_template('user/index.html')
 
 # --- ADMIN LOGIN & DASHBOARD ---
-@app.route('/admin', methods=['GET', 'POST'])
+@app.route('/admin', methods=['POST'])
 def admin_login():
-    if request.method == 'POST':
-        user_input = request.form.get('username') 
-        pass_input = request.form.get('password')
-        db = get_db()
-        admin = db.execute('SELECT * FROM admin WHERE username = ?', (user_input,)).fetchone()
-        
-        if admin and check_password_hash(admin['password_hash'], pass_input):
-            session.clear()
-            session['admin_id'] = admin['admin_id']
-            session['admin_user'] = admin['username']
-            return redirect(url_for('admin_dashboard'))
-        
-        flash("Invalid Username or Password")
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Invalid request. Expected JSON.'}), 400
+
+    user_input = data.get('username')
+    pass_input = data.get('password')
+    db = get_db()
+    admin = db.execute('SELECT * FROM admin WHERE username = ?', (user_input,)).fetchone()
+    
+    if admin and check_password_hash(admin['password_hash'], pass_input):
+        session.clear()
+        session['admin_id'] = admin['admin_id']
+        session['admin_user'] = admin['username']
+        return jsonify({'success': True, 'redirect_url': url_for('admin_dashboard')})
+    
+    return jsonify({'error': 'Invalid Username or Password'}), 401
+
+@app.route('/admin', methods=['GET'])
+def admin_login_page():
     return render_template('admin/adminlogin.html')
 
 @app.route('/admin/dashboard')
