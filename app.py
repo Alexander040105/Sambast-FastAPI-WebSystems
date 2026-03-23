@@ -124,7 +124,7 @@ def admin_login():
         session.clear()
         session['admin_id'] = admin['admin_id']
         session['admin_user'] = admin['username']
-        return jsonify({'success': True, 'redirect_url': url_for('admin_dashboard')})
+        return jsonify({'success': True, 'redirect_url': url_for('admin_analytics')})
     
     return jsonify({'error': 'Invalid Username or Password'}), 401
 
@@ -133,7 +133,7 @@ def admin_login_page():
     return render_template('admin/adminlogin.html')
 
 @app.route('/admin/dashboard')
-def admin_dashboard():
+def admin_analytics(): # Changed name to match url_for('admin_analytics')
     if 'admin_id' not in session: return redirect(url_for('admin_login'))
     return render_template('admin/analytics.html')
 
