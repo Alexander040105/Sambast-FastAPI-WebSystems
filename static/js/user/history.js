@@ -1,58 +1,53 @@
-var data = [
-    { id: 1, name: "Product A", cat: "Category 1", price: 500, desc: "Premium selection product description." },
-    { id: 2, name: "Product B", cat: "Category 1", price: 750, desc: "High quality item with best reviews." },
-    { id: 3, name: "Product C", cat: "Category 2", price: 1200, desc: "Luxury tier product for specialized use." },
-    { id: 4, name: "Product D", cat: "Category 3", price: 300, desc: "Budget friendly option for daily needs." }
-];
-
-const historyData = [
-    { id: 1, qty: 2, orderNo: "ORD-1001" },
-    { id: 2, qty: 1, orderNo: "ORD-1002" },
-    { id: 3, qty: 1, orderNo: "ORD-1003" },
-    { id: 4, qty: 4, orderNo: "ORD-1004" }
-];
-
-function renderHistory() {
+function renderHistory(orders) {
     const container = document.getElementById('orderHistoryList');
     if (!container) return;
     container.innerHTML = '';
 
-    historyData.forEach(histItem => {
-        const product = data.find(p => p.id === histItem.id);
-        
-        if (product) {
-            const total = product.price * histItem.qty;
-            const card = document.createElement('div');
+    if (orders.length === 0) {
+        container.innerHTML = '<p style="text-align:center; margin-top:50px; color:#666;">No orders yet.</p>';
+        return;
+    }
+
+    orders.forEach(order => {
+        order.items.forEach(item => {
+            const total = item.price_at_time * item.qty;
+            const card  = document.createElement('div');
             card.className = 'history-card';
             card.innerHTML = `
                 <div class="item-img-placeholder">image</div>
                 <div class="order-info">
-                    <h2 class="product-name">${product.name}</h2>
-                    <p class="kilos-size">Kilos/size</p>
-                    <p class="amount-label">Product Amount: ${product.price}</p>
-                    <p class="qty-summary">Product qty: ${histItem.qty}</p>
-                    <p class="total-amount">Total Amount: ${total}</p>
-                    <p class="order-no">Order no: ${histItem.orderNo}</p>
-                    <button class="buy-again-btn" onclick="buyAgain(${product.id}, ${histItem.qty})">BUY AGAIN</button>
+                    <h2 class="product-name">${item.name}</h2>
+                    <p class="amount-label">Product Amount: ₱${item.price_at_time}</p>
+                    <p class="qty-summary">Qty: ${item.qty}</p>
+                    <p class="total-amount">Total Amount: ₱${total}</p>
+                    <p class="order-no">Order no: ${order.order_no}</p>
+                    <p class="order-status">Status: ${order.status}</p>
+                    <button class="buy-again-btn" onclick="buyAgain('${order.order_no}', ${JSON.stringify(item).replace(/'/g, "\\'")})">BUY AGAIN</button>
                 </div>
             `;
             container.appendChild(card);
-        }
+        });
     });
 }
 
-function buyAgain(id, qty) {
-    const product = data.find(p => p.id === id);
-    if (product) {
-        const itemToBuy = [{
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            qty: qty
-        }];
-        localStorage.setItem('checkoutItems', JSON.stringify(itemToBuy));
-        window.location.href = 'checkout.html';
-    }
+function buyAgain(orderNo, item) {
+    const itemToBuy = [{
+        product_id: null,  // product_id not needed for display
+        name : item.name,
+        price: item.price_at_time,
+        qty  : item.qty
+    }];
+    localStorage.setItem('checkoutItems', JSON.stringify(itemToBuy));
+    window.location.href = '/checkout';
 }
 
-document.addEventListener('DOMContentLoaded', renderHistory);
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('/orders/history')
+        .then(res => res.json())
+        .then(orders => renderHistory(orders))
+        .catch(() => {
+            const container = document.getElementById('orderHistoryList');
+            if (container) container.innerHTML =
+                '<p style="text-align:center; margin-top:50px; color:#666;">Failed to load history.</p>';
+        });
+});

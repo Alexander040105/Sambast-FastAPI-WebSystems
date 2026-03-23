@@ -1,24 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const listContainer = document.getElementById('checkoutList');
+    const listContainer    = document.getElementById('checkoutList');
     const finalTotalDisplay = document.getElementById('finalTotal');
-    const orderNumDisplay = document.getElementById('tempOrderNo');
+    const orderNumDisplay  = document.getElementById('tempOrderNo');
 
-    if (orderNumDisplay) {
-        orderNumDisplay.innerText = "00000000";
-    }
+    if (orderNumDisplay) orderNumDisplay.innerText = "Generating...";
 
-    const checkoutItemsData = localStorage.getItem('checkoutItems');
-    const checkoutItems = JSON.parse(checkoutItemsData) || [];
+    const checkoutItems = JSON.parse(localStorage.getItem('checkoutItems')) || [];
     let currentTotal = 0;
 
     if (checkoutItems.length === 0) {
         listContainer.innerHTML = '<p style="text-align:center; padding:20px; color:#666;">No items selected.</p>';
     } else {
-        listContainer.innerHTML = ''; 
-        
+        listContainer.innerHTML = '';
         checkoutItems.forEach(item => {
-            const itemTotal = item.price * item.qty;
-            currentTotal += itemTotal;
+            const itemTotal  = item.price * item.qty;
+            currentTotal    += itemTotal;
 
             const div = document.createElement('div');
             div.className = 'checkout-item';
@@ -27,39 +23,64 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="item-details">
                     <h2 class="item-name">${item.name}</h2>
                     <div class="tag-row">
-                        <span class="mini-tag">Kilo/ Size ↕</span>
-                        <span class="mini-tag">Qty: — ${item.qty} +</span>
+                        <span class="mini-tag">Qty: ${item.qty}</span>
                     </div>
-                    <p class="item-amount">Product Amount: ${itemTotal}</p>
+                    <p class="item-amount">Product Amount: ₱${itemTotal}</p>
                 </div>
             `;
             listContainer.appendChild(div);
         });
     }
 
-    if (finalTotalDisplay) {
-        finalTotalDisplay.innerText = currentTotal === 0 ? "0000" : currentTotal;
-    }
+    if (finalTotalDisplay) finalTotalDisplay.innerText = currentTotal === 0 ? "0" : currentTotal;
 
     const placeOrderBtn = document.getElementById('placeOrderBtn');
     if (placeOrderBtn) {
         placeOrderBtn.onclick = () => {
-            // 1. Capture the data while it still exists
-            const totalToSave = finalTotalDisplay.innerText;
-            const itemsToSave = localStorage.getItem('checkoutItems');
+            if (checkoutItems.length === 0) {
+                alert("No items to order.");
+                return;
+            }
 
-            // 2. Save for the Progress Page
-            localStorage.setItem('lastOrderItems', itemsToSave);
-            localStorage.setItem('lastOrderTotal', totalToSave);
-            
-            // 3. Set initial status for the dynamic progress tracker
-            localStorage.setItem('orderStatus', 'Preparing');
+            const paymentInput = document.querySelector('input[name="payment_method"]:checked');
+            const paymentMethod = paymentInput ? paymentInput.value : 'cash';
 
-            alert("Order Successfully Placed!");
-            
-            // 4. Clean up and Redirect
-            localStorage.removeItem('checkoutItems');
-            window.location.href = 'myorderprogress.html';
+            placeOrderBtn.disabled = true;
+            placeOrderBtn.innerText = "Placing Order...";
+
+            fetch('/orders', {
+                method : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body   : JSON.stringify({
+                    items          : checkoutItems,
+                    payment_method : paymentMethod
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Save for progress page
+                    localStorage.setItem('lastOrderItems', JSON.stringify(checkoutItems));
+                    localStorage.setItem('lastOrderTotal', currentTotal);
+                    localStorage.setItem('lastOrderNo', data.order_no);
+
+                    // Clean up cart
+                    localStorage.removeItem('checkoutItems');
+                    localStorage.removeItem('cart');
+
+                    alert("Order Successfully Placed!");
+                    window.location.href = '/order-progress';
+                } else {
+                    alert("Failed to place order: " + (data.error || "Unknown error"));
+                    placeOrderBtn.disabled = false;
+                    placeOrderBtn.innerText = "PLACE ORDER";
+                }
+            })
+            .catch(() => {
+                alert("Network error. Please try again.");
+                placeOrderBtn.disabled = false;
+                placeOrderBtn.innerText = "PLACE ORDER";
+            });
         };
     }
 });

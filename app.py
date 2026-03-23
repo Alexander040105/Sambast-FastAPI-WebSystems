@@ -455,6 +455,199 @@ def shop_home():
     return render_template('user/shophomepage.html')
 
 
+# =============================================================================
+# PART 4 — PRODUCTS API (customer view)
+# =============================================================================
+
+@app.route('/products')
+def get_products():
+    if 'user_id' not in session:
+        return {'error': 'Unauthorized'}, 401
+
+    db       = get_db()
+    category = request.args.get('category', '').strip()
+    search   = request.args.get('search', '').strip()
+
+    query  = 'SELECT * FROM products WHERE stock_status = 1'
+    params = []
+
+    if category:
+        query += ' AND category = ?'
+        params.append(category)
+
+    if search:
+        query += ' AND name LIKE ?'
+        params.append(f'%{search}%')
+
+    query += ' ORDER BY name ASC'
+
+    products = db.execute(query, params).fetchall()
+
+    return [{
+        'product_id'     : p['product_id'],
+        'name'           : p['name'],
+        'category'       : p['category'],
+        'price'          : p['price'],
+        'description'    : p['description'],
+        'image_filename' : p['image_filename'],
+        'stock_status'   : p['stock_status']
+    } for p in products]
+
+
+# =============================================================================
+# PART 5 — ORDER PLACEMENT
+# =============================================================================
+
+import random
+import string
+
+def generate_order_no():
+    digits = ''.join(random.choices(string.digits, k=8))
+    return f'ORD-{digits}'
+
+@app.route('/checkout')
+def checkout_page():
+    if 'user_id' not in session:
+        return redirect(url_for('sign_in'))
+    return render_template('user/checkout.html')
+
+@app.route('/orders', methods=['POST'])
+def place_order():
+    if 'user_id' not in session:
+        return {'error': 'Unauthorized'}, 401
+
+    data           = request.get_json()
+    items          = data.get('items', [])
+    payment_method = data.get('payment_method', 'cash')
+
+    if not items:
+        return {'error': 'No items in order.'}, 400
+
+    # Calculate total
+    total = sum(item['price'] * item['qty'] for item in items)
+
+    # Generate a unique order number
+    db       = get_db()
+    order_no = generate_order_no()
+    while db.execute('SELECT order_id FROM orders WHERE order_no = ?', (order_no,)).fetchone():
+        order_no = generate_order_no()
+
+    # Insert the order
+    db.execute(
+        'INSERT INTO orders (order_no, user_id, total_price, status) VALUES (?, ?, ?, ?)',
+        (order_no, session['user_id'], total, 'Pending')
+    )
+    db.commit()
+
+    order = db.execute(
+        'SELECT order_id FROM orders WHERE order_no = ?', (order_no,)
+    ).fetchone()
+    order_id = order['order_id']
+
+    # Insert each line item
+    for item in items:
+        db.execute(
+            '''INSERT INTO order_items (order_id, product_id, quantity, price_at_time)
+               VALUES (?, ?, ?, ?)''',
+            (order_id, item['product_id'], item['qty'], item['price'])
+        )
+
+    db.commit()
+
+    # Store order_no in session so progress page can poll it
+    session['latest_order_no'] = order_no
+
+    return {'success': True, 'order_no': order_no}
+
+
+# =============================================================================
+# PART 6 — ORDER STATUS + HISTORY
+# =============================================================================
+
+@app.route('/order-progress')
+def order_progress():
+    if 'user_id' not in session:
+        return redirect(url_for('sign_in'))
+    return render_template('user/myorderprogress.html')
+
+@app.route('/orders/latest/status')
+def latest_order_status():
+    if 'user_id' not in session:
+        return {'error': 'Unauthorized'}, 401
+
+    order_no = session.get('latest_order_no')
+    if not order_no:
+        return {'error': 'No active order.'}, 404
+
+    db    = get_db()
+    order = db.execute(
+        'SELECT order_no, status, total_price FROM orders WHERE order_no = ?',
+        (order_no,)
+    ).fetchone()
+
+    if not order:
+        return {'error': 'Order not found.'}, 404
+
+    return {
+        'order_no'    : order['order_no'],
+        'status'      : order['status'],
+        'total_price' : order['total_price']
+    }
+
+@app.route('/orders/history')
+def order_history():
+    if 'user_id' not in session:
+        return {'error': 'Unauthorized'}, 401
+
+    db = get_db()
+
+    # Get all orders belonging to the logged-in user only
+    orders = db.execute(
+        '''SELECT o.order_id, o.order_no, o.status, o.total_price, o.created_at
+           FROM orders o
+           WHERE o.user_id = ?
+           ORDER BY o.created_at DESC''',
+        (session['user_id'],)
+    ).fetchall()
+
+    result = []
+    for o in orders:
+        items = db.execute(
+            '''SELECT oi.quantity, oi.price_at_time, p.name, p.image_filename
+               FROM order_items oi
+               LEFT JOIN products p ON oi.product_id = p.product_id
+               WHERE oi.order_id = ?''',
+            (o['order_id'],)
+        ).fetchall()
+
+        result.append({
+            'order_no'   : o['order_no'],
+            'status'     : o['status'],
+            'total_price': o['total_price'],
+            'created_at' : o['created_at'],
+            'items'      : [{
+                'name'          : i['name'],
+                'qty'           : i['quantity'],
+                'price_at_time' : i['price_at_time'],
+                'image_filename': i['image_filename']
+            } for i in items]
+        })
+
+    return result
+
+@app.route('/history')
+def history_page():
+    if 'user_id' not in session:
+        return redirect(url_for('sign_in'))
+    return render_template('user/history.html')
+
+@app.route('/cart')
+def cart_page():
+    if 'user_id' not in session:
+        return redirect(url_for('sign_in'))
+    return render_template('user/cart.html')
+
+
 if __name__ == '__main__':
     if not os.path.exists(DATABASE):
         init_db()
