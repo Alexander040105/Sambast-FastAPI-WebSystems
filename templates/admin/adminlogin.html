@@ -21,26 +21,18 @@
                 <h1 class="admin-name">REY!</h1>
             </div>
 
-            {% with messages = get_flashed_messages() %}
-              {% if messages %}
-                {% for message in messages %}
-                  <p style="color: #ff4d4d; font-size: 0.8rem; text-align: center; margin-bottom: 10px; font-weight: bold;">
-                    {{ message }}
-                  </p>
-                {% endfor %}
-              {% endif %}
-            {% endwith %}
+            <div id="errorMessage" style="color: #ff4d4d; font-size: 0.8rem; text-align: center; margin-bottom: 10px; font-weight: bold;"></div>
 
-            <form class="auth-form" action="/admin" method="POST">
+            <form class="auth-form" id="adminLoginForm" method="POST">
                 <div class="input-field">
-                    <input type="text" name="username" placeholder="USERNAME" required>
+                    <input type="text" id="username" name="username" placeholder="USERNAME" required>
                 </div>
 
                 <div class="input-field">
-                    <input type="password" name="password" placeholder="PASSWORD" required>
+                    <input type="password" id="password" name="password" placeholder="PASSWORD" required>
                 </div>
                 
-                <a href="/admin/forgot-password" class="forgot-link">Forgot Password?</a>
+                <a href="{{ url_for('forgot_password') }}" class="forgot-link">Forgot Password?</a>
 
                 <button type="submit" class="primary-btn">LOG-IN</button>
             </form>
@@ -51,5 +43,6 @@
         </footer>
     </div>
 
+    <script src="{{ url_for('static', filename='js/admin/adminlogin.js') }}"></script>
 </body>
 </html>
