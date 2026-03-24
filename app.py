@@ -666,6 +666,34 @@ def cart_page():
     return render_template('user/cart.html')
 
 
+@app.route('/change-pin', methods=['GET', 'POST'])
+def change_pin():
+    if 'user_id' not in session:
+        return redirect(url_for('sign_in_page'))
+
+    if request.method == 'POST':
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid request. Expected JSON.'}), 400
+        
+        new_pin = data.get('new_pin', '')
+
+        if len(new_pin) != 4 or not new_pin.isdigit():
+            return jsonify({'error': 'PIN must be exactly 4 digits.'}), 400
+
+        pin_hash = generate_password_hash(new_pin)
+        db = get_db()
+        db.execute(
+            'UPDATE users SET pin_hash = ? WHERE user_id = ?',
+            (pin_hash, session['user_id'])
+        )
+        db.commit()
+
+        return jsonify({'success': True})
+
+    return render_template('user/changepin.html')
+
+
 if __name__ == '__main__':
     if not os.path.exists(DATABASE):
         init_db()

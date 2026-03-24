@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sambast | Change PIN</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/user/setpin.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="auth-page">
+
+    <div class="mobile-container">
+        <header class="header">
+            <a href="/profile" class="back-arrow">←</a>
+            <span class="logo"></span>
+        </header>
+
+        <main class="auth-content">
+            <div class="text-group">
+                <h1 class="main-title">Set your new 4-digit PIN</h1>
+                <p class="sub-text">You'll use this to log-in.</p>
+            </div>
+
+            <p id="errorMessage" style="color:red; font-size:0.8rem; text-align:center; height: 1em;"></p>
+
+            <form class="auth-form" id="changePinForm">
+                <div class="pin-container">
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" required>
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" required>
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" required>
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" required>
+                </div>
+                <input type="hidden" name="pin" id="pinValue">
+
+                <button type="submit" class="primary-btn">UPDATE PIN</button>
+            </form>
+        </main>
+
+        <footer class="auth-footer">
+        </footer>
+    </div>
+
+  <script src="{{ url_for('static', filename='js/user/changepin.js') }}"></script>
+</body>
+</html>
