@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .finally(() => {
             submitButton.disabled = false;
-            submitButton.textContent = 'SET PIN';
+            submitButton.textContent = 'ENTER';
         });
     });
 });

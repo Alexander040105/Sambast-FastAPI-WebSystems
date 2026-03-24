@@ -83,5 +83,5 @@ document.querySelector('.checkout-btn').addEventListener('click', () => {
         return;
     }
     localStorage.setItem('checkoutItems', JSON.stringify(selectedData));
-    window.location.href = 'checkout.html';
+    window.location.href = '/checkout';
 });

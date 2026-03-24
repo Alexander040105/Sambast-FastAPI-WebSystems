@@ -21,6 +21,8 @@
                 <p class="sub-text">You'll use this to log-in.</p>
             </div>
 
+            <p id="errorMessage" style="color:red; font-size:0.8rem; text-align:center; height: 1em;"></p>
+
             {% with messages = get_flashed_messages() %}
               {% if messages %}
                 <p style="color:red; font-size:0.8rem; text-align:center;">{{ messages[0] }}</p>

@@ -45,7 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const paymentInput = document.querySelector('input[name="payment_method"]:checked');
             const paymentMethod = paymentInput ? paymentInput.value : 'cash';
 
-            placeOrderBtn.disabled = true;
+            placeOrderBtn.style.pointerEvents = 'none';
+            placeOrderBtn.style.opacity = '0.6';
             placeOrderBtn.innerText = "Placing Order...";
 
             fetch('/orders', {
@@ -72,13 +73,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = '/order-progress';
                 } else {
                     alert("Failed to place order: " + (data.error || "Unknown error"));
-                    placeOrderBtn.disabled = false;
+                    placeOrderBtn.style.pointerEvents = 'auto';
+                    placeOrderBtn.style.opacity = '1';
                     placeOrderBtn.innerText = "PLACE ORDER";
                 }
             })
             .catch(() => {
                 alert("Network error. Please try again.");
-                placeOrderBtn.disabled = false;
+                placeOrderBtn.style.pointerEvents = 'auto';
+                placeOrderBtn.style.opacity = '1';
                 placeOrderBtn.innerText = "PLACE ORDER";
             });
         };

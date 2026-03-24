@@ -31,6 +31,8 @@
               {% endif %}
             {% endwith %}
 
+            <p id="errorMessage" style="color:red; font-size:0.8rem; text-align:center; height: 1em;"></p>
+
             <form class="auth-form" action="/verify-pin" method="POST" id="verifyPinForm">
                 <div class="pin-container">
                     <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" required>
@@ -41,7 +43,7 @@
                 <!-- Hidden field that verifypin.js fills before submit -->
                 <input type="hidden" name="pin" id="pinValue">
 
-                <button type="submit" class="primary-btn">CONFIRM</button>
+                <button type="submit" class="primary-btn" id="submitButton">CONFIRM</button>
             </form>
         </main>
 

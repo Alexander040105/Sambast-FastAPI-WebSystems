@@ -134,14 +134,14 @@ def admin_login_page():
 
 @app.route('/admin/dashboard')
 def admin_analytics(): # Changed name to match url_for('admin_analytics')
-    if 'admin_id' not in session: return redirect(url_for('admin_login'))
+    if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     return render_template('admin/analytics.html')
 
 # --- ORDER MANAGEMENT ---
 
 @app.route('/admin/orders')
 def admin_orders():
-    if 'admin_id' not in session: return redirect(url_for('admin_login'))
+    if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     status_filter = request.args.get('status')
     db = get_db()
     if status_filter:
@@ -152,7 +152,7 @@ def admin_orders():
 
 @app.route('/admin/orders/<int:order_id>/status', methods=['POST'])
 def update_order_status(order_id):
-    if 'admin_id' not in session: return redirect(url_for('admin_login'))
+    if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     new_status = request.form.get('status')
     db = get_db()
     db.execute('UPDATE orders SET status = ? WHERE order_id = ?', (new_status, order_id))
@@ -163,7 +163,7 @@ def update_order_status(order_id):
 
 @app.route('/admin/orders/<int:order_id>/cancel', methods=['POST'])
 def cancel_order(order_id):
-    if 'admin_id' not in session: return redirect(url_for('admin_login'))
+    if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     db = get_db()
     db.execute('UPDATE orders SET status = "Cancelled" WHERE order_id = ?', (order_id,))
     db.execute('INSERT INTO audit_logs (admin_id, action_text) VALUES (?, ?)', 
@@ -175,14 +175,14 @@ def cancel_order(order_id):
 
 @app.route('/admin/inventory')
 def admin_inventory():
-    if 'admin_id' not in session: return redirect(url_for('admin_login'))
+    if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     db = get_db()
     products = db.execute('SELECT * FROM products ORDER BY name ASC').fetchall()
     return render_template('admin/inventory.html', products=products)
 
 @app.route('/admin/products/add', methods=['POST'])
 def add_product():
-    if 'admin_id' not in session: return redirect(url_for('admin_login'))
+    if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     
     name = request.form.get('name')
     category = request.form.get('category')
@@ -207,7 +207,7 @@ def add_product():
 
 @app.route('/admin/products/edit/<int:product_id>', methods=['POST'])
 def edit_product(product_id):
-    if 'admin_id' not in session: return redirect(url_for('admin_login'))
+    if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     
     name = request.form.get('name')
     category = request.form.get('category')
@@ -233,7 +233,7 @@ def edit_product(product_id):
 
 @app.route('/admin/products/delete/<int:product_id>', methods=['POST'])
 def delete_product(product_id):
-    if 'admin_id' not in session: return redirect(url_for('admin_login'))
+    if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     db = get_db()
     db.execute('DELETE FROM products WHERE product_id = ?', (product_id,))
     db.execute('INSERT INTO audit_logs (admin_id, action_text) VALUES (?, ?)', 
@@ -246,7 +246,7 @@ def delete_product(product_id):
 @app.route('/admin/logout')
 def admin_logout():
     session.clear()
-    return redirect(url_for('admin_login'))
+    return redirect(url_for('admin_login_page'))
 
 @app.route('/admin/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
@@ -283,14 +283,14 @@ def reset_password():
         db.commit()
         session.pop('temp_otp', None)
         flash("Password reset successful!")
-        return redirect(url_for('admin_login'))
+        return redirect(url_for('admin_login_page'))
     return render_template('admin/createpass.html')
 
 @app.route('/admin/audit')
 def admin_audit():
     # Security check: Make sure only logged-in admins can see this
     if 'admin_id' not in session:
-        return redirect(url_for('admin_login'))
+        return redirect(url_for('admin_login_page'))
         
     db = get_db()
     # Fetch logs and join with admin table to see who did what
@@ -307,7 +307,7 @@ def admin_audit():
 @app.route('/admin/profile')
 def admin_profile():
     if 'admin_id' not in session:
-        return redirect(url_for('admin_login'))
+        return redirect(url_for('admin_login_page'))
     
     db = get_db()
     admin = db.execute('SELECT * FROM admin WHERE admin_id = ?', (session['admin_id'],)).fetchone()
@@ -457,14 +457,14 @@ def sign_in_page():
 @app.route('/sign-out')
 def sign_out():
     session.pop('user_id', None)
-    return redirect(url_for('sign_in'))
+    return redirect(url_for('sign_in_page'))
 
 
 # Placeholder shop route — Part 4 will flesh this out
 @app.route('/shop')
 def shop_home():
     if 'user_id' not in session:
-        return redirect(url_for('sign_in'))
+        return redirect(url_for('sign_in_page'))
     return render_template('user/shophomepage.html')
 
 
@@ -521,7 +521,7 @@ def generate_order_no():
 @app.route('/checkout')
 def checkout_page():
     if 'user_id' not in session:
-        return redirect(url_for('sign_in'))
+        return redirect(url_for('sign_in_page'))
     return render_template('user/checkout.html')
 
 @app.route('/orders', methods=['POST'])
@@ -576,7 +576,7 @@ def place_order():
 @app.route('/order-progress')
 def order_progress():
     if 'user_id' not in session:
-        return redirect(url_for('sign_in'))
+        return redirect(url_for('sign_in_page'))
     return render_template('user/myorderprogress.html')
 
 @app.route('/orders/latest/status')
@@ -648,13 +648,13 @@ def order_history():
 @app.route('/history')
 def history_page():
     if 'user_id' not in session:
-        return redirect(url_for('sign_in'))
+        return redirect(url_for('sign_in_page'))
     return render_template('user/history.html')
 
 @app.route('/cart')
 def cart_page():
     if 'user_id' not in session:
-        return redirect(url_for('sign_in'))
+        return redirect(url_for('sign_in_page'))
     return render_template('user/cart.html')
 
 
