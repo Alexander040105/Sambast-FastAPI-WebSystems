@@ -669,20 +669,33 @@ def cart_page():
 @app.route('/change-pin', methods=['GET', 'POST'])
 def change_pin():
     if 'user_id' not in session:
-        return redirect(url_for('sign_in_page'))
+        return jsonify({'error': 'Unauthorized'}), 401
 
     if request.method == 'POST':
         data = request.get_json()
         if not data:
             return jsonify({'error': 'Invalid request. Expected JSON.'}), 400
-        
+
+        old_pin = data.get('old_pin', '')
         new_pin = data.get('new_pin', '')
+        confirm_pin = data.get('confirm_pin', '')
+
+        if not old_pin or not new_pin or not confirm_pin:
+            return jsonify({'error': 'Please fill out all PIN fields.'}), 400
+
+        if new_pin != confirm_pin:
+            return jsonify({'error': 'New PINs do not match.'}), 400
 
         if len(new_pin) != 4 or not new_pin.isdigit():
             return jsonify({'error': 'PIN must be exactly 4 digits.'}), 400
 
-        pin_hash = generate_password_hash(new_pin)
         db = get_db()
+        user = db.execute('SELECT pin_hash FROM users WHERE user_id = ?', (session['user_id'],)).fetchone()
+
+        if not user or not check_password_hash(user['pin_hash'], old_pin):
+            return jsonify({'error': 'Incorrect old PIN.'}), 401
+
+        pin_hash = generate_password_hash(new_pin)
         db.execute(
             'UPDATE users SET pin_hash = ? WHERE user_id = ?',
             (pin_hash, session['user_id'])

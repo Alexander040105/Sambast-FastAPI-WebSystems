@@ -1,29 +1,26 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('changePinForm');
     const errorDisplay = document.getElementById('errorMessage');
-    const pinInputs = document.querySelectorAll('.pin-container input');
-
-    pinInputs.forEach((input, index) => {
-        input.addEventListener('input', (e) => {
-            if (e.target.value.length === 1 && index < pinInputs.length - 1) {
-                pinInputs[index + 1].focus();
-            }
-        });
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && !e.target.value && index > 0) {
-                pinInputs[index - 1].focus();
-            }
-        });
-    });
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
 
-        let pin = '';
-        pinInputs.forEach(input => pin += input.value);
+        const oldPin = document.querySelector('input[name="old_pin"]').value;
+        const newPin = document.querySelector('input[name="new_pin"]').value;
+        const confirmPin = document.querySelector('input[name="confirm_pin"]').value;
 
-        if (pin.length !== 4) {
-            errorDisplay.textContent = 'Please enter all 4 digits of your PIN.';
+        if (!oldPin || !newPin || !confirmPin) {
+            errorDisplay.textContent = 'Please fill out all PIN fields.';
+            return;
+        }
+
+        if (oldPin.length !== 4 || newPin.length !== 4 || confirmPin.length !== 4) {
+            errorDisplay.textContent = 'All PINs must be exactly 4 digits.';
+            return;
+        }
+
+        if (newPin !== confirmPin) {
+            errorDisplay.textContent = 'New PINs do not match. Please try again.';
             return;
         }
 
@@ -35,10 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/change-pin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ new_pin: pin })
+            body: JSON.stringify({
+                old_pin: oldPin,
+                new_pin: newPin,
+                confirm_pin: confirmPin
+            })
         })
-        .then(response => response.json().then(data => ({ ok: response.ok, data })))
-        .then(({ ok, data }) => {
+        .then(response => response.json().then(data => ({ ok: response.ok, status: response.status, data })))
+        .then(({ ok, status, data }) => {
             if (ok) {
                 alert('PIN Updated Successfully');
                 window.location.href = '/profile';
