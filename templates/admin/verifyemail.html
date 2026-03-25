@@ -14,7 +14,7 @@
         <header class="header">
             <img src="{{ url_for('static', filename='image/logo.png') }}" alt="Logo" class="logo">
             
-            <a href="adminlogin.html" class="back-btn">
+            <a href="{{ url_for('admin_login_page') }}" class="back-btn">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M15 18l-6-6 6-6"/>
                 </svg>
@@ -29,13 +29,14 @@
                 <span class="phone-number">juandelacruz@gmail.com</span>
             </p>
 
-            <form class="auth-form" action="createpass.html">
+            <form class="auth-form" id="otp-form" method="POST" action="{{ url_for('verify_otp') }}">
                 <div class="otp-container">
                     <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" required>
                     <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" required>
                     <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" required>
                     <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" required>
                 </div>
+                <input type="hidden" name="otp" id="otp-input">
 
                 <div class="resend-container">
                     <p>Didn't received code?</p>
@@ -52,8 +53,11 @@
     </div>
 
     <script>
-        // Auto-focus next input logic
+        const form = document.getElementById('otp-form');
         const inputs = document.querySelectorAll('.otp-container input');
+        const hiddenInput = document.getElementById('otp-input');
+
+        // Auto-focus next input logic
         inputs.forEach((input, index) => {
             input.addEventListener('input', (e) => {
                 if (e.target.value.length === 1 && index < inputs.length - 1) {
@@ -65,6 +69,14 @@
                     inputs[index - 1].focus();
                 }
             });
+        });
+
+        form.addEventListener('submit', (e) => {
+            let otp = '';
+            inputs.forEach(input => {
+                otp += input.value;
+            });
+            hiddenInput.value = otp;
         });
     </script>
 </body>

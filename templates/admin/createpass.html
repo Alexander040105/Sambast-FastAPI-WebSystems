@@ -14,7 +14,7 @@
         <header class="header">
             <img src="{{ url_for('static', filename='image/logo.png') }}" alt="Logo" class="logo">
             
-            <a href="verifyemail.html" class="back-btn">
+            <a href="{{ url_for('forgot_password') }}" class="back-btn">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M15 18l-6-6 6-6"/>
                 </svg>
@@ -24,18 +24,18 @@
         <main class="auth-content">
             <h1 class="main-title">CREATE NEW<br>PASSWORD</h1>
 
-            <form class="auth-form" action="adminlogin.html">
+            <form class="auth-form" method="POST" action="{{ url_for('reset_password') }}">
                 <div class="input-group">
                     <label>NEW PASSWORD</label>
                     <div class="input-field">
-                        <input type="password" required>
+                        <input type="password" name="password" required>
                     </div>
                 </div>
 
                 <div class="input-group">
                     <label>CONFIRM PASSWORD</label>
                     <div class="input-field">
-                        <input type="password" required>
+                        <input type="password" name="confirm_password" required>
                     </div>
                 </div>
 
