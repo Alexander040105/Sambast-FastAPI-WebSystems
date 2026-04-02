@@ -133,7 +133,7 @@ def admin_login_page():
     return render_template('admin/adminlogin.html')
 
 @app.route('/admin/dashboard')
-def admin_analytics(): # Changed name to match url_for('admin_analytics')
+def admin_analytics(): 
     if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     return render_template('admin/analytics.html')
 
@@ -577,7 +577,13 @@ def place_order():
 def order_progress():
     if 'user_id' not in session:
         return redirect(url_for('sign_in_page'))
-    return render_template('user/myorderprogress.html')
+    
+    db = get_db()
+    # Fetch user info to display real name/contact on the progress page
+    user = db.execute('SELECT name, contact_no FROM users WHERE user_id = ?', 
+                      (session['user_id'],)).fetchone()
+    
+    return render_template('user/myorderprogress.html', user=user)
 
 @app.route('/orders/latest/status')
 def latest_order_status():

@@ -44,12 +44,12 @@
 
                 <div class="detail-item">
                     <span>Recipient</span>
-                    <strong>JUAN DELA CRUZ</strong>
+                    <strong>{{ user.name if user else 'Customer' }}</strong>
                 </div>
 
                 <div class="detail-item">
                     <span>Contact Number</span>
-                    <strong>09123456789</strong>
+                    <strong>{{ user.contact_no if user else 'N/A' }}</strong>
                 </div>
 
                 <hr class="divider">
@@ -62,7 +62,7 @@
         </main>
 
         <footer class="progress-footer">
-            <button class="support-btn" onclick="window.location.href='shophomepage.html'">Back to Shop</button>
+            <button class="support-btn" id="backToShopBtn">Back to Shop</button>
         </footer>
     </div>
 

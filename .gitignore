@@ -1,0 +1,14 @@
+# Database
+database.db
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Virtual Environments (if you use them)
+venv/
+env/
+
+# Uploaded test images (so you don't push dummy user avatars/receipts)
+static/uploads/*
+!static/uploads/.gitkeep
