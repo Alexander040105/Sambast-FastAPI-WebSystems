@@ -41,6 +41,64 @@
         </section>
 
         <main class="scroll-container">
+            <div id="ai-recommendations-container" style="display: none; margin-bottom: 24px;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #1A323E; margin-bottom: 12px; padding-left: 4px;">You may also like</h2>
+                <div class="item-grid" id="ai-recommendations-grid">
+                    <!-- Placeholder product card matching existing design -->
+                    <div class="product-card">
+                        <div class="flip-inner">
+                            <div class="front-face">
+                                <div class="img-box">
+                                    <!-- Placeholder Icon -->
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D6D0C5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                </div>
+                                <p class="label-cat">AI Suggestion</p>
+                                <p class="label-name">Loading...</p>
+                                <div class="input-row">
+                                    <div class="select-box">
+                                        <select disabled style="opacity: 0.5;"><option>Flavor</option></select>
+                                    </div>
+                                    <div class="qty-box" style="opacity: 0.5;">
+                                        <button disabled>-</button><span>1</span><button disabled>+</button>
+                                    </div>
+                                </div>
+                                <p class="label-price">Php 0.00</p>
+                                <div class="btn-row">
+                                    <button class="cart-act" disabled style="opacity: 0.5;">Add to Cart</button>
+                                    <button class="buy-act" disabled style="opacity: 0.5;">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Second Placeholder -->
+                    <div class="product-card">
+                        <div class="flip-inner">
+                            <div class="front-face">
+                                <div class="img-box">
+                                    <!-- Placeholder Icon -->
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D6D0C5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                </div>
+                                <p class="label-cat">AI Suggestion</p>
+                                <p class="label-name">Loading...</p>
+                                <div class="input-row">
+                                    <div class="select-box">
+                                        <select disabled style="opacity: 0.5;"><option>Flavor</option></select>
+                                    </div>
+                                    <div class="qty-box" style="opacity: 0.5;">
+                                        <button disabled>-</button><span>1</span><button disabled>+</button>
+                                    </div>
+                                </div>
+                                <p class="label-price">Php 0.00</p>
+                                <div class="btn-row">
+                                    <button class="cart-act" disabled style="opacity: 0.5;">Add to Cart</button>
+                                    <button class="buy-act" disabled style="opacity: 0.5;">Buy Now</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="item-grid" id="itemGrid"></div>
         </main>
 
@@ -84,6 +142,29 @@
         </div>
     </div>
 </div>
+<!-- Chat Widget -->
+<button id="chatToggleBtn" class="chat-widget-toggle">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+</button>
+
+<div id="chatWindow" class="chat-widget-window">
+    <div class="chat-header">
+        <h3>Store Assistant</h3>
+        <button id="chatCloseBtn" class="chat-close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+    </div>
+    <div id="chatHistory" class="chat-history">
+        <div class="chat-msg bot">Hi! I'm your Sambast Assistant. How can I help you today?</div>
+    </div>
+    <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Type a message...">
+        <button id="chatSendBtn" class="chat-send-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+    </div>
+</div>
+
 <script src="../../static/js/user/shophomepage.js"></script>
 </body>
 </html>

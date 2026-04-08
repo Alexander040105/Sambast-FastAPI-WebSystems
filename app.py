@@ -565,6 +565,53 @@ def get_products():
     } for p in products]
 
 
+@app.route('/api/recommendations', methods=['POST'])
+def api_recommendations():
+    if 'ai_model' not in globals():
+        return jsonify({'error': 'AI model not configured'}), 500
+
+    data = request.get_json()
+    cart_items = data.get('cart_items', []) if data else []
+    
+    top_products = get_top_products_context()
+    
+    prompt = f"User cart: {cart_items}. Top sellers: {top_products}. Suggest 2 complementary products. Return ONLY a raw JSON array of strings."
+    
+    try:
+        response = ai_model.generate_content(prompt)
+        import json
+        text = response.text.strip()
+        if text.startswith("```json"):
+            text = text[7:-3].strip()
+        elif text.startswith("```"):
+            text = text[3:-3].strip()
+        return jsonify(json.loads(text))
+    except Exception as e:
+        print(f"AI Recommendation error: {e}")
+        return jsonify({"error": "Failed to generate recommendations"}), 500
+
+@app.route('/api/chat', methods=['POST'])
+def api_chat():
+    if 'ai_model' not in globals():
+        return jsonify({'error': 'AI model not configured'}), 500
+
+    data = request.get_json()
+    if not data or 'message' not in data:
+        return jsonify({'error': 'Invalid request. Expected JSON with a message string.'}), 400
+
+    user_message = data.get('message', '')
+    inventory_context = get_inventory_context()
+    
+    prompt = f"{inventory_context}\n\nUser Message: {user_message}"
+    
+    try:
+        response = ai_model.generate_content(prompt)
+        return jsonify({"response": response.text})
+    except Exception as e:
+        print(f"AI Chat error: {e}")
+        return jsonify({"error": "Failed to generate chat response"}), 500
+
+
 # =============================================================================
 # PART 5 — ORDER PLACEMENT
 # =============================================================================

@@ -8,6 +8,7 @@ __pycache__/
 # Virtual Environments (if you use them)
 venv/
 env/
+.env
 
 # Uploaded test images (so you don't push dummy user avatars/receipts)
 static/uploads/*

@@ -122,6 +122,62 @@ function closeStatusModal() {
     window.history.replaceState({}, document.title, window.location.pathname);
 }
 
+async function fetchRecommendations(cartItems) {
+    try {
+        const response = await fetch('/api/recommendations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(cartItems)
+        });
+
+        if (!response.ok) return;
+
+        const recommendations = await response.json();
+        if (recommendations && recommendations.length > 0) {
+            const container = document.getElementById('ai-recommendations-container');
+            const grid = document.getElementById('ai-recommendations-grid');
+            
+            grid.innerHTML = '';
+            
+            recommendations.forEach(productName => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <div class="flip-inner">
+                        <div class="front-face">
+                            <div class="img-box">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D6D0C5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            </div>
+                            <p class="label-cat">AI Suggestion</p>
+                            <p class="label-name">${productName}</p>
+                            <div class="input-row">
+                                <div class="select-box">
+                                    <select disabled style="opacity: 0.5;"><option>Flavor</option></select>
+                                </div>
+                                <div class="qty-box" style="opacity: 0.5;">
+                                    <button disabled>-</button><span>1</span><button disabled>+</button>
+                                </div>
+                            </div>
+                            <p class="label-price">Php 0.00</p>
+                            <div class="btn-row">
+                                <button class="cart-act" disabled style="opacity: 0.5;">Add to Cart</button>
+                                <button class="buy-act" disabled style="opacity: 0.5;">Buy Now</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            
+            container.style.display = 'block';
+        }
+    } catch (error) {
+        // Silently ignore errors, leaving container hidden
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Fetch products from the real API
     fetch('/products')
@@ -142,5 +198,79 @@ document.addEventListener('DOMContentLoaded', () => {
     if (urlParams.get('showStatus') === 'true') {
         const modal = document.getElementById('statusModal');
         if (modal) modal.style.display = 'flex';
+    }
+
+    // --- CHAT WIDGET LOGIC ---
+    const chatToggleBtn = document.getElementById('chatToggleBtn');
+    const chatWindow = document.getElementById('chatWindow');
+    const chatCloseBtn = document.getElementById('chatCloseBtn');
+    const chatSendBtn = document.getElementById('chatSendBtn');
+    const chatInput = document.getElementById('chatInput');
+    const chatHistory = document.getElementById('chatHistory');
+
+    if (chatToggleBtn && chatWindow) {
+        chatToggleBtn.addEventListener('click', () => {
+            chatWindow.style.display = 'flex';
+            chatToggleBtn.style.display = 'none';
+        });
+
+        chatCloseBtn.addEventListener('click', () => {
+            chatWindow.style.display = 'none';
+            chatToggleBtn.style.display = 'flex';
+        });
+
+        const sendMessage = async () => {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Append user message
+            const userMsgDiv = document.createElement('div');
+            userMsgDiv.className = 'chat-msg user';
+            userMsgDiv.innerText = message;
+            chatHistory.appendChild(userMsgDiv);
+            
+            chatInput.value = '';
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // Append typing indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-msg bot typing';
+            typingDiv.innerText = 'Typing...';
+            chatHistory.appendChild(typingDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+                
+                // Remove typing indicator
+                chatHistory.removeChild(typingDiv);
+
+                // Append bot response
+                const botMsgDiv = document.createElement('div');
+                botMsgDiv.className = 'chat-msg bot';
+                botMsgDiv.innerText = response.ok && data.response ? data.response : 'Sorry, I am having trouble connecting right now.';
+                chatHistory.appendChild(botMsgDiv);
+                
+            } catch (error) {
+                chatHistory.removeChild(typingDiv);
+                const errorMsgDiv = document.createElement('div');
+                errorMsgDiv.className = 'chat-msg bot';
+                errorMsgDiv.innerText = 'Sorry, there was a network error.';
+                chatHistory.appendChild(errorMsgDiv);
+            }
+            
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        };
+
+        chatSendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
     }
 });
