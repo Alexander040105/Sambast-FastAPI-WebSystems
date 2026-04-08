@@ -223,6 +223,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const message = chatInput.value.trim();
             if (!message) return;
 
+            // 1. Lock the UI so they can't spam messages while waiting
+            chatInput.disabled = true;
+            chatSendBtn.disabled = true;
+
             // Append user message
             const userMsgDiv = document.createElement('div');
             userMsgDiv.className = 'chat-msg user';
@@ -249,7 +253,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 
                 // Remove typing indicator
-                chatHistory.removeChild(typingDiv);
+                if(chatHistory.contains(typingDiv)) {
+                    chatHistory.removeChild(typingDiv);
+                }
 
                 // Append bot response
                 const botMsgDiv = document.createElement('div');
@@ -258,14 +264,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatHistory.appendChild(botMsgDiv);
                 
             } catch (error) {
-                chatHistory.removeChild(typingDiv);
+                if(chatHistory.contains(typingDiv)) {
+                    chatHistory.removeChild(typingDiv);
+                }
                 const errorMsgDiv = document.createElement('div');
                 errorMsgDiv.className = 'chat-msg bot';
                 errorMsgDiv.innerText = 'Sorry, there was a network error.';
                 chatHistory.appendChild(errorMsgDiv);
+            } finally {
+                // 2. Unlock the UI after the API finishes (success or fail)
+                chatInput.disabled = false;
+                chatSendBtn.disabled = false;
+                chatInput.focus(); // puts the cursor back in the box
+                chatHistory.scrollTop = chatHistory.scrollHeight;
             }
-            
-            chatHistory.scrollTop = chatHistory.scrollHeight;
         };
 
         chatSendBtn.addEventListener('click', sendMessage);

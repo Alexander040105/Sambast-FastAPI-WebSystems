@@ -13,3 +13,5 @@ env/
 # Uploaded test images (so you don't push dummy user avatars/receipts)
 static/uploads/*
 !static/uploads/.gitkeep
+
+seed_data.py
