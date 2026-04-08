@@ -113,26 +113,37 @@ if (auditSearch) {
     });
 }
 
-// --- AI INVENTORY INSIGHTS ---
-document.addEventListener("DOMContentLoaded", () => {
-    fetch("/api/admin/inventory-insights")
-        .then(response => {
-            if (!response.ok) throw new Error("Failed to fetch");
-            return response.json();
-        })
-        .then(data => {
-            const alertBanner = document.getElementById("ai-inventory-alert");
-            const alertBody = alertBanner ? alertBanner.querySelector(".ai-alert-body") : null;
-            
-            // Assume the text is in data.insights, data.message, or data directly if it's a string
-            const warningText = data.insights || data.message || (typeof data === "string" ? data : JSON.stringify(data));
+// --- AI INVENTORY INSIGHTS (WITH CACHING) ---
+document.addEventListener("DOMContentLoaded", async () => {
+    const alertBanner = document.getElementById("ai-inventory-alert");
+    const alertBody = alertBanner ? alertBanner.querySelector(".ai-alert-body") : null;
+    
+    if (!alertBanner || !alertBody) return;
 
-            if (alertBanner && alertBody && warningText) {
-                alertBody.textContent = warningText;
-                alertBanner.style.display = "block";
-            }
-        })
-        .catch(error => {
-            // Catch error silently, leaving the banner hidden (display: none)
-        });
+    // 1. Check Session Storage First to save API Quota
+    const cachedInsights = sessionStorage.getItem("ai_inventory_insights");
+    if (cachedInsights) {
+        alertBody.textContent = cachedInsights;
+        alertBanner.style.display = "block";
+        return; // Exit early, no API call needed!
+    }
+
+    // 2. Fetch from API if nothing is cached
+    try {
+        const response = await fetch("/api/admin/inventory-insights");
+        if (!response.ok) throw new Error("Failed to fetch");
+        
+        const data = await response.json();
+        const warningText = data.insights || data.message || (typeof data === "string" ? data : JSON.stringify(data));
+
+        if (warningText) {
+            alertBody.textContent = warningText;
+            alertBanner.style.display = "block";
+            
+            // 3. Save the result to Session Storage for next time
+            sessionStorage.setItem("ai_inventory_insights", warningText);
+        }
+    } catch (error) {
+        // Catch error silently, leaving the banner hidden (display: none)
+    }
 });
