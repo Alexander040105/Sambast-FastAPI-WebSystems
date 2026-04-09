@@ -82,6 +82,8 @@ function addCart(id, pr) {
     }
     localStorage.setItem('cart', JSON.stringify(cart));
 
+    fetchRecommendations({ cart_items: cart });
+
     alert(product.name + " added to cart!");
 }
 
@@ -190,6 +192,11 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('itemGrid').innerHTML =
                 '<p style="text-align:center; margin-top:40px; color:#666;">Failed to load products.</p>';
         });
+
+    var cart = JSON.parse(localStorage.getItem('cart')) || [];
+    if (cart.length > 0) {
+        fetchRecommendations({ cart_items: cart });
+    }
 
     const checkoutBtn = document.querySelector('.checkout-trigger');
     if (checkoutBtn) checkoutBtn.onclick = handleCheckout;

@@ -147,3 +147,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Catch error silently, leaving the banner hidden (display: none)
     }
 });
+
+// --- AI INVENTORY FORECAST ---
+document.addEventListener("DOMContentLoaded", () => {
+    const forecastBtn = document.getElementById("generate-forecast-btn");
+    const forecastResult = document.getElementById("forecast-result");
+
+    if (forecastBtn && forecastResult) {
+        forecastBtn.addEventListener("click", async () => {
+            forecastResult.innerText = "Analyzing inventory and sales velocity...";
+            
+            try {
+                const response = await fetch("/api/admin/inventory-forecast");
+                if (!response.ok) throw new Error("Forecast failed");
+                
+                const data = await response.json();
+                if (data.forecast_html) {
+                    forecastResult.innerHTML = data.forecast_html;
+                } else if (data.error) {
+                    forecastResult.innerText = "Forecast unavailable at the moment.";
+                }
+            } catch (error) {
+                console.error(error);
+                forecastResult.innerText = "Forecast unavailable at the moment.";
+            }
+        });
+    }
+});

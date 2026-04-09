@@ -30,11 +30,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     // 1. AI EXECUTIVE SUMMARY LOGIC
     const summaryElement = document.getElementById("ai-summary-text");
-    if (summaryElement) {
+    const generateBtn = document.getElementById("generate-insights-btn");
+
+    if (summaryElement && generateBtn) {
         const cachedSummary = sessionStorage.getItem("ai_business_summary");
         if (cachedSummary) {
             summaryElement.innerText = cachedSummary;
-        } else {
+        }
+
+        generateBtn.addEventListener("click", async () => {
+            summaryElement.innerText = "Generating insights...";
             try {
                 const response = await fetch("/api/admin/business-summary");
                 if (response.ok) {
@@ -47,8 +52,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             } catch (error) {
                 summaryElement.innerText = "Insights unavailable.";
+                console.error("AI Insights Error:", error);
             }
-        }
+        });
     }
 
     // 2. HARD STATS LOGIC (Revenue, Orders, etc.)
@@ -86,5 +92,42 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     } catch (error) {
         console.error("Dashboard Stats Error:", error);
+    }
+
+    // 3. TOP PRODUCTS CHART LOGIC
+    try {
+        const topProductsResponse = await fetch("/api/admin/top-products");
+        if (topProductsResponse.ok) {
+            const topProductsData = await topProductsResponse.json();
+            const ctx = document.getElementById('topProductsChart');
+            
+            if (ctx && topProductsData.length > 0) {
+                const labels = topProductsData.map(item => item.name);
+                const data = topProductsData.map(item => item.count);
+                
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Quantity Sold',
+                            data: data,
+                            backgroundColor: '#a6171c',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        console.error("Top Products Chart Error:", error);
     }
 });
