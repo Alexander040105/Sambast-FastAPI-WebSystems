@@ -405,3 +405,22 @@ body {
     color: #333;
     line-height: 1.5;
 }
+
+#ai-inventory-forecast {
+    margin-top: 15px;
+    border-left: 4px solid #4CAF50;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+#generate-forecast-btn {
+    padding: 8px 16px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}

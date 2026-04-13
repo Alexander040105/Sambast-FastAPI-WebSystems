@@ -101,6 +101,23 @@ body.profile-body {
     align-items: center;
 }
 
+.pet-profile-section {
+    margin-top: 40px;
+    margin-bottom: 20px;
+}
+
+.pet-profile-section h2 {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--bg-footer-blue);
+    margin-bottom: 15px;
+    margin-left: 15px;
+}
+
+.pet-profile-section .menu-btn {
+    background: var(--action-ruby-red);
+}
+
 /* MENU BUTTONS */
 .nav-menu {
     margin-top: 40px;

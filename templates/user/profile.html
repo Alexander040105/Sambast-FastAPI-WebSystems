@@ -38,6 +38,33 @@
                 </div>
             </div>
 
+            <div class="pet-profile-section">
+                <h2>PET PROFILE</h2>
+                <form id="petProfileForm">
+                    <div class="input-group">
+                        <label for="petName">NAME</label>
+                        <input type="text" id="petName" name="name" class="static-field" placeholder="Enter pet's name" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="petSpecies">SPECIES</label>
+                        <input type="text" id="petSpecies" name="species" class="static-field" placeholder="e.g., Dog, Cat" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="petBreed">BREED</label>
+                        <input type="text" id="petBreed" name="breed" class="static-field" placeholder="Enter breed" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="petAge">AGE (MONTHS)</label>
+                        <input type="number" id="petAge" name="age_months" class="static-field" placeholder="Enter age" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="petWeight">WEIGHT (KG)</label>
+                        <input type="number" step="0.1" id="petWeight" name="weight_kg" class="static-field" placeholder="Enter weight" required>
+                    </div>
+                    <button type="submit" class="menu-btn">Save Pet Profile</button>
+                </form>
+            </div>
+
             <div class="nav-menu">
                 <button class="menu-btn" onclick="location.href='/change-pin'">
                     Change Password
