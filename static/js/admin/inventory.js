@@ -152,24 +152,84 @@ document.addEventListener("DOMContentLoaded", async () => {
 document.addEventListener("DOMContentLoaded", () => {
     const forecastBtn = document.getElementById("generate-forecast-btn");
     const forecastResult = document.getElementById("forecast-result");
+    const forecastCacheKey = "cached_forecast";
 
-    if (forecastBtn && forecastResult) {
+    function renderForecastItems(container, items) {
+        container.textContent = "";
+
+        if (!Array.isArray(items) || items.length === 0) {
+            container.textContent = "No forecast data available at the moment.";
+            return;
+        }
+
+        const list = document.createElement("div");
+
+        items.forEach((item, index) => {
+            const card = document.createElement("div");
+            card.style.padding = "10px 0";
+            card.style.borderBottom = "1px solid #eee";
+
+            const title = document.createElement("div");
+            title.style.fontWeight = "600";
+            title.textContent = `${index + 1}. ${item.name || "Unknown Product"}`;
+
+            const demand = document.createElement("div");
+            demand.textContent = `Predicted demand: ${item.predicted_demand || "Unknown"}`;
+
+            const reasoning = document.createElement("div");
+            reasoning.textContent = `Reasoning: ${item.reasoning || "No reasoning provided."}`;
+
+            const reorder = document.createElement("div");
+            reorder.textContent = `Suggested reorder qty: ${Number.isInteger(item.suggested_reorder_qty) ? item.suggested_reorder_qty : 0}`;
+
+            card.appendChild(title);
+            card.appendChild(demand);
+            card.appendChild(reasoning);
+            card.appendChild(reorder);
+            list.appendChild(card);
+        });
+
+        container.appendChild(list);
+    }
+
+    if (forecastBtn && forecastResult && forecastBtn.dataset.listenerBound !== "true") {
+        forecastBtn.dataset.listenerBound = "true";
         forecastBtn.addEventListener("click", async () => {
+            const originalBtnText = forecastBtn.innerText;
+            forecastBtn.disabled = true;
+            forecastBtn.innerText = "Loading...";
             forecastResult.innerText = "Analyzing inventory and sales velocity...";
             
             try {
+                const cachedForecastRaw = sessionStorage.getItem(forecastCacheKey);
+                if (cachedForecastRaw) {
+                    try {
+                        const cachedItems = JSON.parse(cachedForecastRaw);
+                        renderForecastItems(forecastResult, cachedItems);
+                        return;
+                    } catch (parseError) {
+                        sessionStorage.removeItem(forecastCacheKey);
+                    }
+                }
+
                 const response = await fetch("/api/admin/inventory-forecast");
                 if (!response.ok) throw new Error("Forecast failed");
                 
                 const data = await response.json();
-                if (data.forecast_html) {
-                    forecastResult.innerHTML = data.forecast_html;
+                if (data.forecast && Array.isArray(data.forecast.forecasted_items)) {
+                    renderForecastItems(forecastResult, data.forecast.forecasted_items);
+                    sessionStorage.setItem(forecastCacheKey, JSON.stringify(data.forecast.forecasted_items));
                 } else if (data.error) {
                     forecastResult.innerText = "Forecast unavailable at the moment.";
+                } else {
+                    forecastResult.innerText = "No forecast data available at the moment.";
                 }
             } catch (error) {
                 console.error(error);
                 forecastResult.innerText = "Forecast unavailable at the moment.";
+            } finally {
+                forecastBtn.disabled = false;
+                forecastBtn.innerText = originalBtnText;
             }
         });
     }

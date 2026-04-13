@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import json
 from flask import Flask, render_template, g, request, session, redirect, url_for, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -440,12 +441,68 @@ def inventory_forecast():
 {inventory_data_string}
 
 OUTPUT REQUIREMENTS:
-1. Identify 2-3 products that are at risk of stockouts based on high sales volume and low current stock. Provide a specific "Suggested reorder quantity" for each to cover the next few weeks of demand.
-2. Identify 1-2 products that have slow sales velocity. Suggest a strategy to move this overstocked inventory.
-3. Format your response cleanly using HTML (like <strong> for product names, and <ul>/<li> for lists) so it can be directly injected into the admin dashboard."""
+1. Return ONLY valid JSON. Do not return HTML, markdown, or code fences.
+2. Return exactly this JSON object shape:
+{{
+    "forecasted_items": [
+        {{
+            "name": "string",
+            "predicted_demand": "High|Medium|Low",
+            "reasoning": "string",
+            "suggested_reorder_qty": 0
+        }}
+    ]
+}}
+3. Include 3 to 5 items total.
+4. suggested_reorder_qty must be 0 for non-stockout recommendations."""
 
         response = ai_model.generate_content(prompt)
-        return jsonify({"forecast_html": response.text.strip()})
+        text = response.text.strip()
+        if text.startswith("```json"):
+            text = text[7:-3].strip()
+        elif text.startswith("```"):
+            text = text[3:-3].strip()
+            
+        try:
+            forecast_data = json.loads(text)
+
+            items = []
+            if isinstance(forecast_data, dict):
+                items = forecast_data.get('forecasted_items', [])
+            elif isinstance(forecast_data, list):
+                items = forecast_data
+
+            if not isinstance(items, list):
+                return jsonify({"error": "Invalid forecast format from AI"}), 500
+
+            validated_items = []
+            for entry in items[:10]:
+                if not isinstance(entry, dict):
+                    continue
+
+                name = str(entry.get('name') or entry.get('product_name') or 'Unknown Product').strip()
+                predicted_demand = str(entry.get('predicted_demand') or 'Unknown').strip()
+                reasoning = str(entry.get('reasoning') or entry.get('suggestion') or 'No reasoning provided.').strip()
+
+                reorder_qty = entry.get('suggested_reorder_qty')
+                try:
+                    reorder_qty = int(reorder_qty)
+                    if reorder_qty < 0:
+                        reorder_qty = 0
+                except (TypeError, ValueError):
+                    reorder_qty = 0
+
+                validated_items.append({
+                    'name': name,
+                    'predicted_demand': predicted_demand,
+                    'reasoning': reasoning,
+                    'suggested_reorder_qty': reorder_qty
+                })
+
+            return jsonify({"forecast": {"forecasted_items": validated_items}})
+        except json.JSONDecodeError:
+            print(f"Failed to parse forecast JSON: {text}")
+            return jsonify({"error": "Failed to parse AI response"}), 500
     except Exception as e:
         print(f"Inventory forecast error: {e}")
         return jsonify({"error": "Failed to generate inventory forecast"}), 500
@@ -826,11 +883,50 @@ def place_order():
     if not items:
         return {'error': 'No items in order.'}, 400
 
-    # Calculate total
-    total = sum(item['price'] * item['qty'] for item in items)
+    db = get_db()
+
+    # Build a server-trusted item list and total using DB prices only.
+    total = 0.0
+    validated_items = []
+    for item in items:
+        product_id = item.get('product_id')
+        product_name = item.get('name')
+        qty = item.get('qty')
+
+        try:
+            qty = int(qty)
+        except (TypeError, ValueError):
+            return {'error': 'Invalid quantity provided.'}, 400
+
+        if qty <= 0:
+            return {'error': 'Quantity must be greater than zero.'}, 400
+
+        product_row = None
+        if product_id is not None:
+            product_row = db.execute(
+                'SELECT product_id, price FROM products WHERE product_id = ?',
+                (product_id,)
+            ).fetchone()
+        elif product_name:
+            product_row = db.execute(
+                'SELECT product_id, price FROM products WHERE name = ?',
+                (product_name,)
+            ).fetchone()
+        else:
+            return {'error': 'Each item must include a product_id or name.'}, 400
+
+        if not product_row:
+            return {'error': 'One or more items reference an unknown product.'}, 400
+
+        db_price = float(product_row['price'])
+        total += db_price * qty
+        validated_items.append({
+            'product_id': product_row['product_id'],
+            'qty': qty,
+            'price': db_price
+        })
 
     # Generate a unique order number
-    db       = get_db()
     order_no = generate_order_no()
     while db.execute('SELECT order_id FROM orders WHERE order_no = ?', (order_no,)).fetchone():
         order_no = generate_order_no()
@@ -844,7 +940,7 @@ def place_order():
     order_id = cursor.lastrowid
 
     # Insert each line item
-    for item in items:
+    for item in validated_items:
         db.execute(
             '''INSERT INTO order_items (order_id, product_id, quantity, price_at_time)
                VALUES (?, ?, ?, ?)''',

@@ -31,21 +31,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 1. AI EXECUTIVE SUMMARY LOGIC
     const summaryElement = document.getElementById("ai-summary-text");
     const generateBtn = document.getElementById("generate-insights-btn");
+    const summaryCacheKey = "cached_business_summary";
 
-    if (summaryElement && generateBtn) {
-        const cachedSummary = sessionStorage.getItem("ai_business_summary");
+    if (summaryElement && generateBtn && generateBtn.dataset.listenerBound !== "true") {
+        generateBtn.dataset.listenerBound = "true";
+        const cachedSummary = sessionStorage.getItem(summaryCacheKey) || sessionStorage.getItem("ai_business_summary");
         if (cachedSummary) {
             summaryElement.innerText = cachedSummary;
+            sessionStorage.setItem(summaryCacheKey, cachedSummary);
         }
 
         generateBtn.addEventListener("click", async () => {
+            const originalBtnText = generateBtn.innerText;
+            generateBtn.disabled = true;
+            generateBtn.innerText = "Loading...";
             summaryElement.innerText = "Generating insights...";
             try {
+                const cachedSummaryOnClick = sessionStorage.getItem(summaryCacheKey);
+                if (cachedSummaryOnClick) {
+                    summaryElement.innerText = cachedSummaryOnClick;
+                    return;
+                }
+
                 const response = await fetch("/api/admin/business-summary");
                 if (response.ok) {
                     const data = await response.json();
                     const summaryText = data.summary || data.text || data.message || "Insights loaded.";
                     summaryElement.innerText = summaryText;
+                    sessionStorage.setItem(summaryCacheKey, summaryText);
                     sessionStorage.setItem("ai_business_summary", summaryText);
                 } else {
                     summaryElement.innerText = "Insights unavailable at the moment.";
@@ -53,6 +66,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             } catch (error) {
                 summaryElement.innerText = "Insights unavailable.";
                 console.error("AI Insights Error:", error);
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerText = originalBtnText;
             }
         });
     }
