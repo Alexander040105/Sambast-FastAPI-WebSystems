@@ -725,8 +725,9 @@ def api_recommendations():
     cart_items = data.get('cart_items', []) if data else []
     
     top_products = get_top_products_context()
+    inventory_context = get_inventory_context()
     
-    prompt = f"User cart: {cart_items}. Top sellers: {top_products}. Suggest 2 complementary products. Return ONLY a raw JSON array of strings."
+    prompt = f"User cart: {cart_items}. Top sellers: {top_products}. Available inventory: {inventory_context}. Suggest 2 complementary products from the available inventory. Return ONLY a raw JSON array of exact product name strings."
     
     try:
         response = ai_model.generate_content(prompt)
@@ -736,7 +737,28 @@ def api_recommendations():
             text = text[7:-3].strip()
         elif text.startswith("```"):
             text = text[3:-3].strip()
-        return jsonify(json.loads(text))
+            
+        product_names = json.loads(text)
+        
+        db = get_db()
+        recommended_products = []
+        if product_names:
+            placeholders = ', '.join(['?'] * len(product_names))
+            query = f"SELECT * FROM products WHERE name IN ({placeholders}) AND stock_status = 1 LIMIT 2"
+            products = db.execute(query, product_names).fetchall()
+            
+            for p in products:
+                recommended_products.append({
+                    'product_id': p['product_id'],
+                    'name': p['name'],
+                    'category': p['category'],
+                    'price': p['price'],
+                    'description': p['description'],
+                    'image_filename': p['image_filename'],
+                    'stock_status': p['stock_status']
+                })
+                
+        return jsonify(recommended_products)
     except Exception as e:
         print(f"AI Recommendation error: {e}")
         return jsonify({"error": "Failed to generate recommendations"}), 500

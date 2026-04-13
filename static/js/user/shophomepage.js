@@ -143,30 +143,44 @@ async function fetchRecommendations(cartItems) {
             
             grid.innerHTML = '';
             
-            recommendations.forEach(productName => {
+            recommendations.forEach(p => {
+                // Ensure the product exists in the global 'data' array
+                if (!data.find(item => item.product_id === p.product_id)) {
+                    data.push(p);
+                }
+
+                var imgSrc = p.image_filename
+                    ? '/static/uploads/' + p.image_filename
+                    : '/static/img/user/user-male-circle.png';
+
                 const card = document.createElement('div');
                 card.className = 'product-card';
+                card.id = "p-rec-" + p.product_id;
                 card.innerHTML = `
                     <div class="flip-inner">
-                        <div class="front-face">
+                        <div class="front-face" onclick="document.getElementById('p-rec-${p.product_id}').classList.toggle('is-flipped')">
                             <div class="img-box">
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D6D0C5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;">
                             </div>
-                            <p class="label-cat">AI Suggestion</p>
-                            <p class="label-name">${productName}</p>
-                            <div class="input-row">
-                                <div class="select-box">
-                                    <select disabled style="opacity: 0.5;"><option>Flavor</option></select>
+                            <p class="label-cat">AI Suggestion (${p.category})</p>
+                            <h2 class="label-name">${p.name}</h2>
+                            <div class="input-row" onclick="event.stopPropagation()">
+                                <div class="qty-box">
+                                    <button onclick="qtyChangeRec(${p.product_id},-1)">-</button>
+                                    <span id="qval-rec-${p.product_id}">1</span>
+                                    <button onclick="qtyChangeRec(${p.product_id},1)">+</button>
                                 </div>
-                                <div class="qty-box" style="opacity: 0.5;">
-                                    <button disabled>-</button><span>1</span><button disabled>+</button>
-                                </div>
                             </div>
-                            <p class="label-price">Php 0.00</p>
-                            <div class="btn-row">
-                                <button class="cart-act" disabled style="opacity: 0.5;">Add to Cart</button>
-                                <button class="buy-act" disabled style="opacity: 0.5;">Buy Now</button>
+                            <p class="label-price">Product Amount: ₱${p.price}</p>
+                            <div class="btn-row" onclick="event.stopPropagation()">
+                                <button class="cart-act" onclick="addCartRec(${p.product_id},${p.price})">CART</button>
+                                <button class="buy-act" onclick="buyNowRec(${p.product_id})">BUY</button>
                             </div>
+                        </div>
+                        <div class="back-face" onclick="document.getElementById('p-rec-${p.product_id}').classList.toggle('is-flipped')">
+                            <h3>${p.name}</h3>
+                            <p style="font-size:12px; margin-top:10px;">Description</p>
+                            <p style="font-size:10px; opacity:0.8; margin-top:5px;">${p.description || 'No description available.'}</p>
                         </div>
                     </div>
                 `;
@@ -178,6 +192,54 @@ async function fetchRecommendations(cartItems) {
     } catch (error) {
         // Silently ignore errors, leaving container hidden
     }
+}
+
+function qtyChangeRec(id, d) {
+    var el = document.getElementById("qval-rec-" + id);
+    var v = parseInt(el.innerText) + d;
+    if (v >= 1) el.innerText = v;
+}
+
+function addCartRec(id, pr) {
+    var q = parseInt(document.getElementById("qval-rec-" + id).innerText);
+    var product = data.find(p => p.product_id === id);
+
+    cartSet.add(id);
+    globalQty += q;
+    globalPrice += (pr * q);
+
+    var bottomBar = document.querySelector('.bottom-bar');
+    if (bottomBar) bottomBar.style.display = 'flex';
+
+    document.getElementById('cartCount').innerText = cartSet.size;
+
+    var btnQtyEl = document.getElementById('btnQty');
+    if (btnQtyEl) btnQtyEl.innerText = globalQty;
+
+    var subTotalEl = document.getElementById('displaySubtotal') || document.getElementById('subTotal');
+    if (subTotalEl) subTotalEl.innerText = globalPrice === 0 ? "0000" : globalPrice;
+
+    var cart = JSON.parse(localStorage.getItem('cart')) || [];
+    var existing = cart.find(item => item.product_id === id);
+    if (existing) {
+        existing.qty += q;
+    } else {
+        cart.push({ product_id: product.product_id, name: product.name, price: product.price, qty: q });
+    }
+    localStorage.setItem('cart', JSON.stringify(cart));
+
+    fetchRecommendations({ cart_items: cart });
+
+    alert(product.name + " added to cart!");
+}
+
+function buyNowRec(id) {
+    var q = parseInt(document.getElementById("qval-rec-" + id).innerText);
+    var product = data.find(p => p.product_id === id);
+
+    var directItem = [{ product_id: product.product_id, name: product.name, price: product.price, qty: q }];
+    localStorage.setItem('checkoutItems', JSON.stringify(directItem));
+    window.location.href = '/checkout';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
