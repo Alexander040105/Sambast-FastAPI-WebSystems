@@ -53,26 +53,28 @@
 
     <section class="inventory">
 
-        <div id="ai-inventory-alert">
-            <div class="ai-alert-header">
-                <strong>✨ AI Inventory Insights</strong>
-            </div>
-            <div class="ai-alert-body">Loading insights...</div>
-        </div>
-
-        <div id="ai-inventory-forecast">
-            <div class="ai-alert-header" style="margin-bottom: 10px;">
-                <strong>📈 AI Inventory Forecast & Recommendations</strong>
-            </div>
-            <div class="ai-alert-body">
-                <button id="generate-forecast-btn">Generate AI Forecast</button>
-                <div id="forecast-result">Click the button to analyze inventory health.</div>
-            </div>
-        </div>
-
         <div class="inventory-header">
             <h1>INVENTORY</h1>
             <button class="add-btn" id="addProductBtn">+ Add Product</button>
+        </div>
+
+        <div class="ai-sections">
+            <div id="ai-inventory-alert" class="ai-card">
+                <div class="ai-card-header">
+                    <strong>AI Inventory Insights</strong>
+                </div>
+                <div class="ai-card-body">Loading insights...</div>
+            </div>
+
+            <div id="ai-inventory-forecast" class="ai-card">
+                <div class="ai-card-header">
+                    <strong>AI Inventory Forecast & Recommendations</strong>
+                </div>
+                <div class="ai-card-body">
+                    <button id="generate-forecast-btn" class="forecast-btn">Generate AI Forecast</button>
+                    <div id="forecast-result">Click the button to analyze inventory health.</div>
+                </div>
+            </div>
         </div>
 
         <div class="search-box">

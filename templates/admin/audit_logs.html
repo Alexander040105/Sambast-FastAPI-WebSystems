@@ -24,24 +24,22 @@
         <div class="close-btn" id="closeBtn">✕</div>
         <div class="sidebar-menu">
             <ul class="nav-links">
-               <ul class="nav-links">
-    <li class="{{ 'active' if request.endpoint == 'admin_profile' }}">
-        <a href="{{ url_for('admin_profile') }}">PROFILE</a>
-    </li>
-    
-    <li class="{{ 'active' if request.endpoint == 'admin_analytics' }}">
-        <a href="{{ url_for('admin_analytics') }}">ANALYTICS</a>
-    </li>
-    <li class="{{ 'active' if request.endpoint == 'admin_orders' }}">
-        <a href="{{ url_for('admin_orders') }}">ORDERS</a>
-    </li>
-    <li class="{{ 'active' if request.endpoint == 'admin_inventory' }}">
-        <a href="{{ url_for('admin_inventory') }}">INVENTORY</a>
-    </li>
-    <li class="{{ 'active' if request.endpoint == 'admin_audit' }}">
-        <a href="{{ url_for('admin_audit') }}">AUDIT LOGS</a>
-    </li>
-</ul>
+                <li class="{{ 'active' if request.endpoint == 'admin_profile' }}">
+                    <a href="{{ url_for('admin_profile') }}">PROFILE</a>
+                </li>
+                <li class="{{ 'active' if request.endpoint == 'admin_analytics' }}">
+                    <a href="{{ url_for('admin_analytics') }}">ANALYTICS</a>
+                </li>
+                <li class="{{ 'active' if request.endpoint == 'admin_orders' }}">
+                    <a href="{{ url_for('admin_orders') }}">ORDERS</a>
+                </li>
+                <li class="{{ 'active' if request.endpoint == 'admin_inventory' }}">
+                    <a href="{{ url_for('admin_inventory') }}">INVENTORY</a>
+                </li>
+                <li class="{{ 'active' if request.endpoint == 'admin_audit' }}">
+                    <a href="{{ url_for('admin_audit') }}">AUDIT LOGS</a>
+                </li>
+            </ul>
         </div>
 
         <div class="logout-container">
@@ -90,6 +88,6 @@
         </div>
     </section>
 
-    <script src="{{ url_for('static', filename='js/admin/inventory.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin/audit-logs.js') }}"></script>
 </body>
 </html>

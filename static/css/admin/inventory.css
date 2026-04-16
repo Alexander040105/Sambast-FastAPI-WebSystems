@@ -150,7 +150,16 @@ body {
 /* INVENTORY PAGE */
 
 .inventory{
-    padding:20px;
+    padding: clamp(12px, 4vw, 20px);
+    min-height: calc(100vh - 70px);
+}
+
+.inventory h1 {
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    margin-bottom: 16px;
+    color: #1A323E;
+    font-weight: 700;
+    letter-spacing: 0.5px;
 }
 
 .inventory-header{
@@ -159,16 +168,92 @@ body {
     align-items:center;
     margin-bottom:15px;
     color: #1A323E;
+    gap: 12px;
+    flex-wrap: nowrap;
+}
+
+.inventory-header h1 {
+    flex: 1 1 auto;
+    margin-bottom: 0;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 700;
 }
 
 .add-btn{
     background:#a6171c;
     color:#d5d0c5;
     border:none;
-    padding:8px 16px;
-    border-radius:20px;
-    font-size:12px;
+    padding: clamp(0.5rem, 1.5vw, 0.625rem) clamp(0.75rem, 2.5vw, 0.875rem);
+    border-radius:18px;
+    font-size: clamp(0.688rem, 2vw, 0.8125rem);
     cursor:pointer;
+    font-weight: 600;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    transition: 0.2s;
+    text-decoration: none;
+}
+
+.add-btn:hover,
+.add-btn:active {
+    opacity: 0.85;
+    background: #a6171c;
+}
+
+/* AI SECTIONS CONTAINER */
+.ai-sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: clamp(12px, 2vw, 16px);
+    margin-bottom: clamp(16px, 3vw, 24px);
+}
+
+.ai-card {
+    background: #F9F8F6;
+    border-radius: 12px;
+    padding: clamp(12px, 2vw, 16px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-left: 4px solid #a6171c;
+    display: block;
+}
+
+.ai-card-header {
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+}
+
+.ai-card-header strong {
+    color: #1A323E;
+    font-size: clamp(0.875rem, 2vw, 1rem);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+}
+
+.ai-card-body {
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+    color: #333;
+    line-height: 1.5;
+}
+
+.forecast-btn {
+    background: #a6171c;
+    color: white;
+    border: none;
+    padding: clamp(0.5rem, 1rem, 0.625rem) clamp(0.75rem, 2vw, 0.875rem);
+    border-radius: 18px;
+    font-size: clamp(0.688rem, 1.8vw, 0.8rem);
+    cursor: pointer;
+    font-weight: 600;
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+    transition: 0.2s;
+    white-space: nowrap;
+}
+
+.forecast-btn:hover,
+.forecast-btn:active {
+    opacity: 0.85;
+    background: #a6171c;
 }
 
 /* SEARCH */
@@ -377,50 +462,68 @@ body {
     cursor:pointer;
 }
 
-/* AI ALERT BANNER */
-#ai-inventory-alert {
-    display: none;
-    background: #F9F8F6;
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 15px;
-    border-left: 5px solid #a6171c;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+/* RESPONSIVE DESIGN */
+
+/* Small phones (max-width: 480px) */
+@media (max-width: 480px) {
+    .inventory {
+        padding: clamp(10px, 3vw, 16px);
+    }
+
+    .inventory-header {
+        margin-bottom: clamp(12px, 2vw, 16px);
+        gap: 8px;
+    }
+
+    .inventory-header h1 {
+        font-size: clamp(1.2rem, 3.5vw, 1.5rem);
+    }
+
+    .add-btn {
+        padding: clamp(0.4rem, 1rem, 0.5rem) clamp(0.6rem, 2vw, 0.7rem);
+        font-size: clamp(0.625rem, 1.8vw, 0.75rem);
+    }
+
+    .ai-sections {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .ai-card {
+        padding: 10px;
+    }
+
+    .search-box {
+        margin-bottom: 12px;
+    }
 }
 
-#ai-inventory-alert .ai-alert-header {
-    margin-bottom: 8px;
+/* Tablets (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+    .inventory {
+        padding: clamp(14px, 3.5vw, 18px);
+    }
+
+    .inventory-header {
+        margin-bottom: clamp(14px, 2.5vw, 18px);
+    }
+
+    .ai-sections {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 12px;
+    }
+
+    .ai-card {
+        padding: clamp(12px, 2vw, 14px);
+    }
 }
 
-#ai-inventory-alert .ai-alert-header strong {
-    color: #a6171c;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
+/* Large desktops (1025px+) */
+@media (min-width: 1025px) {
+    .ai-sections {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
 }
 
-#ai-inventory-alert .ai-alert-body {
-    font-size: 12px;
-    color: #333;
-    line-height: 1.5;
-}
-
-#ai-inventory-forecast {
-    margin-top: 15px;
-    border-left: 4px solid #4CAF50;
-    padding: 15px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-#generate-forecast-btn {
-    padding: 8px 16px;
-    background-color: #333;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-bottom: 10px;
-}

@@ -1,80 +1,35 @@
-const tabs = document.querySelectorAll(".tab");
-const cards = document.querySelectorAll(".order-card");
-
-/* FUNCTION: update tab counters */
-function updateTabCounters() {
-    tabs.forEach(tab => {
-        const filter = tab.dataset.filter;
-        if (filter === "all") return;
-        const count = Array.from(cards).filter(card => card.dataset.status === filter).length;
-        const span = tab.querySelector(".count");
-        span.textContent = count ? `(${count})` : "";
-    });
-}
-
-/* TAB FILTER */
-tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-        tabs.forEach(t => t.classList.remove("active"));
-        tab.classList.add("active");
-
-        const filter = tab.dataset.filter;
-        cards.forEach(card => {
-            card.style.display = (filter === "all" || card.dataset.status === filter) ? "block" : "none";
-        });
-    });
-});
-
-/* SIDEBAR MENU */
+/* SIDEBAR MENU - Always works correctly */
 const menuBtn = document.getElementById("menuBtn");
 const sidebar = document.getElementById("sidebar");
 const closeBtn = document.getElementById("closeBtn");
 const overlay = document.getElementById("overlay");
 
-menuBtn.addEventListener("click", () => {
-    sidebar.classList.add("open");
-    overlay.classList.add("show");
-});
-closeBtn.addEventListener("click", closeMenu);
-overlay.addEventListener("click", closeMenu);
-
-function closeMenu() {
-    sidebar.classList.remove("open");
-    overlay.classList.remove("show");
-}
-
-/* ORDER BUTTON ACTIONS */
-function updateOrderStatus(btn) {
-    const card = btn.closest(".order-card");
-    let status = card.dataset.status;
-
-    if (status === "pending") {
-        card.dataset.status = "processing";
-        btn.textContent = "Mark as Ready for pick up";
-    } else if (status === "processing") {
-        card.dataset.status = "ready";
-        btn.textContent = "Completed";
-    } else if (status === "ready") {
-        card.dataset.status = "completed";
-        btn.remove();
+if (menuBtn && sidebar && closeBtn && overlay) {
+    menuBtn.addEventListener("click", () => {
+        sidebar.classList.add("open");
+        overlay.classList.add("show");
+    });
+    
+    closeBtn.addEventListener("click", closeMenu);
+    overlay.addEventListener("click", closeMenu);
+    
+    function closeMenu() {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("show");
     }
-
-    updateTabCounters();
 }
 
-document.querySelectorAll(".primary").forEach(btn => {
-    btn.addEventListener("click", () => updateOrderStatus(btn));
-});
+/* FORM SUBMISSION - Let backend handle filtering and updates */
+/* Forms are already configured with correct POST routes and status parameters */
+/* No client-side interception needed - forms submit normally */
 
-/* CANCEL BUTTON */
-document.querySelectorAll(".secondary").forEach(btn => {
-    btn.addEventListener("click", () => {
-        const card = btn.closest(".order-card");
-        card.dataset.status = "cancelled";
-        btn.parentElement.remove();
-        updateTabCounters();
+/* OPTIONAL: Add visual feedback while forms process */
+document.querySelectorAll("form").forEach(form => {
+    form.addEventListener("submit", function() {
+        const submitBtn = this.querySelector("button[type='submit']");
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Processing...";
+        }
     });
 });
-
-/* INITIALIZE COUNTERS */
-updateTabCounters();
