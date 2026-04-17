@@ -113,74 +113,245 @@ if (auditSearch) {
     });
 }
 
-// --- AI INVENTORY INSIGHTS (WITH CACHING) ---
-document.addEventListener("DOMContentLoaded", async () => {
-    const alertBanner = document.getElementById("ai-inventory-alert");
-    const alertBody = alertBanner ? alertBanner.querySelector(".ai-alert-body") : null;
-    
-    if (!alertBanner || !alertBody) return;
+// --- AI INVENTORY INSIGHTS + FORECAST (BUTTON-TRIGGERED, JSON RENDERED) ---
+let insightsInFlight = false;
+let forecastInFlight = false;
 
-    // 1. Check Session Storage First to save API Quota
-    const cachedInsights = sessionStorage.getItem("ai_inventory_insights");
-    if (cachedInsights) {
-        alertBody.textContent = cachedInsights;
-        alertBanner.style.display = "block";
-        return; // Exit early, no API call needed!
+function createTextElement(tagName, className, textValue) {
+    const element = document.createElement(tagName);
+    if (className) element.className = className;
+    element.textContent = textValue;
+    return element;
+}
+
+function renderInsightsPayload(container, payload) {
+    container.innerHTML = "";
+
+    if (!payload || typeof payload !== "object") {
+        container.textContent = "Insights unavailable at the moment.";
+        return;
     }
 
-    // 2. Fetch from API if nothing is cached
-    try {
-        const response = await fetch("/api/admin/inventory-insights");
-        if (!response.ok) throw new Error("Failed to fetch");
-        
-        const data = await response.json();
-        const warningText = data.insights || data.message || (typeof data === "string" ? data : JSON.stringify(data));
+    if (payload.headline) {
+        container.appendChild(createTextElement("h4", "ai-block-title", payload.headline));
+    }
 
-        if (warningText) {
-            alertBody.textContent = warningText;
-            alertBanner.style.display = "block";
-            
-            // 3. Save the result to Session Storage for next time
-            sessionStorage.setItem("ai_inventory_insights", warningText);
+    if (payload.summary) {
+        container.appendChild(createTextElement("p", "ai-block-summary", payload.summary));
+    }
+
+    if (Array.isArray(payload.alerts) && payload.alerts.length > 0) {
+        const list = document.createElement("ul");
+        list.className = "ai-list";
+
+        payload.alerts.forEach(item => {
+            const text = item && item.text ? String(item.text).trim() : "";
+            if (!text) return;
+
+            const severity = item && item.severity ? String(item.severity).toLowerCase() : "info";
+            const normalizedSeverity = ["critical", "warning", "watch", "info"].includes(severity) ? severity : "info";
+
+            const listItem = createTextElement("li", `ai-list-item severity-${normalizedSeverity}`, text);
+            list.appendChild(listItem);
+        });
+
+        if (list.children.length > 0) {
+            container.appendChild(list);
         }
-    } catch (error) {
-        // Catch error silently, leaving the banner hidden (display: none)
     }
-});
+}
 
-// --- AI INVENTORY FORECAST ---
+function renderForecastPayload(container, payload) {
+    container.innerHTML = "";
+
+    if (!payload || typeof payload !== "object") {
+        container.textContent = "Forecast unavailable at the moment.";
+        return;
+    }
+
+    if (payload.headline) {
+        container.appendChild(createTextElement("h4", "ai-block-title", payload.headline));
+    }
+
+    if (payload.summary) {
+        container.appendChild(createTextElement("p", "ai-block-summary", payload.summary));
+    }
+
+    if (Array.isArray(payload.critical_alerts) && payload.critical_alerts.length > 0) {
+        const criticalLabel = createTextElement("p", "ai-section-label", "Critical Alerts");
+        container.appendChild(criticalLabel);
+
+        const criticalList = document.createElement("ul");
+        criticalList.className = "ai-list";
+
+        payload.critical_alerts.forEach(textValue => {
+            const clean = String(textValue || "").trim();
+            if (!clean) return;
+            criticalList.appendChild(createTextElement("li", "ai-list-item severity-critical", clean));
+        });
+
+        if (criticalList.children.length > 0) {
+            container.appendChild(criticalList);
+        }
+    }
+
+    if (payload.table && Array.isArray(payload.table.rows) && payload.table.rows.length > 0) {
+        const tableWrap = document.createElement("div");
+        tableWrap.className = "ai-table-wrap";
+
+        const table = document.createElement("table");
+        table.className = "ai-table";
+
+        const thead = document.createElement("thead");
+        const headRow = document.createElement("tr");
+        const columns = Array.isArray(payload.table.columns) && payload.table.columns.length > 0
+            ? payload.table.columns
+            : ["Product", "Current Stock", "Sold (30d)", "Projected Demand (14d)", "Recommended Reorder", "Urgency", "Notes"];
+
+        columns.forEach(columnTitle => {
+            const th = document.createElement("th");
+            th.textContent = String(columnTitle);
+            headRow.appendChild(th);
+        });
+
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+        payload.table.rows.forEach(row => {
+            const tr = document.createElement("tr");
+
+            const urgency = row && row.urgency ? String(row.urgency).toLowerCase() : "low";
+            if (urgency === "high") tr.classList.add("urgency-high");
+            if (urgency === "medium") tr.classList.add("urgency-medium");
+
+            const values = [
+                row.product,
+                row.current_stock,
+                row.sold_last_30_days,
+                row.projected_14_day_demand,
+                row.recommended_reorder,
+                row.urgency,
+                row.note
+            ];
+
+            values.forEach(value => {
+                const td = document.createElement("td");
+                td.textContent = value === undefined || value === null ? "" : String(value);
+                tr.appendChild(td);
+            });
+
+            tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        tableWrap.appendChild(table);
+        container.appendChild(tableWrap);
+    }
+
+    if (Array.isArray(payload.recommendations) && payload.recommendations.length > 0) {
+        const recommendationLabel = createTextElement("p", "ai-section-label", "Action Recommendations");
+        container.appendChild(recommendationLabel);
+
+        const recommendationList = document.createElement("ul");
+        recommendationList.className = "ai-list";
+        payload.recommendations.forEach(textValue => {
+            const clean = String(textValue || "").trim();
+            if (!clean) return;
+            recommendationList.appendChild(createTextElement("li", "ai-list-item", clean));
+        });
+
+        if (recommendationList.children.length > 0) {
+            container.appendChild(recommendationList);
+        }
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+    const insightsBtn = document.getElementById("generate-insights-btn");
+    const insightsResult = document.getElementById("insights-result");
     const forecastBtn = document.getElementById("generate-forecast-btn");
     const forecastResult = document.getElementById("forecast-result");
-    const forecastCacheKey = "cached_forecast";
+
+    const insightsCacheKey = "cached_inventory_insights_json_v1";
+    const forecastCacheKey = "cached_inventory_forecast_json_v2";
+
+    if (insightsBtn && insightsResult && insightsBtn.dataset.listenerBound !== "true") {
+        insightsBtn.dataset.listenerBound = "true";
+        insightsBtn.addEventListener("click", async () => {
+            if (insightsInFlight) return;
+
+            const originalText = insightsBtn.textContent;
+            insightsInFlight = true;
+            insightsBtn.disabled = true;
+            insightsBtn.textContent = "Loading...";
+            insightsResult.textContent = "Analyzing inventory health...";
+
+            try {
+                const cachedRaw = sessionStorage.getItem(insightsCacheKey);
+                if (cachedRaw) {
+                    const cachedPayload = JSON.parse(cachedRaw);
+                    renderInsightsPayload(insightsResult, cachedPayload);
+                    return;
+                }
+
+                const response = await fetch("/api/admin/inventory-insights");
+                if (!response.ok) throw new Error("Insights request failed");
+
+                const data = await response.json();
+                const payload = data && data.insights ? data.insights : null;
+
+                renderInsightsPayload(insightsResult, payload);
+                if (payload) {
+                    sessionStorage.setItem(insightsCacheKey, JSON.stringify(payload));
+                }
+            } catch (error) {
+                console.error(error);
+                insightsResult.textContent = "Insights unavailable at the moment.";
+            } finally {
+                insightsInFlight = false;
+                insightsBtn.disabled = false;
+                insightsBtn.textContent = originalText;
+            }
+        });
+    }
 
     if (forecastBtn && forecastResult && forecastBtn.dataset.listenerBound !== "true") {
         forecastBtn.dataset.listenerBound = "true";
         forecastBtn.addEventListener("click", async () => {
-            const originalBtnText = forecastBtn.innerText;
+            if (forecastInFlight) return;
+
+            const originalText = forecastBtn.textContent;
+            forecastInFlight = true;
             forecastBtn.disabled = true;
-            forecastBtn.innerText = "Loading...";
-            forecastResult.innerText = "Analyzing inventory and sales velocity...";
-            
+            forecastBtn.textContent = "Loading...";
+            forecastResult.textContent = "Analyzing inventory and sales velocity...";
+
             try {
-                const cachedForecastHtml = sessionStorage.getItem(forecastCacheKey);
-                if (cachedForecastHtml) {
-                    forecastResult.innerHTML = cachedForecastHtml;
+                const cachedRaw = sessionStorage.getItem(forecastCacheKey);
+                if (cachedRaw) {
+                    const cachedPayload = JSON.parse(cachedRaw);
+                    renderForecastPayload(forecastResult, cachedPayload);
                     return;
                 }
 
                 const response = await fetch("/api/admin/inventory-forecast");
-                if (!response.ok) throw new Error("Forecast failed");
+                if (!response.ok) throw new Error("Forecast request failed");
 
-                const data = await response.text();
-                forecastResult.innerHTML = data;
-                sessionStorage.setItem(forecastCacheKey, data);
+                const data = await response.json();
+                const payload = data && data.report ? data.report : null;
+
+                renderForecastPayload(forecastResult, payload);
+                if (payload) {
+                    sessionStorage.setItem(forecastCacheKey, JSON.stringify(payload));
+                }
             } catch (error) {
                 console.error(error);
-                forecastResult.innerText = "Forecast unavailable at the moment.";
+                forecastResult.textContent = "Forecast unavailable at the moment.";
             } finally {
+                forecastInFlight = false;
                 forecastBtn.disabled = false;
-                forecastBtn.innerText = originalBtnText;
+                forecastBtn.textContent = originalText;
             }
         });
     }

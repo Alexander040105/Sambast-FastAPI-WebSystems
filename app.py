@@ -3,6 +3,8 @@ import os
 import json
 import re
 import threading
+import time
+import math
 from datetime import datetime
 from flask import Flask, render_template, g, request, session, redirect, url_for, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -27,6 +29,33 @@ app = Flask(__name__)
 app.secret_key = 'dev_key_for_session_management' 
 DATABASE = 'database.db'
 
+# --- AI REQUEST GUARDRAILS ---
+AI_CACHE = {}
+AI_CACHE_LOCK = threading.Lock()
+AI_RATE_LIMIT_STATE = {}
+AI_RATE_LIMIT_LOCK = threading.Lock()
+AI_COOLDOWN_UNTIL = {}
+AI_COOLDOWN_LOCK = threading.Lock()
+
+AI_CACHE_TTL_SECONDS = {
+    'inventory_insights': 15 * 60,
+    'inventory_forecast': 15 * 60,
+    'business_summary': 15 * 60,
+    'recommendations': 10 * 60,
+    'chat': 2 * 60,
+    'pet_lifestyle': 30 * 60,
+}
+
+AI_RATE_LIMIT_CONFIG = {
+    'inventory_insights': {'limit': 10, 'window_seconds': 60},
+    'inventory_forecast': {'limit': 10, 'window_seconds': 60},
+    'business_summary': {'limit': 10, 'window_seconds': 60},
+    'recommendations': {'limit': 20, 'window_seconds': 60},
+    'chat': {'limit': 25, 'window_seconds': 60},
+}
+
+AI_ENDPOINT_COOLDOWN_SECONDS = 90
+
 # --- CONFIGURATION: IMAGE UPLOADS ---
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -38,6 +67,128 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def _canonicalize_for_cache(value):
+    if isinstance(value, dict):
+        return {key: _canonicalize_for_cache(value[key]) for key in sorted(value.keys())}
+    if isinstance(value, list):
+        return [_canonicalize_for_cache(item) for item in value]
+    return value
+
+def _build_cache_key(endpoint_name, payload):
+    normalized_payload = _canonicalize_for_cache(payload)
+    payload_text = json.dumps(normalized_payload, separators=(',', ':'), sort_keys=True, default=str)
+    return f"{endpoint_name}:{payload_text}"
+
+def _cache_get(cache_key):
+    now = time.time()
+    with AI_CACHE_LOCK:
+        entry = AI_CACHE.get(cache_key)
+        if not entry:
+            return None
+
+        if entry['expires_at'] <= now:
+            AI_CACHE.pop(cache_key, None)
+            return None
+
+        return entry['value']
+
+def _cache_set(cache_key, value, ttl_seconds):
+    with AI_CACHE_LOCK:
+        AI_CACHE[cache_key] = {
+            'value': value,
+            'expires_at': time.time() + max(1, int(ttl_seconds))
+        }
+
+def _request_identity():
+    if 'admin_id' in session:
+        return f"admin:{session['admin_id']}"
+    if 'user_id' in session:
+        return f"user:{session['user_id']}"
+    return f"ip:{request.remote_addr or 'unknown'}"
+
+def _rate_limit_check(endpoint_name):
+    config = AI_RATE_LIMIT_CONFIG.get(endpoint_name)
+    if not config:
+        return False, 0
+
+    now = time.time()
+    window_seconds = config['window_seconds']
+    limit = config['limit']
+    bucket_key = f"{endpoint_name}:{_request_identity()}"
+
+    with AI_RATE_LIMIT_LOCK:
+        timestamps = AI_RATE_LIMIT_STATE.get(bucket_key, [])
+        valid_timestamps = [ts for ts in timestamps if (now - ts) < window_seconds]
+
+        if len(valid_timestamps) >= limit:
+            retry_after = max(1, int(window_seconds - (now - valid_timestamps[0])))
+            AI_RATE_LIMIT_STATE[bucket_key] = valid_timestamps
+            return True, retry_after
+
+        valid_timestamps.append(now)
+        AI_RATE_LIMIT_STATE[bucket_key] = valid_timestamps
+        return False, 0
+
+def _is_quota_error(exception_obj):
+    message = str(exception_obj).lower()
+    markers = [
+        'quota',
+        'resource_exhausted',
+        'rate limit',
+        'too many requests',
+        '429',
+        'exceeded'
+    ]
+    return any(marker in message for marker in markers)
+
+def _cooldown_remaining(endpoint_name):
+    with AI_COOLDOWN_LOCK:
+        expires_at = AI_COOLDOWN_UNTIL.get(endpoint_name, 0)
+    remaining = int(math.ceil(expires_at - time.time()))
+    return max(0, remaining)
+
+def _set_endpoint_cooldown(endpoint_name, cooldown_seconds=AI_ENDPOINT_COOLDOWN_SECONDS):
+    with AI_COOLDOWN_LOCK:
+        AI_COOLDOWN_UNTIL[endpoint_name] = time.time() + cooldown_seconds
+
+def _is_endpoint_in_cooldown(endpoint_name):
+    return _cooldown_remaining(endpoint_name) > 0
+
+def _strip_code_fences(text):
+    cleaned = (text or '').strip()
+    if cleaned.startswith('```json'):
+        cleaned = cleaned[7:]
+    elif cleaned.startswith('```'):
+        cleaned = cleaned[3:]
+
+    if cleaned.endswith('```'):
+        cleaned = cleaned[:-3]
+    return cleaned.strip()
+
+def _extract_json_fragment(text):
+    cleaned = _strip_code_fences(text)
+    if not cleaned:
+        return ''
+
+    if cleaned[0] in ['{', '[']:
+        return cleaned
+
+    first_obj = cleaned.find('{')
+    last_obj = cleaned.rfind('}')
+    if first_obj != -1 and last_obj != -1 and last_obj > first_obj:
+        return cleaned[first_obj:last_obj + 1]
+
+    first_arr = cleaned.find('[')
+    last_arr = cleaned.rfind(']')
+    if first_arr != -1 and last_arr != -1 and last_arr > first_arr:
+        return cleaned[first_arr:last_arr + 1]
+
+    return cleaned
+
+def _safe_json_loads(text):
+    fragment = _extract_json_fragment(text)
+    return json.loads(fragment)
 
 # --- DATABASE UTILITIES ---
 
@@ -124,12 +275,15 @@ def init_db():
 
 # --- AI CONTEXT HELPERS ---
 
-def calculate_pet_lifestyle(user_id):
+def calculate_pet_lifestyle(user_id, current_order_count=None):
     """Background task to analyze user's recent purchases and classify pet lifestyle."""
     # We must create a new app context since this runs in a background thread
     with app.app_context():
         db = get_db()
         try:
+            if 'ai_model' not in globals():
+                return
+
             # Check if user has a pet profile
             pet = db.execute('SELECT id FROM pets WHERE user_id = ?', (user_id,)).fetchone()
             if not pet:
@@ -153,19 +307,39 @@ def calculate_pet_lifestyle(user_id):
             items_str = ", ".join(purchased_items)
 
             prompt = f"Analyze these recent pet product purchases: {items_str}. Classify this pet's lifestyle into exactly ONE of these categories: 'Active', 'Indoor', 'Senior', or 'Sensitive'. Return ONLY the one-word string."
-            
-            response = ai_model.generate_content(prompt)
-            classification = response.text.strip().replace("'", "").replace('"', "")
+
+            cache_key = _build_cache_key('pet_lifestyle', {
+                'user_id': user_id,
+                'items': purchased_items
+            })
+            cached_classification = _cache_get(cache_key)
+            if cached_classification:
+                classification = str(cached_classification)
+            elif _is_endpoint_in_cooldown('pet_lifestyle'):
+                return
+            else:
+                response = ai_model.generate_content(prompt)
+                classification = response.text.strip().replace("'", "").replace('"', "")
+                _cache_set(cache_key, classification, AI_CACHE_TTL_SECONDS['pet_lifestyle'])
             
             valid_categories = ['Active', 'Indoor', 'Senior', 'Sensitive']
             if classification in valid_categories:
                 db.execute('UPDATE pets SET lifestyle_classification = ? WHERE user_id = ?', (classification, user_id))
                 db.commit()
+
+                effective_order_count = (
+                    int(current_order_count)
+                    if current_order_count is not None
+                    else _get_user_completed_order_count(db, user_id)
+                )
+                _mark_lifestyle_refresh_complete(db, user_id, effective_order_count)
                 print(f"Successfully updated lifestyle classification for user {user_id} to {classification}")
             else:
                 print(f"Invalid classification received from AI: {classification}")
 
         except Exception as e:
+            if _is_quota_error(e):
+                _set_endpoint_cooldown('pet_lifestyle')
             print(f"Error in calculate_pet_lifestyle: {e}")
 
 def get_inventory_context():
@@ -208,6 +382,326 @@ def get_top_products_context():
     except Exception as e:
         print(f"Database error in get_top_products_context: {e}")
         return "Top product data unavailable."
+
+def _inventory_signature(db):
+    inventory_stats = db.execute('''
+        SELECT
+            COUNT(*) AS product_count,
+            IFNULL(SUM(stock_status), 0) AS stock_total,
+            IFNULL(MAX(product_id), 0) AS latest_product_id
+        FROM products
+    ''').fetchone()
+    order_stats = db.execute('''
+        SELECT
+            IFNULL(COUNT(*), 0) AS order_count,
+            IFNULL(MAX(created_at), '') AS latest_order_at
+        FROM orders
+        WHERE status != 'Cancelled'
+    ''').fetchone()
+
+    return {
+        'product_count': inventory_stats['product_count'] if inventory_stats else 0,
+        'stock_total': inventory_stats['stock_total'] if inventory_stats else 0,
+        'latest_product_id': inventory_stats['latest_product_id'] if inventory_stats else 0,
+        'order_count': order_stats['order_count'] if order_stats else 0,
+        'latest_order_at': order_stats['latest_order_at'] if order_stats else ''
+    }
+
+def _build_inventory_insights_fallback(db):
+    low_stock_rows = db.execute('''
+        SELECT name, stock_status
+        FROM products
+        WHERE stock_status < 10
+        ORDER BY stock_status ASC, name ASC
+        LIMIT 6
+    ''').fetchall()
+
+    if not low_stock_rows:
+        return {
+            'headline': 'Inventory Insights',
+            'summary': 'No low-stock risk detected right now. Continue monitoring best sellers daily.',
+            'alerts': [
+                {
+                    'text': 'All tracked products currently look stable.',
+                    'severity': 'info'
+                }
+            ]
+        }
+
+    alerts = []
+    for row in low_stock_rows:
+        stock_value = int(row['stock_status'])
+        if stock_value <= 2:
+            severity = 'critical'
+        elif stock_value <= 5:
+            severity = 'warning'
+        else:
+            severity = 'watch'
+
+        alerts.append({
+            'text': f"{row['name']}: current stock is {stock_value}.",
+            'severity': severity
+        })
+
+    critical_count = len([alert for alert in alerts if alert['severity'] == 'critical'])
+    summary_text = (
+        f"{critical_count} item(s) need urgent replenishment. "
+        "Prioritize items at or below 2 units to avoid stockouts."
+    )
+
+    return {
+        'headline': 'Inventory Insights',
+        'summary': summary_text,
+        'alerts': alerts
+    }
+
+def _normalize_insights_payload(payload):
+    if not isinstance(payload, dict):
+        return None
+
+    headline = str(payload.get('headline', 'Inventory Insights')).strip() or 'Inventory Insights'
+    summary = str(payload.get('summary', '')).strip()
+
+    raw_alerts = payload.get('alerts', [])
+    if not isinstance(raw_alerts, list):
+        raw_alerts = []
+
+    alerts = []
+    for alert in raw_alerts:
+        if not isinstance(alert, dict):
+            continue
+
+        text = str(alert.get('text', '')).strip()
+        if not text:
+            continue
+
+        severity = str(alert.get('severity', 'info')).strip().lower()
+        if severity not in ['critical', 'warning', 'watch', 'info']:
+            severity = 'info'
+
+        alerts.append({'text': text, 'severity': severity})
+
+    return {
+        'headline': headline,
+        'summary': summary,
+        'alerts': alerts[:8]
+    }
+
+def _build_inventory_forecast_fallback(db):
+    now = datetime.now()
+    month = now.month
+    season = 'Dry Season' if month in [12, 1, 2, 3, 4, 5] else 'Rainy Season'
+
+    rows = db.execute('''
+        SELECT
+            p.name,
+            p.stock_status,
+            IFNULL(SUM(CASE WHEN o.status != 'Cancelled' THEN oi.quantity ELSE 0 END), 0) AS total_sold,
+            IFNULL(SUM(CASE
+                WHEN o.status != 'Cancelled'
+                 AND o.created_at >= datetime('now', '-30 day')
+                THEN oi.quantity ELSE 0 END), 0) AS sold_last_30_days
+        FROM products p
+        LEFT JOIN order_items oi ON p.product_id = oi.product_id
+        LEFT JOIN orders o ON oi.order_id = o.order_id
+        GROUP BY p.product_id, p.name, p.stock_status
+        ORDER BY p.name ASC
+    ''').fetchall()
+
+    table_rows = []
+    critical_alerts = []
+
+    for row in rows:
+        stock_value = int(row['stock_status']) if row['stock_status'] is not None else 0
+        sold_30d = int(row['sold_last_30_days']) if row['sold_last_30_days'] is not None else 0
+        projected_14d = int(math.ceil((sold_30d / 30.0) * 14)) if sold_30d > 0 else 0
+        recommended_reorder = max(0, projected_14d - stock_value)
+
+        if stock_value <= 2 and projected_14d > stock_value:
+            urgency = 'High'
+            note = 'Immediate reorder recommended to avoid stockout.'
+            critical_alerts.append(f"{row['name']} is at high risk of stockout.")
+        elif recommended_reorder > 0:
+            urgency = 'Medium'
+            note = 'Reorder this cycle to keep buffer stock.'
+        else:
+            urgency = 'Low'
+            note = 'Current stock appears sufficient for the next two weeks.'
+
+        table_rows.append({
+            'product': row['name'],
+            'current_stock': stock_value,
+            'sold_last_30_days': sold_30d,
+            'projected_14_day_demand': projected_14d,
+            'recommended_reorder': recommended_reorder,
+            'urgency': urgency,
+            'note': note
+        })
+
+    recommendations = [
+        'Prioritize replenishment for products marked High urgency first.',
+        'Bundle low-urgency slow movers with top sellers to prevent stagnant stock.',
+        'Review this forecast after major promotions or sudden demand spikes.'
+    ]
+
+    return {
+        'headline': 'Inventory Forecast and Recommendations',
+        'summary': f"Generated for {season}. This deterministic forecast estimates 14-day demand using the last 30 days of sales.",
+        'critical_alerts': critical_alerts[:5],
+        'table': {
+            'columns': [
+                'Product',
+                'Current Stock',
+                'Sold (30d)',
+                'Projected Demand (14d)',
+                'Recommended Reorder',
+                'Urgency',
+                'Notes'
+            ],
+            'rows': table_rows
+        },
+        'recommendations': recommendations
+    }
+
+def _normalize_forecast_payload(payload):
+    if not isinstance(payload, dict):
+        return None
+
+    headline = str(payload.get('headline', 'Inventory Forecast and Recommendations')).strip()
+    summary = str(payload.get('summary', '')).strip()
+
+    critical_alerts_raw = payload.get('critical_alerts', [])
+    if not isinstance(critical_alerts_raw, list):
+        critical_alerts_raw = []
+    critical_alerts = [str(item).strip() for item in critical_alerts_raw if str(item).strip()]
+
+    table_obj = payload.get('table', {})
+    if not isinstance(table_obj, dict):
+        table_obj = {}
+
+    columns_raw = table_obj.get('columns', [])
+    if not isinstance(columns_raw, list):
+        columns_raw = []
+    columns = [str(col).strip() for col in columns_raw if str(col).strip()]
+
+    rows_raw = table_obj.get('rows', [])
+    if not isinstance(rows_raw, list):
+        rows_raw = []
+
+    normalized_rows = []
+    for row in rows_raw:
+        if not isinstance(row, dict):
+            continue
+
+        product = str(row.get('product', '')).strip()
+        if not product:
+            continue
+
+        urgency = str(row.get('urgency', 'Low')).strip().title()
+        if urgency not in ['High', 'Medium', 'Low']:
+            urgency = 'Low'
+
+        try:
+            current_stock = int(row.get('current_stock', 0))
+        except (TypeError, ValueError):
+            current_stock = 0
+
+        try:
+            sold_last_30_days = int(row.get('sold_last_30_days', 0))
+        except (TypeError, ValueError):
+            sold_last_30_days = 0
+
+        try:
+            projected_14_day_demand = int(row.get('projected_14_day_demand', 0))
+        except (TypeError, ValueError):
+            projected_14_day_demand = 0
+
+        try:
+            recommended_reorder = int(row.get('recommended_reorder', 0))
+        except (TypeError, ValueError):
+            recommended_reorder = 0
+
+        note = str(row.get('note', '')).strip()
+
+        normalized_rows.append({
+            'product': product,
+            'current_stock': current_stock,
+            'sold_last_30_days': sold_last_30_days,
+            'projected_14_day_demand': projected_14_day_demand,
+            'recommended_reorder': recommended_reorder,
+            'urgency': urgency,
+            'note': note
+        })
+
+    recommendations_raw = payload.get('recommendations', [])
+    if not isinstance(recommendations_raw, list):
+        recommendations_raw = []
+    recommendations = [str(item).strip() for item in recommendations_raw if str(item).strip()]
+
+    return {
+        'headline': headline or 'Inventory Forecast and Recommendations',
+        'summary': summary,
+        'critical_alerts': critical_alerts[:8],
+        'table': {
+            'columns': columns,
+            'rows': normalized_rows[:50]
+        },
+        'recommendations': recommendations[:12]
+    }
+
+def _ensure_lifestyle_tracker_table(db):
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS lifestyle_ai_runs (
+            user_id INTEGER PRIMARY KEY,
+            last_order_count INTEGER DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (user_id)
+        )
+    ''')
+
+def _get_user_completed_order_count(db, user_id):
+    row = db.execute(
+        "SELECT COUNT(*) AS cnt FROM orders WHERE user_id = ? AND status != 'Cancelled'",
+        (user_id,)
+    ).fetchone()
+    return int(row['cnt']) if row and row['cnt'] is not None else 0
+
+def _should_trigger_lifestyle_refresh(db, user_id, min_new_orders=3, min_total_orders=3):
+    _ensure_lifestyle_tracker_table(db)
+
+    total_orders = _get_user_completed_order_count(db, user_id)
+    if total_orders < min_total_orders:
+        return False, total_orders
+
+    tracker = db.execute(
+        "SELECT last_order_count FROM lifestyle_ai_runs WHERE user_id = ?",
+        (user_id,)
+    ).fetchone()
+
+    last_order_count = int(tracker['last_order_count']) if tracker and tracker['last_order_count'] is not None else 0
+
+    if not tracker:
+        db.execute(
+            "INSERT INTO lifestyle_ai_runs (user_id, last_order_count) VALUES (?, ?)",
+            (user_id, 0)
+        )
+        db.commit()
+
+    return (total_orders - last_order_count) >= min_new_orders, total_orders
+
+def _mark_lifestyle_refresh_complete(db, user_id, current_order_count):
+    _ensure_lifestyle_tracker_table(db)
+    update_cursor = db.execute(
+        "UPDATE lifestyle_ai_runs SET last_order_count = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?",
+        (current_order_count, user_id)
+    )
+
+    if update_cursor.rowcount == 0:
+        db.execute(
+            "INSERT INTO lifestyle_ai_runs (user_id, last_order_count) VALUES (?, ?)",
+            (user_id, current_order_count)
+        )
+    db.commit()
 
 def ensure_startup_schema_guard():
     """Ensures phase-6 schema artifacts exist; triggers migration if missing."""
@@ -615,26 +1109,103 @@ def delete_product(product_id):
 def inventory_insights():
     if 'admin_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     db = get_db()
+    cache_key = _build_cache_key('inventory_insights', {
+        'signature': _inventory_signature(db)
+    })
+
+    cached_payload = _cache_get(cache_key)
+    if cached_payload:
+        return jsonify({'source': 'cache', 'insights': cached_payload})
+
+    is_limited, retry_after = _rate_limit_check('inventory_insights')
+    fallback_payload = _build_inventory_insights_fallback(db)
+
+    if is_limited:
+        return jsonify({
+            'source': 'rate_limited_fallback',
+            'retry_after_seconds': retry_after,
+            'insights': fallback_payload
+        }), 200
+
+    if _is_endpoint_in_cooldown('inventory_insights'):
+        return jsonify({
+            'source': 'quota_cooldown_fallback',
+            'cooldown_seconds': _cooldown_remaining('inventory_insights'),
+            'insights': fallback_payload
+        }), 200
+
+    if 'ai_model' not in globals():
+        return jsonify({'source': 'fallback', 'insights': fallback_payload}), 200
+
     products = db.execute('SELECT name, stock_status FROM products').fetchall()
     inventory_list = ", ".join([f"{p['name']} (Stock: {p['stock_status']})" for p in products])
-    
-    prompt = f"Current inventory: {inventory_list}. Please return a 1-2 sentence warning identifying any items that need restocking based on low stock."
+
+    prompt = f"""You are Sambast's inventory analyst.
+
+STORE INVENTORY SNAPSHOT:
+{inventory_list}
+
+Return ONLY strict JSON with this schema:
+{{
+  "headline": "Inventory Insights",
+  "summary": "1-2 sentence overall summary",
+  "alerts": [
+    {{"text": "short alert text", "severity": "critical|warning|watch|info"}}
+  ]
+}}
+
+Rules:
+- Maximum of 6 alerts.
+- Focus on restocking risk and urgency.
+- No markdown. No code fences."""
 
     try:
         response = ai_model.generate_content(prompt)
-        return jsonify({"insights": response.text.strip()})
+        parsed = _normalize_insights_payload(_safe_json_loads(response.text))
+        if not parsed:
+            parsed = fallback_payload
+
+        _cache_set(cache_key, parsed, AI_CACHE_TTL_SECONDS['inventory_insights'])
+        return jsonify({'source': 'ai', 'insights': parsed})
     except Exception as e:
+        if _is_quota_error(e):
+            _set_endpoint_cooldown('inventory_insights')
         print(f"Inventory insights error: {e}")
-        return jsonify({"insights": "<div class='alert'>AI Forecasting temporarily unavailable. Please wait a minute and try again.</div>"}), 200
+        return jsonify({'source': 'fallback', 'insights': fallback_payload}), 200
 
 @app.route('/api/admin/business-summary', methods=['GET'])
 def business_summary():
     if 'admin_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     db = get_db()
+    cache_key = _build_cache_key('business_summary', {
+        'signature': _inventory_signature(db)
+    })
+
+    cached_payload = _cache_get(cache_key)
+    if cached_payload:
+        return jsonify({'source': 'cache', 'summary': cached_payload})
+
+    is_limited, retry_after = _rate_limit_check('business_summary')
+    if is_limited:
+        return jsonify({
+            'source': 'rate_limited',
+            'retry_after_seconds': retry_after,
+            'error': 'Please wait before generating another summary.'
+        }), 429
+
+    if _is_endpoint_in_cooldown('business_summary'):
+        return jsonify({
+            'source': 'quota_cooldown',
+            'error': 'AI summary is temporarily paused due to quota limits. Please try again shortly.'
+        }), 503
+
+    if 'ai_model' not in globals():
+        return jsonify({'error': 'AI model not configured'}), 500
+
     try:
         result = db.execute("SELECT SUM(total_price) as total FROM orders WHERE status != 'Cancelled'").fetchone()
         total_revenue = result['total'] if result and result['total'] else 0
@@ -677,8 +1248,12 @@ OUTPUT REQUIREMENTS:
 4. Keep the tone professional, objective, and highly analytical. Avoid overly generic praise."""
 
         response = ai_model.generate_content(prompt)
-        return jsonify({"summary": response.text.strip()})
+        summary_text = response.text.strip()
+        _cache_set(cache_key, summary_text, AI_CACHE_TTL_SECONDS['business_summary'])
+        return jsonify({'source': 'ai', 'summary': summary_text})
     except Exception as e:
+        if _is_quota_error(e):
+            _set_endpoint_cooldown('business_summary')
         print(f"Business summary error: {e}")
         return jsonify({"error": "Failed to generate business summary"}), 500
 
@@ -744,6 +1319,33 @@ def inventory_forecast():
         return jsonify({'error': 'Unauthorized'}), 401
 
     db = get_db()
+    fallback_report = _build_inventory_forecast_fallback(db)
+    cache_key = _build_cache_key('inventory_forecast', {
+        'signature': _inventory_signature(db)
+    })
+
+    cached_payload = _cache_get(cache_key)
+    if cached_payload:
+        return jsonify({'source': 'cache', 'report': cached_payload})
+
+    is_limited, retry_after = _rate_limit_check('inventory_forecast')
+    if is_limited:
+        return jsonify({
+            'source': 'rate_limited_fallback',
+            'retry_after_seconds': retry_after,
+            'report': fallback_report
+        }), 200
+
+    if _is_endpoint_in_cooldown('inventory_forecast'):
+        return jsonify({
+            'source': 'quota_cooldown_fallback',
+            'cooldown_seconds': _cooldown_remaining('inventory_forecast'),
+            'report': fallback_report
+        }), 200
+
+    if 'ai_model' not in globals():
+        return jsonify({'source': 'fallback', 'report': fallback_report}), 200
+
     try:
         now = datetime.now()
         current_date_str = now.strftime("%Y-%m-%d")
@@ -776,19 +1378,45 @@ STORE DATA:
 {inventory_data_string}
 
 OUTPUT REQUIREMENTS:
-Format the response in raw HTML (tables, bold text, etc.). Do not return markdown, JSON, or code fences. Provide exactly the HTML to be injected."""
+Return ONLY strict JSON using this schema:
+{{
+    "headline": "Inventory Forecast and Recommendations",
+    "summary": "short summary paragraph",
+    "critical_alerts": ["critical point text"],
+    "table": {{
+        "columns": ["Product", "Current Stock", "Sold (30d)", "Projected Demand (14d)", "Recommended Reorder", "Urgency", "Notes"],
+        "rows": [
+            {{
+                "product": "string",
+                "current_stock": 0,
+                "sold_last_30_days": 0,
+                "projected_14_day_demand": 0,
+                "recommended_reorder": 0,
+                "urgency": "High|Medium|Low",
+                "note": "string"
+            }}
+        ]
+    }},
+    "recommendations": ["action item text"]
+}}
+
+Rules:
+- Use integers for numeric fields.
+- Keep row count <= 20.
+- No markdown. No code fences. No HTML."""
 
         response = ai_model.generate_content(prompt)
-        text = response.text.strip()
-        if text.startswith("```html"):
-            text = text[7:-3].strip()
-        elif text.startswith("```"):
-            text = text[3:-3].strip()
-            
-        return text
+        parsed = _normalize_forecast_payload(_safe_json_loads(response.text))
+        if not parsed or not parsed.get('table', {}).get('rows'):
+            parsed = fallback_report
+
+        _cache_set(cache_key, parsed, AI_CACHE_TTL_SECONDS['inventory_forecast'])
+        return jsonify({'source': 'ai', 'report': parsed})
     except Exception as e:
+        if _is_quota_error(e):
+            _set_endpoint_cooldown('inventory_forecast')
         print(f"Inventory forecast error: {e}")
-        return jsonify({"error": "Failed to generate inventory forecast"}), 500
+        return jsonify({'source': 'fallback', 'report': fallback_report}), 200
 
 # --- AUTH FLOWS ---
 
@@ -1058,32 +1686,50 @@ def get_products():
 
 @app.route('/api/recommendations', methods=['POST'])
 def api_recommendations():
-    if 'ai_model' not in globals():
-        return jsonify({'error': 'AI model not configured'}), 500
-
     data = request.get_json()
     cart_items = data.get('cart_items', []) if data else []
-    
+
     db = get_db()
+
+    if not cart_items:
+        return jsonify({'source': 'empty', 'products': []})
+
+    is_limited, retry_after = _rate_limit_check('recommendations')
+    if is_limited:
+        fallback_products = _fallback_recommendations(db, cart_items, limit=2)
+        return jsonify({
+            'source': 'rate_limited_fallback',
+            'retry_after_seconds': retry_after,
+            'products': fallback_products
+        }), 200
+
     pet_profile = "Pet Profile: Unknown"
     if 'user_id' in session:
         pet = db.execute('SELECT species, age_months, lifestyle_classification FROM pets WHERE user_id = ?', (session['user_id'],)).fetchone()
         if pet:
             pet_profile = f"Pet Profile: Species: {pet['species']}, Age (months): {pet['age_months']}, Lifestyle: {pet['lifestyle_classification']}"
-    
+
     inventory_context = get_inventory_context()
-    
+
+    cache_key = _build_cache_key('recommendations', {
+        'user': session.get('user_id'),
+        'cart_items': cart_items,
+        'pet_profile': pet_profile
+    })
+
+    cached_products = _cache_get(cache_key)
+    if cached_products is not None:
+        return jsonify({'source': 'cache', 'products': cached_products})
+
+    if _is_endpoint_in_cooldown('recommendations') or 'ai_model' not in globals():
+        fallback_products = _fallback_recommendations(db, cart_items, limit=2)
+        return jsonify({'source': 'fallback', 'products': fallback_products}), 200
+
     prompt = f"{pet_profile}\nUser cart: {cart_items}. Available inventory: {inventory_context}\nBased ONLY on the pet's specific profile/lifestyle and the current cart items, suggest exactly 2 highly relevant complementary products from the available inventory. Return ONLY a raw JSON array containing the 2 exact product name strings. Do not include markdown, code blocks, or explanations."
-    
+
     try:
         response = ai_model.generate_content(prompt)
-        text = response.text.strip()
-        if text.startswith("```json"):
-            text = text[7:-3].strip()
-        elif text.startswith("```"):
-            text = text[3:-3].strip()
-
-        parsed_names = json.loads(text)
+        parsed_names = _safe_json_loads(response.text)
         product_names = _normalize_recommendation_names(parsed_names)
 
         recommended_products = []
@@ -1111,22 +1757,41 @@ def api_recommendations():
             )
             recommended_products.extend(fallback_products)
 
-        return jsonify(recommended_products[:2])
+        final_products = recommended_products[:2]
+        _cache_set(cache_key, final_products, AI_CACHE_TTL_SECONDS['recommendations'])
+        return jsonify({'source': 'ai', 'products': final_products})
     except Exception as e:
+        if _is_quota_error(e):
+            _set_endpoint_cooldown('recommendations')
         print(f"AI Recommendation error: {e}. Falling back to deterministic recommendations.")
         fallback_products = _fallback_recommendations(db, cart_items, limit=2)
-        return jsonify(fallback_products)
+        return jsonify({'source': 'fallback', 'products': fallback_products}), 200
 
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
-    if 'ai_model' not in globals():
-        return jsonify({'error': 'AI model not configured'}), 500
-
     data = request.get_json()
     if not data or 'message' not in data:
         return jsonify({'error': 'Invalid request. Expected JSON with a message string.'}), 400
 
     user_message = data.get('message', '')
+
+    if not user_message.strip():
+        return jsonify({'error': 'Message cannot be empty.'}), 400
+
+    is_limited, retry_after = _rate_limit_check('chat')
+    if is_limited:
+        return jsonify({
+            'error': 'Too many chat requests. Please wait and try again.',
+            'retry_after_seconds': retry_after
+        }), 429
+
+    if _is_endpoint_in_cooldown('chat'):
+        return jsonify({
+            'error': 'Chat is temporarily paused due to quota limits. Please try again shortly.'
+        }), 503
+
+    if 'ai_model' not in globals():
+        return jsonify({'error': 'AI model not configured'}), 500
     
     db = get_db()
     pet_context = "No pet profile available."
@@ -1154,6 +1819,15 @@ STRICT GUARDRAILS & RULES:
 3. Decision Support: If asked for health/care advice, suggest potential causes and helpful products, but ALWAYS append: 'I am an AI, not a veterinarian. Please consult a vet for medical advice.'
 4. Budget Bundling: If the user specifies a budget (e.g., 'I have ₱500'), filter the inventory and generate an optimized product bundle. CRITICAL MATH GUARDRAIL: Calculate the exact total cost of your suggested bundle. It MUST NOT exceed the user's budget. If it does, silently recalculate before responding. Break down the prices clearly.
 5. Tone & Formatting: Keep your responses concise, warm, and easy to read. Do not hallucinate products or prices that are not in the provided inventory."""
+
+    cache_key = _build_cache_key('chat', {
+        'user': session.get('user_id'),
+        'message': user_message,
+        'pet_context': pet_context
+    })
+    cached_chat_text = _cache_get(cache_key)
+    if cached_chat_text:
+        return jsonify({'response': cached_chat_text})
 
     try:
         response = ai_model.generate_content(prompt)
@@ -1193,8 +1867,11 @@ STRICT GUARDRAILS & RULES:
                 if _is_health_advice_intent(user_message) and VET_DISCLAIMER not in ai_text:
                     ai_text = f"{ai_text}\n\n{VET_DISCLAIMER}"
 
+        _cache_set(cache_key, ai_text, AI_CACHE_TTL_SECONDS['chat'])
         return jsonify({"response": ai_text})
     except Exception as e:
+        if _is_quota_error(e):
+            _set_endpoint_cooldown('chat')
         print(f"AI Chat error: {e}")
         return jsonify({"error": "Failed to generate chat response"}), 500
 
@@ -1294,8 +1971,14 @@ def place_order():
 
     db.commit()
 
-    # Trigger async pet lifestyle classification
-    threading.Thread(target=calculate_pet_lifestyle, args=(session['user_id'],)).start()
+    # Trigger lifestyle classification only when enough new order history exists.
+    should_trigger_lifestyle, current_order_count = _should_trigger_lifestyle_refresh(db, session['user_id'])
+    if should_trigger_lifestyle:
+        threading.Thread(
+            target=calculate_pet_lifestyle,
+            args=(session['user_id'], current_order_count),
+            daemon=True
+        ).start()
 
     # Store order_no in session so progress page can poll it
     session['latest_order_no'] = order_no

@@ -3,6 +3,8 @@ var currentCheckout = [];
 var cartSet = new Set();
 var globalQty = 0;
 var globalPrice = 0;
+var recommendationInFlight = false;
+var lastRecommendationSignature = null;
 
 function render(list) {
     var grid = document.getElementById('itemGrid');
@@ -81,8 +83,7 @@ function addCart(id, pr) {
         cart.push({ product_id: product.product_id, name: product.name, price: product.price, qty: q });
     }
     localStorage.setItem('cart', JSON.stringify(cart));
-
-    fetchRecommendations({ cart_items: cart });
+    updateRecommendationStatus("Cart updated. Click Generate AI Recommendations.");
 
     alert(product.name + " added to cart!");
 }
@@ -125,22 +126,52 @@ function closeStatusModal() {
 }
 
 async function fetchRecommendations(cartItems) {
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+        updateRecommendationStatus("Add items to cart before generating recommendations.");
+        return;
+    }
+
+    const requestSignature = JSON.stringify(
+        cartItems
+            .map(item => ({
+                product_id: item.product_id,
+                qty: item.qty,
+                price: item.price
+            }))
+            .sort((a, b) => Number(a.product_id) - Number(b.product_id))
+    );
+
+    if (recommendationInFlight && requestSignature === lastRecommendationSignature) {
+        return;
+    }
+
+    recommendationInFlight = true;
+    lastRecommendationSignature = requestSignature;
+    updateRecommendationStatus("Generating recommendations...");
+
     try {
         const response = await fetch('/api/recommendations', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(cartItems)
+            body: JSON.stringify({ cart_items: cartItems })
         });
 
-        if (!response.ok) return;
+        if (!response.ok) {
+            updateRecommendationStatus('Recommendations unavailable right now.');
+            return;
+        }
 
-        const recommendations = await response.json();
+        const responsePayload = await response.json();
+        const recommendations = Array.isArray(responsePayload)
+            ? responsePayload
+            : (Array.isArray(responsePayload.products) ? responsePayload.products : []);
+
+        const container = document.getElementById('ai-recommendations-container');
+        const grid = document.getElementById('ai-recommendations-grid');
+
         if (recommendations && recommendations.length > 0) {
-            const container = document.getElementById('ai-recommendations-container');
-            const grid = document.getElementById('ai-recommendations-grid');
-            
             grid.innerHTML = '';
             
             recommendations.forEach(p => {
@@ -188,9 +219,22 @@ async function fetchRecommendations(cartItems) {
             });
             
             container.style.display = 'block';
+            updateRecommendationStatus('Recommendations ready.');
+        } else {
+            if (container) container.style.display = 'none';
+            updateRecommendationStatus('No recommendations available for the current cart.');
         }
     } catch (error) {
-        // Silently ignore errors, leaving container hidden
+        updateRecommendationStatus('Recommendations unavailable due to a network error.');
+    } finally {
+        recommendationInFlight = false;
+    }
+}
+
+function updateRecommendationStatus(message) {
+    const statusEl = document.getElementById('recommendations-status');
+    if (statusEl) {
+        statusEl.innerText = message;
     }
 }
 
@@ -227,8 +271,7 @@ function addCartRec(id, pr) {
         cart.push({ product_id: product.product_id, name: product.name, price: product.price, qty: q });
     }
     localStorage.setItem('cart', JSON.stringify(cart));
-
-    fetchRecommendations({ cart_items: cart });
+    updateRecommendationStatus("Cart updated. Click Generate AI Recommendations.");
 
     alert(product.name + " added to cart!");
 }
@@ -257,10 +300,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     var cart = JSON.parse(localStorage.getItem('cart')) || [];
     if (cart.length > 0) {
-        fetchRecommendations({ cart_items: cart });
+        updateRecommendationStatus('Cart detected. Click Generate AI Recommendations to load suggestions.');
+    } else {
+        updateRecommendationStatus('Add items to cart, then click to generate suggestions.');
     }
 
-    const checkoutBtn = document.querySelector('.checkout-trigger');
+    const generateRecommendationsBtn = document.getElementById('generate-recommendations-btn');
+    if (generateRecommendationsBtn) {
+        generateRecommendationsBtn.addEventListener('click', async () => {
+            if (recommendationInFlight) return;
+
+            const cartItems = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cartItems.length === 0) {
+                updateRecommendationStatus('Add items to cart before generating recommendations.');
+                return;
+            }
+
+            const originalLabel = generateRecommendationsBtn.innerText;
+            generateRecommendationsBtn.disabled = true;
+            generateRecommendationsBtn.innerText = 'Loading...';
+
+            try {
+                await fetchRecommendations(cartItems);
+            } finally {
+                generateRecommendationsBtn.disabled = false;
+                generateRecommendationsBtn.innerText = originalLabel;
+            }
+        });
+    }
+
+    const checkoutBtn = document.querySelector('.bottom-bar .checkout-trigger');
     if (checkoutBtn) checkoutBtn.onclick = handleCheckout;
 
     const urlParams = new URLSearchParams(window.location.search);

@@ -236,6 +236,99 @@ body {
     line-height: 1.5;
 }
 
+#insights-result,
+#forecast-result {
+    margin-top: 10px;
+}
+
+.ai-block-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #1A323E;
+    margin-bottom: 6px;
+}
+
+.ai-block-summary {
+    font-size: 0.84rem;
+    line-height: 1.5;
+    margin-bottom: 8px;
+    color: #1F2E33;
+}
+
+.ai-section-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #1A323E;
+    margin: 10px 0 6px;
+}
+
+.ai-list {
+    margin: 0;
+    padding-left: 16px;
+}
+
+.ai-list-item {
+    font-size: 0.8rem;
+    line-height: 1.45;
+    margin-bottom: 4px;
+    color: #2A2A2A;
+}
+
+.ai-list-item.severity-critical {
+    color: #a6171c;
+    font-weight: 700;
+}
+
+.ai-list-item.severity-warning {
+    color: #b03f18;
+    font-weight: 700;
+}
+
+.ai-list-item.severity-watch {
+    color: #704f00;
+    font-weight: 600;
+}
+
+.ai-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 10px;
+    border: 1px solid #e4ddd2;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.ai-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 640px;
+}
+
+.ai-table th,
+.ai-table td {
+    padding: 8px;
+    border-bottom: 1px solid #efe8de;
+    font-size: 0.76rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.ai-table th {
+    font-weight: 800;
+    color: #1A323E;
+    background: #f7f2ea;
+}
+
+.ai-table tbody tr.urgency-high td {
+    color: #a6171c;
+    font-weight: 700;
+}
+
+.ai-table tbody tr.urgency-medium td {
+    color: #7e4300;
+    font-weight: 600;
+}
+
 .forecast-btn {
     background: #a6171c;
     color: white;

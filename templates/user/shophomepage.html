@@ -43,6 +43,13 @@
         </section>
 
         <main class="scroll-container">
+            <div id="ai-recommendation-controls" style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <button id="generate-recommendations-btn" class="checkout-trigger" type="button" style="width: auto; padding: 10px 16px; border-radius: 22px;">
+                    Generate AI Recommendations
+                </button>
+                <p id="recommendations-status" style="font-size: 12px; color: #314047; margin: 0;">Add items to cart, then click to generate suggestions.</p>
+            </div>
+
             <div id="ai-recommendations-container" style="display: none; margin-bottom: 24px;">
                 <h2 style="font-size: 16px; font-weight: 800; color: #1A323E; margin-bottom: 12px; padding-left: 4px;">You may also like</h2>
                 <div class="item-grid" id="ai-recommendations-grid">
