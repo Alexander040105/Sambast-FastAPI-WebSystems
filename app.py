@@ -563,6 +563,143 @@ def _build_inventory_forecast_fallback(db):
         'recommendations': recommendations
     }
 
+def _get_business_summary_snapshot(db):
+    revenue_row = db.execute(
+        "SELECT SUM(total_price) AS total FROM orders WHERE status != 'Cancelled'"
+    ).fetchone()
+    total_revenue = float(revenue_row['total']) if revenue_row and revenue_row['total'] else 0.0
+
+    orders_row = db.execute(
+        "SELECT COUNT(order_id) AS count FROM orders WHERE status != 'Cancelled'"
+    ).fetchone()
+    order_count = int(orders_row['count']) if orders_row and orders_row['count'] else 0
+
+    top_seller_rows = db.execute('''
+        SELECT p.name, IFNULL(SUM(oi.quantity), 0) AS count
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.product_id
+        GROUP BY p.product_id
+        ORDER BY count DESC
+        LIMIT 3
+    ''').fetchall()
+    top_sellers = [
+        {
+            'name': row['name'],
+            'count': int(row['count']) if row['count'] is not None else 0
+        }
+        for row in top_seller_rows
+    ]
+
+    slow_mover_rows = db.execute('''
+        SELECT p.name, IFNULL(SUM(oi.quantity), 0) AS count
+        FROM products p
+        LEFT JOIN order_items oi ON p.product_id = oi.product_id
+        GROUP BY p.product_id
+        ORDER BY count ASC
+        LIMIT 3
+    ''').fetchall()
+    slow_movers = [
+        {
+            'name': row['name'],
+            'count': int(row['count']) if row['count'] is not None else 0
+        }
+        for row in slow_mover_rows
+    ]
+
+    low_stock_rows = db.execute(
+        "SELECT name, stock_status AS stock FROM products WHERE stock_status < 10"
+    ).fetchall()
+    low_stock = [
+        {
+            'name': row['name'],
+            'stock': int(row['stock']) if row['stock'] is not None else 0
+        }
+        for row in low_stock_rows
+    ]
+
+    return {
+        'total_revenue': total_revenue,
+        'order_count': order_count,
+        'top_sellers': top_sellers,
+        'slow_movers': slow_movers,
+        'low_stock': low_stock
+    }
+
+def _build_business_summary_fallback(snapshot):
+    total_revenue = float(snapshot.get('total_revenue', 0.0) or 0.0)
+    order_count = int(snapshot.get('order_count', 0) or 0)
+    avg_order_value = total_revenue / order_count if order_count > 0 else 0.0
+
+    top_sellers = snapshot.get('top_sellers', [])
+    slow_movers = snapshot.get('slow_movers', [])
+    low_stock = snapshot.get('low_stock', [])
+
+    critical_low_stock = [item for item in low_stock if item['stock'] <= 2]
+    warning_low_stock = [item for item in low_stock if 2 < item['stock'] < 10]
+
+    if order_count == 0:
+        return (
+            "Executive summary (deterministic): There are no completed sales yet, so trend confidence is low. "
+            "Priority actions: 1) drive first conversions with introductory bundles, "
+            "2) monitor early top sellers weekly, 3) keep low-stock alerts active to avoid early stockouts."
+        )
+
+    if avg_order_value >= 500 and order_count >= 30:
+        demand_signal = "sales momentum is strong"
+    elif avg_order_value >= 250 and order_count >= 12:
+        demand_signal = "sales momentum is stable"
+    else:
+        demand_signal = "sales momentum is still building"
+
+    if top_sellers:
+        top_seller_text = ", ".join(
+            [f"{item['name']} ({item['count']} sold)" for item in top_sellers[:2]]
+        )
+    else:
+        top_seller_text = "no dominant best-sellers identified yet"
+
+    if slow_movers:
+        slow_mover_text = ", ".join(
+            [f"{item['name']} ({item['count']} sold)" for item in slow_movers[:2]]
+        )
+    else:
+        slow_mover_text = "no obvious slow movers"
+
+    if low_stock:
+        inventory_risk_text = (
+            f"{len(low_stock)} item(s) are below 10 stock, "
+            f"including {len(critical_low_stock)} critical item(s) at 2 or below"
+        )
+    else:
+        inventory_risk_text = "no low-stock pressure detected"
+
+    recommendation_parts = []
+    if critical_low_stock:
+        recommendation_parts.append(
+            "prioritize emergency replenishment for critical low-stock SKUs"
+        )
+    if slow_movers and any(item['count'] == 0 for item in slow_movers):
+        recommendation_parts.append(
+            "bundle zero/slow-moving items with top sellers to improve turnover"
+        )
+    if not recommendation_parts:
+        recommendation_parts.append(
+            "maintain current replenishment cadence and review weekly demand shifts"
+        )
+    if warning_low_stock:
+        recommendation_parts.append(
+            "schedule a near-term reorder for warning-level stock items"
+        )
+
+    recommendation_text = "; ".join(recommendation_parts[:3])
+
+    return (
+        f"Executive summary (deterministic): Revenue is ₱{total_revenue:,.2f} across {order_count} non-cancelled order(s) "
+        f"with an average order value of ₱{avg_order_value:,.2f}; overall {demand_signal}. "
+        f"Best-seller momentum is led by {top_seller_text}, while slow-moving exposure is seen in {slow_mover_text}. "
+        f"Inventory risk status: {inventory_risk_text}. Recommended actions: {recommendation_text}."
+    )
+
 def _normalize_forecast_payload(payload):
     if not isinstance(payload, dict):
         return None
@@ -1189,54 +1326,45 @@ def business_summary():
     if cached_payload:
         return jsonify({'source': 'cache', 'summary': cached_payload})
 
+    snapshot = _get_business_summary_snapshot(db)
+    fallback_summary = _build_business_summary_fallback(snapshot)
+
     is_limited, retry_after = _rate_limit_check('business_summary')
     if is_limited:
         return jsonify({
-            'source': 'rate_limited',
+            'source': 'rate_limited_fallback',
             'retry_after_seconds': retry_after,
-            'error': 'Please wait before generating another summary.'
-        }), 429
+            'summary': fallback_summary
+        }), 200
 
     if _is_endpoint_in_cooldown('business_summary'):
         return jsonify({
-            'source': 'quota_cooldown',
-            'error': 'AI summary is temporarily paused due to quota limits. Please try again shortly.'
-        }), 503
+            'source': 'quota_cooldown_fallback',
+            'cooldown_seconds': _cooldown_remaining('business_summary'),
+            'summary': fallback_summary
+        }), 200
 
     if 'ai_model' not in globals():
-        return jsonify({'error': 'AI model not configured'}), 500
+        return jsonify({
+            'source': 'fallback',
+            'summary': fallback_summary
+        }), 200
 
     try:
-        result = db.execute("SELECT SUM(total_price) as total FROM orders WHERE status != 'Cancelled'").fetchone()
-        total_revenue = result['total'] if result and result['total'] else 0
-
-        top_sellers = db.execute("""
-            SELECT p.name, SUM(oi.quantity) as count
-            FROM order_items oi
-            JOIN products p ON oi.product_id = p.product_id
-            GROUP BY p.product_id
-            ORDER BY count DESC
-            LIMIT 3
-        """).fetchall()
-        top_products_str = ", ".join([f"{row['name']} ({row['count']} sold)" for row in top_sellers]) if top_sellers else "None"
-
-        slow_movers = db.execute("""
-            SELECT p.name, IFNULL(SUM(oi.quantity), 0) as count
-            FROM products p
-            LEFT JOIN order_items oi ON p.product_id = oi.product_id
-            GROUP BY p.product_id
-            ORDER BY count ASC
-            LIMIT 3
-        """).fetchall()
-        slow_products_str = ", ".join([f"{row['name']} ({row['count']} sold)" for row in slow_movers]) if slow_movers else "None"
-
-        low_stock = db.execute("SELECT name, stock_status as stock FROM products WHERE stock_status < 10").fetchall()
-        low_stock_str = ", ".join([f"{row['name']} ({row['stock']} left)" for row in low_stock]) if low_stock else "None"
+        top_products_str = ", ".join(
+            [f"{row['name']} ({row['count']} sold)" for row in snapshot['top_sellers']]
+        ) if snapshot['top_sellers'] else "None"
+        slow_products_str = ", ".join(
+            [f"{row['name']} ({row['count']} sold)" for row in snapshot['slow_movers']]
+        ) if snapshot['slow_movers'] else "None"
+        low_stock_str = ", ".join(
+            [f"{row['name']} ({row['stock']} left)" for row in snapshot['low_stock']]
+        ) if snapshot['low_stock'] else "None"
 
         prompt = f"""You are an expert Retail Data Analyst for Sambast Pet Supply. Your job is to analyze the current snapshot of store data and provide a sharp, actionable executive summary. 
 
 CURRENT STORE DATA:
-- Total Revenue: ₱{total_revenue:,.2f}
+- Total Revenue: ₱{snapshot['total_revenue']:,.2f}
 - Top Selling Products: {top_products_str}
 - Slow-Moving Items (Worst Sellers): {slow_products_str}
 - Items with Low/Zero Stock: {low_stock_str}
@@ -1249,13 +1377,19 @@ OUTPUT REQUIREMENTS:
 
         response = ai_model.generate_content(prompt)
         summary_text = response.text.strip()
+        if not summary_text:
+            summary_text = fallback_summary
+
         _cache_set(cache_key, summary_text, AI_CACHE_TTL_SECONDS['business_summary'])
         return jsonify({'source': 'ai', 'summary': summary_text})
     except Exception as e:
         if _is_quota_error(e):
             _set_endpoint_cooldown('business_summary')
         print(f"Business summary error: {e}")
-        return jsonify({"error": "Failed to generate business summary"}), 500
+        return jsonify({
+            'source': 'fallback',
+            'summary': fallback_summary
+        }), 200
 
 @app.route('/api/admin/stats', methods=['GET'])
 def admin_stats():
