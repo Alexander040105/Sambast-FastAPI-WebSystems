@@ -127,7 +127,7 @@ function render(list) {
     for (var i = 0; i < list.length; i++) {
         var p = list[i];
         var imgSrc = p.image_filename
-            ? '/static/uploads/' + p.image_filename
+            ? '/product-image/' + encodeURIComponent(p.image_filename)
             : '/static/img/user/user-male-circle.png';
         var div = document.createElement('div');
         div.className = "product-card";
@@ -336,7 +336,7 @@ async function fetchRecommendations(cartItems) {
                 }
 
                 var imgSrc = p.image_filename
-                    ? '/static/uploads/' + p.image_filename
+                    ? '/product-image/' + encodeURIComponent(p.image_filename)
                     : '/static/img/user/user-male-circle.png';
 
                 const card = document.createElement('div');

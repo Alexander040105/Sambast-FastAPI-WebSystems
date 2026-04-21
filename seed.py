@@ -120,6 +120,30 @@ def parse_int(value, default_value=0):
 		return default_value
 
 
+def normalize_image_stem(name):
+	text = (name or "").strip().lower()
+	text = re.sub(r"[^a-z0-9]+", "_", text)
+	return text.strip("_")
+
+
+def resolve_image_filename(name, explicit_filename=""):
+	image_folder = Path(__file__).with_name("static") / "products"
+	extensions = (".png", ".jpg", ".jpeg")
+
+	filename = (explicit_filename or "").strip()
+	if filename and (image_folder / filename).exists():
+		if Path(filename).suffix.lower() in extensions:
+			return filename
+
+	stem = normalize_image_stem(name)
+	for ext in extensions:
+		candidate = f"{stem}{ext}"
+		if (image_folder / candidate).exists():
+			return candidate
+
+	return ""
+
+
 def ensure_products_table(conn):
 	conn.execute(
 		'''
@@ -187,7 +211,7 @@ def seed_products(db_path, csv_path, replace_existing=True, truncate=False, dry_
 					"category": category,
 					"price": price,
 					"stock_status": parse_int(csv_get(row, header_map, "stock_status", 20), 20),
-					"image_filename": csv_get(row, header_map, "image_filename", "logo.png"),
+					"image_filename": resolve_image_filename(name, csv_get(row, header_map, "image_filename", "")),
 					"description": description,
 					"purpose": csv_get(row, header_map, "purpose", ""),
 					"target_species": target_species,
