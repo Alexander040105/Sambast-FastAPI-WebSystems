@@ -299,6 +299,15 @@ def _run_migrations(db):
     """Apply any necessary database migrations and backfill data."""
     try:
         cursor = db.cursor()
+
+        # Migration 0: Ensure categories table exists
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL
+            )
+        ''')
+        db.commit()
         
         # Migration 1: Check if category column exists in audit_logs table
         cursor.execute("PRAGMA table_info(audit_logs)")
@@ -309,7 +318,48 @@ def _run_migrations(db):
             db.commit()
             print("Migration: Added category column to audit_logs table.")
         
-        # Migration 2: Backfill existing logs with correct categories
+        # Migration 2: Ensure product structure supports unit + variant fields
+        cursor.execute("PRAGMA table_info(products)")
+        product_columns = [column[1] for column in cursor.fetchall()]
+
+        if 'unit' not in product_columns:
+            cursor.execute("ALTER TABLE products ADD COLUMN unit TEXT DEFAULT 'pcs'")
+            db.commit()
+            print("Migration: Added unit column to products table.")
+
+        if 'variant_value' not in product_columns:
+            cursor.execute("ALTER TABLE products ADD COLUMN variant_value REAL DEFAULT 1")
+            db.commit()
+            print("Migration: Added variant_value column to products table.")
+
+        if 'category_id' not in product_columns:
+            cursor.execute("ALTER TABLE products ADD COLUMN category_id INTEGER")
+            db.commit()
+            print("Migration: Added category_id column to products table.")
+
+        # Backfill categories table and products.category_id
+        cursor.execute("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND TRIM(category) != ''")
+        raw_categories = [row[0] for row in cursor.fetchall()]
+        for raw_name in raw_categories:
+            normalized = _normalize_category_name(raw_name)
+            if not normalized:
+                continue
+            cursor.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (normalized,))
+
+        cursor.execute("SELECT product_id, category, category_id FROM products")
+        rows = cursor.fetchall()
+        for product_id, category_name, category_id in rows:
+            normalized = _normalize_category_name(category_name)
+            if category_id is None and normalized:
+                cat_row = cursor.execute("SELECT id FROM categories WHERE name = ?", (normalized,)).fetchone()
+                if cat_row:
+                    cursor.execute(
+                        "UPDATE products SET category_id = ?, category = ? WHERE product_id = ?",
+                        (cat_row[0], normalized, product_id)
+                    )
+        db.commit()
+
+        # Migration 3: Backfill existing logs with correct categories
         cursor.execute("SELECT COUNT(*) FROM audit_logs WHERE category IS NULL OR category = ''")
         null_count = cursor.fetchone()[0]
         
@@ -325,7 +375,7 @@ def _run_migrations(db):
             db.commit()
             print(f"Migration: Successfully backfilled {null_count} audit logs with categories.")
         
-        # Migration 3: Correct any misclassified logs (optional - recategorize all)
+        # Migration 4: Correct any misclassified logs (optional - recategorize all)
         # Uncomment if you want to recategorize ALL logs on startup
         # cursor.execute("SELECT log_id, action_text FROM audit_logs")
         # all_logs = cursor.fetchall()
@@ -366,10 +416,18 @@ def init_db():
             product_id INTEGER PRIMARY KEY AUTOINCREMENT, 
             name TEXT NOT NULL, 
             category TEXT, 
+            category_id INTEGER,
+            unit TEXT DEFAULT 'pcs',
+            variant_value REAL DEFAULT 1,
             price REAL NOT NULL, 
             stock_status INTEGER DEFAULT 1, 
             image_filename TEXT, 
             description TEXT)''')
+
+        cursor.execute('''CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        )''')
         
         cursor.execute('''CREATE TABLE IF NOT EXISTS orders (
             order_id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -1012,15 +1070,27 @@ def ensure_startup_schema_guard():
 
 VET_DISCLAIMER = "I am an AI, not a veterinarian. Please consult a vet for medical advice."
 
+def _normalize_category_name(raw_name):
+    if raw_name is None:
+        return ''
+    cleaned = str(raw_name).strip()
+    if not cleaned:
+        return ''
+    collapsed = ' '.join(cleaned.split())
+    return collapsed.title()
+
 def _product_row_to_dict(product_row):
     return {
         'product_id': product_row['product_id'],
         'name': product_row['name'],
         'category': product_row['category'],
+        'unit': (product_row['unit'] if 'unit' in product_row.keys() else 'pcs') or 'pcs',
+        'variant_value': (product_row['variant_value'] if 'variant_value' in product_row.keys() else 1) or 1,
         'price': product_row['price'],
         'description': product_row['description'],
         'image_filename': product_row['image_filename'],
-        'stock_status': product_row['stock_status']
+        'stock_status': product_row['stock_status'],
+        'stock': product_row['stock_status']
     }
 
 def _normalize_recommendation_names(candidate):
@@ -1320,19 +1390,71 @@ def cancel_order(order_id):
 def admin_inventory():
     if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     db = get_db()
-    products = db.execute('SELECT * FROM products ORDER BY name ASC').fetchall()
-    return render_template('admin/inventory.html', products=products)
+    products = db.execute('''
+        SELECT
+            p.*, 
+            COALESCE(c.name, p.category, '') AS category_name,
+            COALESCE(c.id, p.category_id, NULL) AS resolved_category_id
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.id
+        ORDER BY p.name ASC
+    ''').fetchall()
+    categories = db.execute('SELECT id, name FROM categories ORDER BY name ASC').fetchall()
+    return render_template('admin/inventory.html', products=products, categories=categories)
+
+@app.route('/admin/categories/add', methods=['POST'])
+def add_category():
+    if 'admin_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    payload = request.get_json(silent=True) or {}
+    raw_name = payload.get('name', '')
+    normalized_name = _normalize_category_name(raw_name)
+
+    if not normalized_name:
+        return jsonify({'success': False, 'message': 'Category name cannot be empty.'}), 400
+
+    db = get_db()
+    existing = db.execute('SELECT id, name FROM categories WHERE LOWER(name) = LOWER(?)', (normalized_name,)).fetchone()
+    if existing:
+        return jsonify({
+            'success': True,
+            'category': {'id': existing['id'], 'name': existing['name']},
+            'message': 'Category already exists.'
+        }), 200
+
+    cursor = db.execute('INSERT INTO categories (name) VALUES (?)', (normalized_name,))
+    db.commit()
+    new_id = cursor.lastrowid
+    return jsonify({
+        'success': True,
+        'category': {'id': new_id, 'name': normalized_name},
+        'message': 'Category added successfully.'
+    }), 201
 
 @app.route('/admin/products/add', methods=['POST'])
 def add_product():
     if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     
     name = request.form.get('name')
-    category = request.form.get('category')
+    category_id_raw = request.form.get('category_id')
+    new_category_raw = request.form.get('new_category', '')
+    unit = request.form.get('unit', 'pcs')
+    variant_value = request.form.get('variant_value', 1)
     price = request.form.get('price')
     description = request.form.get('description')
-    stock_status = request.form.get('stock_status', 1)
+    stock_status = request.form.get('stock_status', 0)
     file = request.files.get('image')
+
+    try:
+        stock_status = max(0, int(stock_status))
+    except (TypeError, ValueError):
+        stock_status = 0
+
+    try:
+        variant_value = float(variant_value)
+    except (TypeError, ValueError):
+        variant_value = 1
 
     filename = 'logo.png' # Fallback image
     if file and allowed_file(file.filename):
@@ -1340,8 +1462,36 @@ def add_product():
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
     db = get_db()
-    db.execute('''INSERT INTO products (name, category, price, stock_status, image_filename, description) 
-                  VALUES (?, ?, ?, ?, ?, ?)''', (name, category, price, stock_status, filename, description))
+    category_id = None
+    category_name = ''
+
+    normalized_new = _normalize_category_name(new_category_raw)
+    if normalized_new:
+        existing_category = db.execute('SELECT id, name FROM categories WHERE LOWER(name) = LOWER(?)', (normalized_new,)).fetchone()
+        if existing_category:
+            category_id = existing_category['id']
+            category_name = existing_category['name']
+        else:
+            category_cursor = db.execute('INSERT INTO categories (name) VALUES (?)', (normalized_new,))
+            category_id = category_cursor.lastrowid
+            category_name = normalized_new
+    else:
+        try:
+            parsed_category_id = int(category_id_raw)
+        except (TypeError, ValueError):
+            parsed_category_id = None
+
+        if parsed_category_id is None:
+            return redirect(url_for('admin_inventory'))
+
+        category_row = db.execute('SELECT id, name FROM categories WHERE id = ?', (parsed_category_id,)).fetchone()
+        if not category_row:
+            return redirect(url_for('admin_inventory'))
+        category_id = category_row['id']
+        category_name = category_row['name']
+
+    db.execute('''INSERT INTO products (name, category, category_id, unit, variant_value, price, stock_status, image_filename, description) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', (name, category_name, category_id, unit, variant_value, price, stock_status, filename, description))
     action_text = f"Added product: {name}"
     db.execute('INSERT INTO audit_logs (admin_id, action_text, category) VALUES (?, ?, ?)', 
                (session['admin_id'], action_text, get_log_category(action_text)))
@@ -1354,12 +1504,53 @@ def edit_product(product_id):
     if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     
     name = request.form.get('name')
-    category = request.form.get('category')
+    category_id_raw = request.form.get('category_id')
+    new_category_raw = request.form.get('new_category', '')
+    unit = request.form.get('unit', 'pcs')
+    variant_value = request.form.get('variant_value', 1)
     price = request.form.get('price')
     description = request.form.get('description')
     stock_status = request.form.get('stock_status')
+    remove_image = request.form.get('remove_image', '0') == '1'
+
+    try:
+        stock_status = max(0, int(stock_status))
+    except (TypeError, ValueError):
+        stock_status = 0
+
+    try:
+        variant_value = float(variant_value)
+    except (TypeError, ValueError):
+        variant_value = 1
     
     db = get_db()
+    category_id = None
+    category_name = ''
+
+    normalized_new = _normalize_category_name(new_category_raw)
+    if normalized_new:
+        existing_category = db.execute('SELECT id, name FROM categories WHERE LOWER(name) = LOWER(?)', (normalized_new,)).fetchone()
+        if existing_category:
+            category_id = existing_category['id']
+            category_name = existing_category['name']
+        else:
+            category_cursor = db.execute('INSERT INTO categories (name) VALUES (?)', (normalized_new,))
+            category_id = category_cursor.lastrowid
+            category_name = normalized_new
+    else:
+        try:
+            parsed_category_id = int(category_id_raw)
+        except (TypeError, ValueError):
+            parsed_category_id = None
+
+        if parsed_category_id is None:
+            return redirect(url_for('admin_inventory'))
+
+        category_row = db.execute('SELECT id, name FROM categories WHERE id = ?', (parsed_category_id,)).fetchone()
+        if not category_row:
+            return redirect(url_for('admin_inventory'))
+        category_id = category_row['id']
+        category_name = category_row['name']
     
     # Handle Image Update if provided
     file = request.files.get('image')
@@ -1367,9 +1558,11 @@ def edit_product(product_id):
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         db.execute('UPDATE products SET image_filename = ? WHERE product_id = ?', (filename, product_id))
+    elif remove_image:
+        db.execute('UPDATE products SET image_filename = ? WHERE product_id = ?', ('', product_id))
 
-    db.execute('''UPDATE products SET name=?, category=?, price=?, description=?, stock_status=? 
-                  WHERE product_id = ?''', (name, category, price, description, stock_status, product_id))
+    db.execute('''UPDATE products SET name=?, category=?, category_id=?, unit=?, variant_value=?, price=?, description=?, stock_status=? 
+                  WHERE product_id = ?''', (name, category_name, category_id, unit, variant_value, price, description, stock_status, product_id))
     action_text = f"Edited product ID: {product_id}"
     db.execute('INSERT INTO audit_logs (admin_id, action_text, category) VALUES (?, ?, ?)', 
                (session['admin_id'], action_text, get_log_category(action_text)))
@@ -1380,12 +1573,45 @@ def edit_product(product_id):
 def delete_product(product_id):
     if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     db = get_db()
-    db.execute('DELETE FROM products WHERE product_id = ?', (product_id,))
-    action_text = f"Deleted product ID: {product_id}"
-    db.execute('INSERT INTO audit_logs (admin_id, action_text, category) VALUES (?, ?, ?)', 
-               (session['admin_id'], action_text, get_log_category(action_text)))
-    db.commit()
-    return redirect(url_for('admin_inventory'))
+    wants_json = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
+                 'application/json' in request.headers.get('Accept', '')
+
+    def _json_or_redirect(message, success=True, status_code=200):
+        if wants_json:
+            return jsonify({'success': success, 'message': message}), status_code
+        flash(message)
+        return redirect(url_for('admin_inventory'))
+
+    product = db.execute('SELECT name FROM products WHERE product_id = ?', (product_id,)).fetchone()
+    if not product:
+        return _json_or_redirect("Product not found.", success=False, status_code=404)
+
+    referenced_count = db.execute(
+        'SELECT COUNT(*) AS cnt FROM order_items WHERE product_id = ?',
+        (product_id,)
+    ).fetchone()['cnt']
+
+    try:
+        if referenced_count > 0:
+            db.execute('DELETE FROM order_items WHERE product_id = ?', (product_id,))
+
+        db.execute('DELETE FROM products WHERE product_id = ?', (product_id,))
+        if referenced_count > 0:
+            action_text = f"Deleted product ID: {product_id} with {referenced_count} linked order item(s)"
+        else:
+            action_text = f"Deleted product ID: {product_id}"
+
+        db.execute('INSERT INTO audit_logs (admin_id, action_text, category) VALUES (?, ?, ?)', 
+                   (session['admin_id'], action_text, get_log_category(action_text)))
+        db.commit()
+        return _json_or_redirect(f"Product {product['name']} successfully deleted.", success=True, status_code=200)
+    except sqlite3.IntegrityError:
+        db.rollback()
+        return _json_or_redirect(
+            f"Cannot delete {product['name']}. It is linked to existing records.",
+            success=False,
+            status_code=409
+        )
 
 @app.route('/api/admin/inventory-insights', methods=['GET'])
 def inventory_insights():
@@ -2186,10 +2412,13 @@ def get_products():
         'product_id'     : p['product_id'],
         'name'           : p['name'],
         'category'       : p['category'],
+        'unit'           : (p['unit'] if 'unit' in p.keys() else 'pcs') or 'pcs',
+        'variant_value'  : (p['variant_value'] if 'variant_value' in p.keys() else 1) or 1,
         'price'          : p['price'],
         'description'    : p['description'],
         'image_filename' : p['image_filename'],
-        'stock_status'   : p['stock_status']
+        'stock_status'   : p['stock_status'],
+        'stock'          : p['stock_status']
     } for p in products]
 
 
@@ -2476,38 +2705,39 @@ def place_order():
 
     db = get_db()
 
-    # Build a server-trusted item list and total using DB prices only.
-    total = 0.0
-    validated_items = []
+    # Build a server-trusted item list and total using DB prices and stock only.
+    requested_by_product = {}
     for item in items:
         product_id = item.get('product_id')
-        product_name = item.get('name')
         qty = item.get('qty')
 
         try:
+            product_id = int(product_id)
             qty = int(qty)
         except (TypeError, ValueError):
-            return {'error': 'Invalid quantity provided.'}, 400
+            return {'error': 'Invalid product or quantity provided.'}, 400
 
         if qty <= 0:
             return {'error': 'Quantity must be greater than zero.'}, 400
 
-        product_row = None
-        if product_id is not None:
-            product_row = db.execute(
-                'SELECT product_id, price FROM products WHERE product_id = ?',
-                (product_id,)
-            ).fetchone()
-        elif product_name:
-            product_row = db.execute(
-                'SELECT product_id, price FROM products WHERE name = ?',
-                (product_name,)
-            ).fetchone()
-        else:
-            return {'error': 'Each item must include a product_id or name.'}, 400
+        requested_by_product[product_id] = requested_by_product.get(product_id, 0) + qty
+
+    total = 0.0
+    validated_items = []
+    for product_id, qty in requested_by_product.items():
+        product_row = db.execute(
+            'SELECT product_id, name, price, stock_status FROM products WHERE product_id = ?',
+            (product_id,)
+        ).fetchone()
 
         if not product_row:
             return {'error': 'One or more items reference an unknown product.'}, 400
+
+        available_stock = int(product_row['stock_status'] or 0)
+        if qty > available_stock:
+            return {
+                'error': f"Insufficient stock for {product_row['name']}. Available: {available_stock}, requested: {qty}."
+            }, 409
 
         db_price = float(product_row['price'])
         total += db_price * qty
@@ -2522,23 +2752,36 @@ def place_order():
     while db.execute('SELECT order_id FROM orders WHERE order_no = ?', (order_no,)).fetchone():
         order_no = generate_order_no()
 
-    # Insert the order
-    cursor = db.execute(
-        'INSERT INTO orders (order_no, user_id, total_price, status) VALUES (?, ?, ?, ?)',
-        (order_no, session['user_id'], total, 'Pending')
-    )
-    
-    order_id = cursor.lastrowid
-
-    # Insert each line item
-    for item in validated_items:
-        db.execute(
-            '''INSERT INTO order_items (order_id, product_id, quantity, price_at_time)
-               VALUES (?, ?, ?, ?)''',
-            (order_id, item['product_id'], item['qty'], item['price'])
+    try:
+        # Insert the order
+        cursor = db.execute(
+            'INSERT INTO orders (order_no, user_id, total_price, status) VALUES (?, ?, ?, ?)',
+            (order_no, session['user_id'], total, 'Pending')
         )
 
-    db.commit()
+        order_id = cursor.lastrowid
+
+        # Insert each line item and deduct stock atomically
+        for item in validated_items:
+            db.execute(
+                '''INSERT INTO order_items (order_id, product_id, quantity, price_at_time)
+                   VALUES (?, ?, ?, ?)''',
+                (order_id, item['product_id'], item['qty'], item['price'])
+            )
+            db.execute(
+                '''UPDATE products
+                   SET stock_status = stock_status - ?
+                   WHERE product_id = ? AND stock_status >= ?''',
+                (item['qty'], item['product_id'], item['qty'])
+            )
+            updated = db.execute('SELECT changes() AS updated').fetchone()['updated']
+            if updated != 1:
+                raise ValueError('Stock update failed due to concurrent stock change.')
+
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        return {'error': f'Unable to place order: {str(e)}'}, 409
 
     # Trigger lifestyle classification only when enough new order history exists.
     should_trigger_lifestyle, current_order_count = _should_trigger_lifestyle_refresh(db, session['user_id'])

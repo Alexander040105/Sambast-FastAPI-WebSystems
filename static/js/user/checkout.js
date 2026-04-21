@@ -14,10 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
         listContainer.innerHTML = '';
         checkoutItems.forEach(item => {
             const base = parseFloat(item.basePrice ?? item.price ?? 0);
-const multiplier = parseFloat(item.multiplier ?? 1);
 const qty = parseInt(item.qty ?? 1);
 
-const itemTotal = base * multiplier * qty;
+const itemTotal = base * qty;
             currentTotal += itemTotal;
 
             const div = document.createElement('div');
@@ -65,7 +64,7 @@ const itemTotal = base * multiplier * qty;
 
     // 🔥 THIS IS THE FIX
     basePrice: item.basePrice ?? item.price,
-    multiplier: item.multiplier ?? 1,
+    multiplier: 1,
     unit: item.unit ?? "1 pc"
 })),
     payment_method: paymentMethod

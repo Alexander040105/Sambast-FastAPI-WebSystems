@@ -14,8 +14,8 @@ function renderCart() {
     cart.forEach((item, index) => {
 
     const base = item.basePrice ?? item.price;
-    const multiplier = item.multiplier ?? 1;
-    const total = base * multiplier * item.qty;
+    const total = base * item.qty;
+    const variantLabel = item.unit || "1pcs";
 
     const card = document.createElement('div');
     card.className = 'cart-item-card';
@@ -29,18 +29,7 @@ function renderCart() {
 
         <div class="item-details">
             <h2 class="item-name">${item.name}</h2>
-
-            <select class="size-dropdown"
-                onchange="updateUnit(${index}, this.value)">
-                ${(getUnitOptions(item) || [{label:"1 pc", value:"1 pc", multiplier:1}]).map(u => `
-                    <option 
-                        value="${u.value}" 
-                        data-multiplier="${u.multiplier}"
-                        ${item.unit === u.value ? 'selected' : ''}>
-                        ${u.label}
-                    </option>
-                `).join('')}
-            </select>
+            <p class="item-price" style="margin-bottom:6px; font-size:12px;">Variant: ${variantLabel}</p>
 
             <p class="item-price">
                 Product Amount: ₱${total.toFixed(2)}
@@ -60,7 +49,15 @@ function renderCart() {
 }
 
 function updateQty(index, delta) {
-    cart[index].qty += delta;
+    const nextQty = Number(cart[index].qty || 0) + delta;
+    const maxStock = Number(cart[index].stock || 0);
+
+    if (maxStock > 0 && nextQty > maxStock) {
+        alert(`Only ${maxStock} item(s) available in stock.`);
+        return;
+    }
+
+    cart[index].qty = nextQty;
     if (cart[index].qty < 1) {
         cart.splice(index, 1);
         selectedItems.delete(index);
@@ -94,9 +91,7 @@ function calculateTotal() {
 
         const base = parseFloat(cart[index].basePrice ?? cart[index].price ?? 0);
         const qty = parseInt(cart[index].qty ?? 0);
-        const multiplier = parseFloat(cart[index].multiplier ?? 1);
-
-        total += base * qty * multiplier;
+        total += base * qty;
     }
 });
     
@@ -232,14 +227,7 @@ function getUnitOptions(product) {
     return [{ label: "1 pc", value: "1 pc", multiplier: 1 }];
 }
 function updateUnit(index) {
-    const select = document.querySelectorAll('.size-dropdown')[index];
-    const option = select.options[select.selectedIndex];
-
-    cart[index].unit = option.value;
-    cart[index].multiplier = parseFloat(option.dataset.multiplier || 1);
-
-    localStorage.setItem('cart', JSON.stringify(cart));
-    renderCart(); // 🔥 re-render so everything recalculates properly
+    return;
 }
 function updateSubtotal() {
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -249,11 +237,10 @@ function updateSubtotal() {
 
     cart.forEach(item => {
         const base = parseFloat(item.basePrice ?? item.price ?? 0);
-        const mult = parseFloat(item.multiplier ?? 1);
         const q = parseInt(item.qty ?? 1);
 
         qty += q;
-        total += base * mult * q;
+        total += base * q;
     });
 
     document.getElementById('subTotal').innerText = total.toFixed(2);

@@ -6,119 +6,12 @@ var globalPrice = 0;
 var recommendationInFlight = false;
 var lastRecommendationSignature = null;
 
-function getUnitOptions(product) {
-    if (!product) return [{ label: "1 pc", value: "1 pc", multiplier: 1 }];
-
-    const name = (product.name || "").toLowerCase();
-    const cat = (product.category || "").toLowerCase();
-
-    const isFeedCategory = cat.includes("feeds");
-
-    const isPetFeed =
-        isFeedCategory &&
-        (name.includes("feed") ||
-         name.includes("chicken") ||
-         name.includes("dog food") ||
-         name.includes("cat food") ||
-         name.includes("rabbit feed") ||
-         name.includes("bird feed"));
-
-    const isPoultry = name.includes("chicken") || name.includes("chick");
-    const isRabbitFeed = name.includes("rabbit");
-    const isBirdFeed = name.includes("bird");
-
-    const isSupply =
-        cat.includes("supplies") ||
-        name.includes("leash") ||
-        name.includes("collar") ||
-        name.includes("harness") ||
-        name.includes("bowl") ||
-        name.includes("feeder") ||
-        name.includes("cage") ||
-        name.includes("toy");
-
-    const isLitter = name.includes("litter");
-
-    const isMedicine =
-        cat.includes("medicine") ||
-        name.includes("tablet") ||
-        name.includes("capsule") ||
-        name.includes("vitamin");
-
-    const isLiquid = name.includes("syrup") || name.includes("milk") || name.includes("gel");
-
-    const isWetFood = name.includes("wet") || name.includes("pouch");
-
-    const isPowder = name.includes("powder");
-
-    // 🐔 FEEDS (fraction-based pricing)
-    if (isPetFeed || isPoultry || isRabbitFeed || isBirdFeed) {
-        return [
-            { label: "1kg", value: "1kg", multiplier: 1 },
-            { label: "1/2kg", value: "1/2kg", multiplier: 0.5 },
-            { label: "1/4kg", value: "1/4kg", multiplier: 0.25 },
-            { label: "1/8kg", value: "1/8kg", multiplier: 0.125 },
-            { label: "25kg sack", value: "25kg sack", multiplier: 25 },
-            { label: "50kg sack", value: "50kg sack", multiplier: 50 }
-        ];
-    }
-
-    // 🐱🐶 LITTER (fixed weight packs)
-    if (isLitter) {
-        return [
-            { label: "5kg", value: "5kg", multiplier: 5 },
-            { label: "10kg", value: "10kg", multiplier: 10 },
-            { label: "20kg", value: "20kg", multiplier: 20 }
-        ];
-    }
-
-    // 🧰 SUPPLIES (simple per piece)
-    if (isSupply) {
-        return [
-            { label: "1 pc", value: "1 pc", multiplier: 1 },
-            { label: "2 pcs", value: "2 pcs", multiplier: 2 },
-            { label: "3 pcs", value: "3 pcs", multiplier: 3 }
-        ];
-    }
-
-    // 💊 MEDICINE (pack-based logic)
-    if (isMedicine) {
-        return [
-            { label: "per tablet", value: "per tablet", multiplier: 1 },
-            { label: "per strip", value: "per strip", multiplier: 10 },
-            { label: "per box", value: "per box", multiplier: 100 },
-            { label: "per bottle", value: "per bottle", multiplier: 1 }
-        ];
-    }
-
-    // 🧴 LIQUID
-    if (isLiquid) {
-        return [
-            { label: "per bottle", value: "per bottle", multiplier: 1 },
-            { label: "per box", value: "per box", multiplier: 12 }
-        ];
-    }
-
-    // 🍖 WET FOOD
-    if (isWetFood) {
-        return [
-            { label: "per pouch", value: "per pouch", multiplier: 1 },
-            { label: "per pack", value: "per pack", multiplier: 6 },
-            { label: "3 packs", value: "3 packs", multiplier: 3 },
-            { label: "6 packs", value: "6 packs", multiplier: 6 }
-        ];
-    }
-
-    // 🧂 POWDER
-    if (isPowder) {
-        return [
-            { label: "per pack", value: "per pack", multiplier: 1 },
-            { label: "per kilo", value: "per kilo", multiplier: 1 },
-            { label: "per box", value: "per box", multiplier: 10 }
-        ];
-    }
-
-    return [{ label: "1 pc", value: "1 pc", multiplier: 1 }];
+function getVariantLabel(product) {
+    const rawValue = product && product.variant_value !== undefined ? Number(product.variant_value) : 1;
+    const cleanValue = Number.isFinite(rawValue) && rawValue > 0 ? rawValue : 1;
+    const displayValue = Number.isInteger(cleanValue) ? cleanValue.toString() : cleanValue.toFixed(2).replace(/\.00$/, "");
+    const unit = (product && product.unit ? String(product.unit) : "pcs").trim() || "pcs";
+    return `${displayValue}${unit}`;
 }
 
 function render(list) {
@@ -144,21 +37,10 @@ function render(list) {
     <span id="qval-${p.product_id}">1</span>
     <button onclick="qtyChange(${p.product_id},1)">+</button>
 </div>
-
-<div class="unit-box">
-    <select id="unit-${p.product_id}" class="unit-select"
-    onchange="updateCardPrice(${p.product_id})">
-        ${(getUnitOptions(p) || ["1 pc"])
-            .map(u => `
-    <option value="${u.value}" data-multiplier="${u.multiplier}">
-        ${u.label}
-    </option>
-`)
-            .join('')}
-    </select>
-</div>
+                        <div class="unit-box" style="font-size:11px; font-weight:700; color:#1A323E;">${getVariantLabel(p)}</div>
                     </div>
-                    <p class="label-price">₱${p.price}</p>
+                    <p class="label-price">₱${Number(p.price).toFixed(2)}</p>
+                    <p class="label-cat" style="margin-top:2px; font-size:11px;">Stock: ${Number(p.stock || p.stock_status || 0)}</p>
                     <div class="btn-row" onclick="event.stopPropagation()">
                         <button class="cart-act" onclick="addCart(${p.product_id},${p.price})">CART</button>
                         <button class="buy-act" onclick="buyNow(${p.product_id})">BUY</button>
@@ -181,71 +63,36 @@ function toggle(id) {
 function qtyChange(id, d) {
     var el = document.getElementById("qval-" + id);
     var v = parseInt(el.innerText) + d;
-    if (v >= 1) el.innerText = v;
-}
+    const product = data.find(p => p.product_id === id);
+    const maxStock = Number(product && (product.stock ?? product.stock_status) || 0);
 
-function addCart(id, pr) {
-    document.querySelector('.bottom-bar').style.display = 'flex';
-    document.getElementById('displaySubtotal').innerText = globalPrice.toFixed(2);
-document.getElementById('btnQty').innerText = globalQty;
-document.getElementById('cartCount').innerText = globalQty;
-    var q = parseInt(document.getElementById("qval-" + id).innerText);
-
-    var unitSelect = document.getElementById("unit-" + id);
-    var selectedOption = unitSelect.options[unitSelect.selectedIndex];
-
-    var unit = selectedOption.value;
-    var multiplier = parseFloat(selectedOption.dataset.multiplier || 1);
-
-    var product = data.find(p => p.product_id === id);
-
-    var computedPrice = pr * multiplier * q;
-
-    cartSet.add(id);
-    globalQty += q;
-    globalPrice += computedPrice;
-
-    var cart = JSON.parse(localStorage.getItem('cart')) || [];
-
-    var existing = cart.find(item => item.product_id === id && item.unit === unit);
-
-    if (existing) {
-        existing.qty += q;
-        existing.totalPrice += computedPrice;
-    } else {
-       cart.push({
-    product_id: product.product_id,
-    name: product.name,
-    basePrice: pr,
-    qty: q,
-    unit: unit,
-    multiplier: multiplier,
-    image: product.image_filename
-});
+    if (v < 1) return;
+    if (v > maxStock) {
+        alert(`Only ${maxStock} item(s) available in stock.`);
+        return;
     }
-
-    localStorage.setItem('cart', JSON.stringify(cart));
-
-    showToast("Added " + product.name + " (" + unit + ")");
+    el.innerText = v;
 }
 
 function buyNow(id) {
     var q = parseInt(document.getElementById("qval-" + id).innerText);
     var product = data.find(p => p.product_id === id);
+    const availableStock = Number(product && (product.stock ?? product.stock_status) || 0);
 
-    var unitSelect = document.getElementById("unit-" + id);
-    var selectedOption = unitSelect.options[unitSelect.selectedIndex];
-
-    var unit = selectedOption.value;
-    var multiplier = parseFloat(selectedOption.dataset.multiplier || 1);
+    if (q > availableStock) {
+        alert(`Only ${availableStock} item(s) available in stock.`);
+        return;
+    }
 
     var directItem = [{
         product_id: product.product_id,
         name: product.name,
         basePrice: product.price,
         qty: q,
-        unit: unit,
-        multiplier: multiplier
+        unit: getVariantLabel(product),
+        variant_value: product.variant_value,
+        product_unit: product.unit,
+        stock: availableStock
     }];
 
     localStorage.setItem('checkoutItems', JSON.stringify(directItem));
@@ -396,12 +243,21 @@ function updateRecommendationStatus(message) {
 function qtyChangeRec(id, d) {
     var el = document.getElementById("qval-rec-" + id);
     var v = parseInt(el.innerText) + d;
-    if (v >= 1) el.innerText = v;
+    const product = data.find(p => p.product_id === id);
+    const maxStock = Number(product && (product.stock ?? product.stock_status) || 0);
+
+    if (v < 1) return;
+    if (v > maxStock) {
+        alert(`Only ${maxStock} item(s) available in stock.`);
+        return;
+    }
+    el.innerText = v;
 }
 
 function addCartRec(id, pr) {
     var q = parseInt(document.getElementById("qval-rec-" + id).innerText);
     var product = data.find(p => p.product_id === id);
+    const availableStock = Number(product && (product.stock ?? product.stock_status) || 0);
 
     cartSet.add(id);
     globalQty += q;
@@ -420,17 +276,26 @@ function addCartRec(id, pr) {
 
     var cart = JSON.parse(localStorage.getItem('cart')) || [];
     var existing = cart.find(item => item.product_id === id);
+
+    const existingQty = existing ? Number(existing.qty || 0) : 0;
+    if (existingQty + q > availableStock) {
+        alert(`Only ${availableStock} item(s) available in stock.`);
+        return;
+    }
+
     if (existing) {
         existing.qty += q;
     } else {
         cart.push({
-    product_id: product.product_id,
-    name: product.name,
-    basePrice: pr,   // ✅ FIX: store original price
-    qty: q,
-    unit: unit,
-    multiplier: multiplier
-});
+            product_id: product.product_id,
+            name: product.name,
+            basePrice: pr,
+            qty: q,
+            unit: getVariantLabel(product),
+            variant_value: product.variant_value,
+            product_unit: product.unit,
+            stock: availableStock
+        });
     }
     localStorage.setItem('cart', JSON.stringify(cart));
     updateRecommendationStatus("Cart updated. Click Generate AI Recommendations.");
@@ -438,20 +303,39 @@ function addCartRec(id, pr) {
     alert(product.name + " added to cart!");
 }
 
+function buyNowRec(id) {
+    var q = parseInt(document.getElementById("qval-rec-" + id).innerText);
+    var product = data.find(p => p.product_id === id);
+    const availableStock = Number(product && (product.stock ?? product.stock_status) || 0);
+
+    if (q > availableStock) {
+        alert(`Only ${availableStock} item(s) available in stock.`);
+        return;
+    }
+
+    var directItem = [{
+        product_id: product.product_id,
+        name: product.name,
+        basePrice: product.price,
+        qty: q,
+        unit: getVariantLabel(product),
+        variant_value: product.variant_value,
+        product_unit: product.unit,
+        stock: availableStock
+    }];
+
+    localStorage.setItem('checkoutItems', JSON.stringify(directItem));
+    window.location.href = '/checkout';
+}
+
 function addCart(id, pr) {
     document.querySelector('.bottom-bar').style.display = 'flex';
 
     var q = parseInt(document.getElementById("qval-" + id).innerText);
 
-    var unitSelect = document.getElementById("unit-" + id);
-    var selectedOption = unitSelect.options[unitSelect.selectedIndex];
-
-    var unit = selectedOption.value;
-    var multiplier = parseFloat(selectedOption.dataset.multiplier || 1);
-
     var product = data.find(p => p.product_id === id);
-
-    var computedPrice = pr * multiplier * q;
+    const availableStock = Number(product && (product.stock ?? product.stock_status) || 0);
+    var computedPrice = pr * q;
 
     // ✅ UPDATE VALUES FIRST
     cartSet.add(id);
@@ -464,8 +348,13 @@ function addCart(id, pr) {
     document.getElementById('cartCount').innerText = globalQty;
 
     var cart = JSON.parse(localStorage.getItem('cart')) || [];
+    var existing = cart.find(item => item.product_id === id);
 
-    var existing = cart.find(item => item.product_id === id && item.unit === unit);
+    const existingQty = existing ? Number(existing.qty || 0) : 0;
+    if (existingQty + q > availableStock) {
+        alert(`Only ${availableStock} item(s) available in stock.`);
+        return;
+    }
 
     if (existing) {
         existing.qty += q;
@@ -475,8 +364,10 @@ function addCart(id, pr) {
             name: product.name,
             basePrice: pr,
             qty: q,
-            unit: unit,
-            multiplier: multiplier
+            unit: getVariantLabel(product),
+            variant_value: product.variant_value,
+            product_unit: product.unit,
+            stock: availableStock
         });
     }
 
@@ -706,14 +597,8 @@ function updateCardPrice(productId) {
 
     const qty = parseInt(document.getElementById("qval-" + productId).innerText);
 
-    const unitSelect = document.getElementById("unit-" + productId);
-    const selectedOption = unitSelect.options[unitSelect.selectedIndex];
-
-    const multiplier = parseFloat(selectedOption.dataset.multiplier || 1);
-
     const basePrice = parseFloat(product.price);
-
-    const computed = basePrice * multiplier * qty;
+    const computed = basePrice * qty;
 
     const priceEl = document.querySelector("#p-" + productId + " .label-price");
 
