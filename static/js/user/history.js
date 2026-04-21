@@ -12,6 +12,20 @@ function renderHistory(orders) {
         const card = document.createElement('div');
         card.className = 'history-card';
 
+        const resolveItemImage = (item) => {
+            const rawImage = item?.image || item?.image_filename || item?.img || '';
+            if (!rawImage) return '/static/img/user/user-male-circle.png';
+
+            const image = String(rawImage).trim();
+            if (!image) return '/static/img/user/user-male-circle.png';
+
+            if (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('/')) {
+                return image;
+            }
+
+            return '/product-image/' + encodeURIComponent(image);
+        };
+
         // Create a sub-list for items
         let itemsHtml = order.items.map(item => {
 
@@ -20,10 +34,11 @@ function renderHistory(orders) {
     const qty = item.qty ?? 1;
 
     const itemTotal = (base || 0) * (multiplier || 1) * (qty || 1);
+    const imgSrc = resolveItemImage(item);
 
     return `
         <div class="history-item">
-            <div class="item-img-placeholder">image</div>
+            <div class="item-img-placeholder"><img src="${imgSrc}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:2px;" onerror="this.onerror=null;this.src='/static/img/user/user-male-circle.png';"></div>
 
             <div class="item-details">
                 <h2 class="product-name">

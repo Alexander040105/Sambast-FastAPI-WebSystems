@@ -2486,7 +2486,9 @@ def generate_order_no():
 def checkout_page():
     if 'user_id' not in session:
         return redirect(url_for('sign_in_page'))
-    return render_template('user/checkout.html')
+    db = get_db()
+    user = db.execute('SELECT name, contact_no FROM users WHERE user_id = ?', (session['user_id'],)).fetchone()
+    return render_template('user/checkout.html', user=user)
 
 @app.route('/orders', methods=['POST'])
 def place_order():

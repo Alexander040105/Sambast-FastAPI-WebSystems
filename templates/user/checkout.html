@@ -29,8 +29,8 @@
 
         <main class="checkout-content">
             <div class="info-card user-info">
-                <h2 id="tempCustomerName">JUAN DELA CRUZ</h2>
-                <p id="tempCustomerPhone">09123456789</p>
+                <h2 id="tempCustomerName">{{ user['name'] if user else 'Guest User' }}</h2>
+                <p id="tempCustomerPhone">{{ user['contact_no'] if user else 'No contact on file' }}</p>
             </div>
 
             <div class="info-card products-container" id="checkoutList">
