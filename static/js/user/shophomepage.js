@@ -216,10 +216,11 @@ document.getElementById('cartCount').innerText = globalQty;
        cart.push({
     product_id: product.product_id,
     name: product.name,
-    basePrice: pr,   // ✅ FIX: store original price
+    basePrice: pr,
     qty: q,
     unit: unit,
-    multiplier: multiplier
+    multiplier: multiplier,
+    image: product.image_filename
 });
     }
 
@@ -229,10 +230,24 @@ document.getElementById('cartCount').innerText = globalQty;
 }
 
 function buyNow(id) {
-    var q       = parseInt(document.getElementById("qval-" + id).innerText);
+    var q = parseInt(document.getElementById("qval-" + id).innerText);
     var product = data.find(p => p.product_id === id);
 
-    var directItem = [{ product_id: product.product_id, name: product.name, price: product.price, qty: q }];
+    var unitSelect = document.getElementById("unit-" + id);
+    var selectedOption = unitSelect.options[unitSelect.selectedIndex];
+
+    var unit = selectedOption.value;
+    var multiplier = parseFloat(selectedOption.dataset.multiplier || 1);
+
+    var directItem = [{
+        product_id: product.product_id,
+        name: product.name,
+        basePrice: product.price,
+        qty: q,
+        unit: unit,
+        multiplier: multiplier
+    }];
+
     localStorage.setItem('checkoutItems', JSON.stringify(directItem));
     window.location.href = '/checkout';
 }
@@ -467,7 +482,10 @@ function addCart(id, pr) {
 
     localStorage.setItem('cart', JSON.stringify(cart));
 
-    showToast("Added " + product.name + " (" + unit + ")");
+    document.querySelector('.notif-title').innerText = "Success!";
+document.querySelector('.notif-msg').innerText = "Added to cart!";
+showNotification();
+
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -609,16 +627,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-function showToast(message) {
-    const toast = document.getElementById("toast");
-    toast.textContent = message;
+let notificationTimeout;
+let remainingTime = 4000;
 
-    toast.classList.add("show");
+function showNotification() {
+    const notification = document.getElementById('notification');
+    if (!notification) return;
 
-    setTimeout(() => {
-        toast.classList.remove("show");
-    }, 5000); // ⬅️ 5 seconds
+    notification.classList.remove('show');
+    void notification.offsetHeight; // restart animation
+    notification.classList.add('show');
+
+    if (notificationTimeout) {
+        clearTimeout(notificationTimeout);
+    }
+
+    notificationTimeout = setTimeout(() => {
+        hideNotification();
+    }, remainingTime);
 }
+
+function hideNotification() {
+    const notification = document.getElementById('notification');
+    if (!notification) return;
+
+    notification.classList.remove('show');
+}
+
+
 function adjustChatWidget() {
     const bottomBar = document.querySelector('.bottom-bar');
     const chatBtn = document.querySelector('.chat-widget-toggle');
