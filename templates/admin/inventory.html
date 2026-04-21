@@ -55,7 +55,7 @@
 
         <div class="inventory-header">
             <h1>INVENTORY</h1>
-            <button class="add-btn" id="addProductBtn">+ Add Product</button>
+            <button class="add-btn" id="addProducpython seed.py --truncatetn">+ Add Product</button>
         </div>
 
         <div class="ai-sections">
@@ -117,7 +117,7 @@
 
                 <div class="card-body">
                     {% if product['image_filename'] %}
-                        <img src="{{ url_for('static', filename='uploads/' + product['image_filename']) }}" alt="Product" class="prod-img-small" style="max-width: 50px; display: block; margin-bottom: 10px;">
+                        <img src="{{ url_for('product_image', filename=product['image_filename']) }}" alt="Product" class="prod-img-small" style="max-width: 50px; display: block; margin-bottom: 10px;">
                     {% endif %}
                     <div><strong>CATEGORY:</strong> {{ product['category'] }}</div>
                     <div><strong>PRICE:</strong> ₱{{ product['price'] }}</div>

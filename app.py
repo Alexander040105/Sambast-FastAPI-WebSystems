@@ -6,7 +6,7 @@ import threading
 import time
 import math
 from datetime import datetime
-from flask import Flask, render_template, g, request, session, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, g, request, session, redirect, url_for, flash, jsonify, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -58,8 +58,10 @@ AI_ENDPOINT_COOLDOWN_SECONDS = 90
 
 # --- CONFIGURATION: IMAGE UPLOADS ---
 UPLOAD_FOLDER = 'static/uploads'
+PRODUCTS_FOLDER = 'static/products'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['PRODUCTS_FOLDER'] = PRODUCTS_FOLDER
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 # Ensure the upload directory exists
 if not os.path.exists(UPLOAD_FOLDER):
@@ -67,6 +69,21 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route('/product-image/<path:filename>')
+def product_image(filename):
+    safe_filename = secure_filename(filename or '')
+    if not safe_filename:
+        return redirect(url_for('static', filename='img/user/user-male-circle.png'))
+
+    # Resolve catalog-first then admin uploads, so seeded items work consistently.
+    for folder in [app.config['PRODUCTS_FOLDER'], app.config['UPLOAD_FOLDER']]:
+        file_path = os.path.join(folder, safe_filename)
+        if os.path.exists(file_path):
+            return send_from_directory(folder, safe_filename)
+
+    return redirect(url_for('static', filename='img/user/user-male-circle.png'))
 
 def _canonicalize_for_cache(value):
     if isinstance(value, dict):
