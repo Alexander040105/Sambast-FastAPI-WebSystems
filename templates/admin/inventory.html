@@ -55,29 +55,13 @@
 
         <div class="inventory-header">
             <h1>INVENTORY</h1>
-            <button class="add-btn" id="addProductBtn">+ Add Product</button>
+            <button class="add-btn" id="addProducpython seed.py --truncatetn">+ Add Product</button>
         </div>
 
         <div class="ai-sections">
             <div id="ai-inventory-alert" class="ai-card">
                 <div class="ai-card-header">
-                    <div class="ai-card-title-row">
-                        <strong>AI Inventory Insights</strong>
-                        <div class="ai-card-controls">
-                            <button class="ai-download-icon-btn" onclick="downloadAIResult('insights')" title="Download" style="display:none;">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="7 10 12 15 17 10"></polyline>
-                                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                            </button>
-                            <button class="ai-minimize-btn" onclick="minimizeAIPanel('ai-inventory-alert')" title="Minimize" style="display:none;">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
+                    <strong>AI Inventory Insights</strong>
                 </div>
                 <div class="ai-card-body">
                     <button id="generate-insights-btn" class="forecast-btn">Generate AI Insights</button>
@@ -87,23 +71,7 @@
 
             <div id="ai-inventory-forecast" class="ai-card">
                 <div class="ai-card-header">
-                    <div class="ai-card-title-row">
-                        <strong>AI Inventory Forecast & Recommendations</strong>
-                        <div class="ai-card-controls">
-                            <button class="ai-download-icon-btn" onclick="downloadAIResult('forecast')" title="Download" style="display:none;">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="7 10 12 15 17 10"></polyline>
-                                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                            </button>
-                            <button class="ai-minimize-btn" onclick="minimizeAIPanel('ai-inventory-forecast')" title="Minimize" style="display:none;">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
+                    <strong>AI Inventory Forecast & Recommendations</strong>
                 </div>
                 <div class="ai-card-body">
                     <button id="generate-forecast-btn" class="forecast-btn">Generate AI Forecast</button>
@@ -112,32 +80,21 @@
             </div>
         </div>
 
-        <div class="filter-search-container">
-            <div class="search-box">
-                <input type="text" id="inventorySearch" placeholder="Search Product">
-                <svg class="search-mag" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"/>
-                    <path d="m21 21-4.3-4.3"/>
-                </svg>
-            </div>
-            <div class="category-filter-box">
-                <label for="categoryFilter" class="filter-label">Category:</label>
-                <select id="categoryFilter">
-                    <option value="">All Categories</option>
-                    <option value="feeds">Feeds</option>
-                    <option value="supplies">Supplies</option>
-                    <option value="medicine">Medicine</option>
-                </select>
-            </div>
+        <div class="search-box">
+            <input type="text" id="inventorySearch" placeholder="Search Product">
+            <svg class="search-mag" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.3-4.3"/>
+            </svg>
         </div>
 
         <div id="inventoryContainer">
             {% for product in products %}
-            <div class="inventory-card" data-name="{{ product['name']|lower }}" data-category="{{ product['category_name']|lower }}" data-id="{{ product.product_id }}" data-pname="{{ product.name }}" data-price="{{ product.price }}" data-pcat="{{ product['category_name'] }}" data-pcatid="{{ product['resolved_category_id'] or '' }}" data-punit="{{ product['unit'] or 'pcs' }}" data-pvariant="{{ product['variant_value'] or 1 }}" data-desc="{{ product.description }}" data-stock="{{ product.stock_status }}" data-image="{{ product['image_filename'] or '' }}">
+            <div class="inventory-card" data-name="{{ product['name']|lower }}">
                 <div class="card-header">
                     <strong>{{ product['name'] }}</strong>
                     <span class="icons">
-                        <button class="edit" onclick="openEditModalFromCard(this)">
+                        <button class="edit" onclick="openEditModal('{{ product.product_id }}', '{{ product.name }}', '{{ product.price }}', '{{ product.category }}', '{{ product.description }}', '{{ product.stock_status }}')">
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M12 20h9"/>
                                 <path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
@@ -145,7 +102,7 @@
                         </button>
 
                         <form action="{{ url_for('delete_product', product_id=product['product_id']) }}" method="POST" style="display:inline;">
-                            <button type="submit" class="delete">
+                            <button type="submit" class="delete" onclick="return confirm('Delete this product?')">
                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="3 6 5 6 21 6"/>
                                     <path d="M19 6l-1 14H6L5 6"/>
@@ -160,12 +117,11 @@
 
                 <div class="card-body">
                     {% if product['image_filename'] %}
-                        <img src="{{ url_for('product_image', filename=product['image_filename']) }}" alt="Product" class="prod-img-small">
+                        <img src="{{ url_for('product_image', filename=product['image_filename']) }}" alt="Product" class="prod-img-small" style="max-width: 50px; display: block; margin-bottom: 10px;">
                     {% endif %}
-                    <div><strong>CATEGORY:</strong> {{ product['category_name'] }}</div>
-                    <div><strong>VARIANT:</strong> {{ product['variant_value'] or 1 }}{{ product['unit'] or 'pcs' }}</div>
+                    <div><strong>CATEGORY:</strong> {{ product['category'] }}</div>
                     <div><strong>PRICE:</strong> ₱{{ product['price'] }}</div>
-                    <div><strong>STOCK:</strong> {{ product['stock_status'] }}</div>
+                    <div><strong>STATUS:</strong> {{ 'Available' if product['stock_status'] == 1 else 'Out of Stock' }}</div>
                 </div>
             </div>
             {% endfor %}
@@ -185,10 +141,8 @@
                     <label>Product Image</label>
                     <div class="image-upload-container">
                         <div id="imagePreview" class="image-preview-box">
-                            <span class="image-placeholder">Click to upload image</span>
-                            <button type="button" class="image-remove-btn" id="deleteImageBtn" aria-label="Remove image">✕</button>
+                            <span>Upload Image</span>
                         </div>
-                        <input type="hidden" name="remove_image" id="removeImageFlag" value="0">
                         <input type="file" name="image" id="productImage" accept="image/*">
                     </div>
                     
@@ -196,32 +150,11 @@
                     <input type="text" name="name" id="formName" placeholder="Enter product name" required>
 
                     <label>Category</label>
-                    <select name="category_id" id="formCategory" required>
-                        {% for category in categories %}
-                            <option value="{{ category['id'] }}">{{ category['name'] }}</option>
-                        {% endfor %}
-                        <option value="__add_new__">+ Add New Category</option>
+                    <select name="category" id="formCategory">
+                        <option value="Feeds">Feeds</option>
+                        <option value="Supplies">Supplies</option>
+                        <option value="Medicine">Medicine</option>
                     </select>
-                    <div id="newCategoryWrap" style="display:none; margin-top:8px;">
-                        <input type="text" name="new_category" id="newCategoryInput" placeholder="Enter new category">
-                        <button type="button" class="btn-control btn-change" id="saveNewCategoryBtn" style="margin-top:8px;">Save Category</button>
-                    </div>
-
-                    <div class="flex-row">
-                        <div>
-                            <label>Unit</label>
-                            <select name="unit" id="formUnit">
-                                <option value="kg">kg</option>
-                                <option value="pcs">pcs</option>
-                                <option value="pack">pack</option>
-                                <option value="bottle">bottle</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Variant Value</label>
-                            <input type="number" step="0.01" min="0.01" name="variant_value" id="formVariant" placeholder="e.g. 5" required>
-                        </div>
-                    </div>
 
                     <div class="flex-row">
                         <div>
@@ -230,8 +163,11 @@
                         </div>
 
                         <div>
-                            <label>Stock</label>
-                            <input type="number" name="stock_status" id="formStock" min="0" step="1" placeholder="0" required>
+                            <label>Stock Status</label>
+                            <select name="stock_status" id="formStock">
+                                <option value="1">Available</option>
+                                <option value="0">Out of Stock</option>
+                            </select>
                         </div>
                     </div>
 
@@ -244,39 +180,6 @@
         </div>
     </div>
 
-    <div class="modal" id="deleteConfirmModal">
-        <div class="modal-content delete-modal-content">
-            <div class="modal-header">
-                <h2>Confirm Deletion</h2>
-                <span class="close" id="deleteConfirmClose">✕</span>
-            </div>
-            <div class="modal-body">
-                <p id="deleteConfirmMessage" class="delete-modal-message">Are you sure you want to delete this item?</p>
-                <div class="delete-modal-actions">
-                    <button type="button" class="submit-btn delete-confirm-btn" id="deleteConfirmBtn">Delete</button>
-                    <button type="button" class="submit-btn delete-cancel-btn" id="deleteCancelBtn">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="deleteResultModal">
-        <div class="modal-content delete-modal-content">
-            <div class="modal-header">
-                <h2 id="deleteResultTitle">Delete Status</h2>
-                <span class="close" id="deleteResultClose">✕</span>
-            </div>
-            <div class="modal-body">
-                <p id="deleteResultMessage" class="delete-modal-message">Item successfully deleted.</p>
-                <div class="delete-modal-actions single-action">
-                    <button type="button" class="submit-btn" id="deleteResultOkBtn">OK</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
     <script src="{{ url_for('static', filename='js/admin/inventory.js') }}"></script>
 </body>
 </html>

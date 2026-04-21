@@ -1,6 +1,55 @@
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
 let selectedItems = new Set();
 
+function resolveCartImage(item) {
+    const rawImage = item?.image || item?.image_filename || item?.img || '';
+    if (!rawImage) return '/static/img/user/user-male-circle.png';
+
+    const image = String(rawImage).trim();
+    if (!image) return '/static/img/user/user-male-circle.png';
+
+    if (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('/')) {
+        return image;
+    }
+
+    return '/product-image/' + encodeURIComponent(image);
+}
+
+async function hydrateMissingCartImages() {
+    const needsHydration = cart.some(item => item && item.product_id && !(item.image || item.image_filename || item.img));
+    if (!needsHydration) return;
+
+    try {
+        const response = await fetch('/products');
+        if (!response.ok) return;
+
+        const products = await response.json();
+        const imageById = new Map((products || []).map(p => [p.product_id, p.image_filename]));
+
+        let changed = false;
+        cart = cart.map(item => {
+            if (!item || !item.product_id) return item;
+            if (item.image || item.image_filename || item.img) return item;
+
+            const filename = imageById.get(item.product_id);
+            if (!filename) return item;
+
+            changed = true;
+            return {
+                ...item,
+                image: filename,
+                image_filename: filename
+            };
+        });
+
+        if (changed) {
+            localStorage.setItem('cart', JSON.stringify(cart));
+        }
+    } catch (_) {
+        // Keep cart functional even if hydration request fails.
+    }
+}
+
 function renderCart() {
     const listContainer = document.getElementById('cartList');
     listContainer.innerHTML = '';
@@ -14,22 +63,35 @@ function renderCart() {
     cart.forEach((item, index) => {
 
     const base = item.basePrice ?? item.price;
-    const total = base * item.qty;
-    const variantLabel = item.unit || "1pcs";
+    const multiplier = item.multiplier ?? 1;
+    const total = base * multiplier * item.qty;
 
     const card = document.createElement('div');
     card.className = 'cart-item-card';
+
+    const imageSrc = resolveCartImage(item);
 
     card.innerHTML = `
         <input type="checkbox" class="item-checkbox"
             onchange="toggleSelect(${index})"
             ${selectedItems.has(index) ? 'checked' : ''}>
 
-        <div class="item-img-placeholder">image</div>
+        <img class="item-img" src="${imageSrc}" alt="${item.name}" onerror="this.onerror=null;this.src='/static/img/user/user-male-circle.png';">
 
         <div class="item-details">
             <h2 class="item-name">${item.name}</h2>
-            <p class="item-price" style="margin-bottom:6px; font-size:12px;">Variant: ${variantLabel}</p>
+
+            <select class="size-dropdown"
+                onchange="updateUnit(${index}, this.value)">
+                ${(getUnitOptions(item) || [{label:"1 pc", value:"1 pc", multiplier:1}]).map(u => `
+                    <option 
+                        value="${u.value}" 
+                        data-multiplier="${u.multiplier}"
+                        ${item.unit === u.value ? 'selected' : ''}>
+                        ${u.label}
+                    </option>
+                `).join('')}
+            </select>
 
             <p class="item-price">
                 Product Amount: ₱${total.toFixed(2)}
@@ -49,15 +111,7 @@ function renderCart() {
 }
 
 function updateQty(index, delta) {
-    const nextQty = Number(cart[index].qty || 0) + delta;
-    const maxStock = Number(cart[index].stock || 0);
-
-    if (maxStock > 0 && nextQty > maxStock) {
-        alert(`Only ${maxStock} item(s) available in stock.`);
-        return;
-    }
-
-    cart[index].qty = nextQty;
+    cart[index].qty += delta;
     if (cart[index].qty < 1) {
         cart.splice(index, 1);
         selectedItems.delete(index);
@@ -91,7 +145,9 @@ function calculateTotal() {
 
         const base = parseFloat(cart[index].basePrice ?? cart[index].price ?? 0);
         const qty = parseInt(cart[index].qty ?? 0);
-        total += base * qty;
+        const multiplier = parseFloat(cart[index].multiplier ?? 1);
+
+        total += base * qty * multiplier;
     }
 });
     
@@ -101,7 +157,10 @@ function calculateTotal() {
     document.getElementById('selectedCount').innerText = selectedItems.size;
 }
 
-document.addEventListener('DOMContentLoaded', renderCart);
+document.addEventListener('DOMContentLoaded', async () => {
+    await hydrateMissingCartImages();
+    renderCart();
+});
 
 document.querySelector('.checkout-btn').addEventListener('click', () => {
     const selectedData = cart.filter((item, index) => selectedItems.has(index));
@@ -227,7 +286,14 @@ function getUnitOptions(product) {
     return [{ label: "1 pc", value: "1 pc", multiplier: 1 }];
 }
 function updateUnit(index) {
-    return;
+    const select = document.querySelectorAll('.size-dropdown')[index];
+    const option = select.options[select.selectedIndex];
+
+    cart[index].unit = option.value;
+    cart[index].multiplier = parseFloat(option.dataset.multiplier || 1);
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+    renderCart(); // 🔥 re-render so everything recalculates properly
 }
 function updateSubtotal() {
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -237,10 +303,11 @@ function updateSubtotal() {
 
     cart.forEach(item => {
         const base = parseFloat(item.basePrice ?? item.price ?? 0);
+        const mult = parseFloat(item.multiplier ?? 1);
         const q = parseInt(item.qty ?? 1);
 
         qty += q;
-        total += base * q;
+        total += base * mult * q;
     });
 
     document.getElementById('subTotal').innerText = total.toFixed(2);
