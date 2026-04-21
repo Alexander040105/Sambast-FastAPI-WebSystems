@@ -71,7 +71,9 @@ body.profile-body {
     display: block;
     font-size: 11px;
     font-weight: 800;
-    margin-bottom: 8px;
+
+    margin-bottom: 10px; /* increase spacing here */
+
     margin-left: 15px;
     color: var(--bg-footer-blue);
 }
@@ -102,41 +104,154 @@ body.profile-body {
 }
 
 .pet-profile-section {
-    margin-top: 40px;
-    margin-bottom: 20px;
+    margin-top: 50px;
+    margin-bottom: 25px;
+    padding: 0 5px;
 }
 
+/* Section Title */
 .pet-profile-section h2 {
-    font-size: 16px;
-    font-weight: 800;
+    font-size: 18px;
+    font-weight: 900;
     color: var(--bg-footer-blue);
-    margin-bottom: 15px;
-    margin-left: 15px;
+    margin-bottom: 18px;
+    margin-left: 12px;
+    letter-spacing: 0.5px;
 }
 
+/* Container */
 .pet-profile-toolbar {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    margin-bottom: 10px;
+    gap: 6px;
 }
-
+/* Dropdown Wrapper */
 .pet-selector-group {
-    margin-bottom: 0;
+    position: relative;
+}
+.pet-select option {
+    padding: 10px;
+    line-height: 2;
+}
+.custom-dropdown {
+    position: relative;
+    width: 100%;
 }
 
-.pet-select {
-    appearance: none;
+.dropdown-selected {
+    background: var(--fill-natural-beige);
+    padding: 18px 22px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.dropdown-options {
+    position: absolute;
+    width: 100%;
+    background: var(--fill-natural-beige);
+    border-radius: 15px;
+    margin-top: 8px;
+    overflow: hidden;
+    display: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.option {
+    padding: 12px 20px;
     cursor: pointer;
 }
 
-.add-pet-btn {
-    background: var(--bg-footer-blue);
-    justify-content: center;
+.option:hover {
+    background: #cfc8bc;
 }
 
+/* Select Dropdown */
+.pet-select {
+    width: 100%;
+    background: var(--fill-natural-beige);
+    padding: 18px 22px;
+    line-height: 1.8;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    color: var(--text-pure-black);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    height: 55px;
+
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.pet-select option {
+    font-size: 14px;
+}
+
+/* Custom Arrow */
+.pet-selector-group::after {
+    content: "▾";
+    font-size: 20px;
+    color: var(--bg-footer-blue);
+    position: absolute;
+    right: 20px;
+    top: 65%; /* Adjusted from 50% to lower the icon */
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+/* Hover + Focus Effects */
+.pet-select:hover {
+    background: #cfc8bc;
+}
+
+.pet-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--bg-footer-blue);
+}
+
+/* Add Pet Button */
+.add-pet-btn {
+    width: 100%;
+    margin-top: 2px;
+    margin-bottom: 18px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 18px 25px;
+    border-radius: 50px;
+
+    background: var(--bg-footer-blue);
+    color: var(--bg-antique-cream);
+
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+
+    cursor: pointer;
+}
+
+.add-pet-btn:hover {
+    opacity: 0.9;
+}
+
+.add-pet-btn:active {
+    transform: scale(0.97);
+}
+
+/* Action Button inside section */
 .pet-profile-section .menu-btn {
     background: var(--action-ruby-red);
+    color: #fff;
+    justify-content: center;
+    font-weight: 800;
 }
 
 /* MENU BUTTONS */

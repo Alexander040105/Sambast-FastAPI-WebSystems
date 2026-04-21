@@ -43,7 +43,7 @@ const itemTotal = base * multiplier * qty;
     if (placeOrderBtn) {
         placeOrderBtn.onclick = () => {
             if (checkoutItems.length === 0) {
-                alert("No items to order.");
+                showNotification("Warning", "No items to order");
                 return;
             }
 
@@ -52,7 +52,7 @@ const itemTotal = base * multiplier * qty;
 
             placeOrderBtn.style.pointerEvents = 'none';
             placeOrderBtn.style.opacity = '0.6';
-            placeOrderBtn.innerText = "Placing Order...";
+            placeOrderBtn.querySelector('.place-label').innerText = "Placing Order...";
 
             fetch('/orders', {
                 method : 'POST',
@@ -83,17 +83,19 @@ const itemTotal = base * multiplier * qty;
                     localStorage.removeItem('checkoutItems');
                     localStorage.removeItem('cart');
 
-                    alert("Order Successfully Placed!");
-                    window.location.href = '/order-progress';
+                    showNotification("Success", "Order placed successfully");
+setTimeout(() => {
+    window.location.href = '/order-progress';
+}, 3000); // 3 seconds delay
                 } else {
-                    alert("Failed to place order: " + (data.error || "Unknown error"));
+                    showNotification("Error", data.error || "Failed to place order");
                     placeOrderBtn.style.pointerEvents = 'auto';
                     placeOrderBtn.style.opacity = '1';
                     placeOrderBtn.innerText = "PLACE ORDER";
                 }
             })
             .catch(() => {
-                alert("Network error. Please try again.");
+                showNotification("Error", "Network error. Try again");
                 placeOrderBtn.style.pointerEvents = 'auto';
                 placeOrderBtn.style.opacity = '1';
                 placeOrderBtn.innerText = "PLACE ORDER";
@@ -101,3 +103,25 @@ const itemTotal = base * multiplier * qty;
         };
     }
 });
+let notificationTimeout;
+
+function showNotification(title, message) {
+    const notif = document.getElementById('notification');
+
+    document.querySelector('.notif-title').innerText = title;
+    document.querySelector('.notif-msg').innerText = message;
+
+    notif.classList.remove('show');
+    void notif.offsetHeight;
+    notif.classList.add('show');
+
+    clearTimeout(notificationTimeout);
+    notificationTimeout = setTimeout(() => {
+        hideNotification();
+    }, 3000);
+}
+
+function hideNotification() {
+    const notif = document.getElementById('notification');
+    notif.classList.remove('show');
+}

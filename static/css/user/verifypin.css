@@ -105,18 +105,19 @@ body, html {
 }
 
 .pin-container input {
-    width: 70px;
-    height: 70px;
-    border-radius: 18px;
+    width: 60px;   /* was 70px */
+    height: 60px;  /* was 70px */
+
+    border-radius: 16px; /* slightly softer */
     border: 1px solid var(--text-pure-black);
     background-color: var(--fill-natural-beige);
+
     text-align: center;
-    font-size: 1.8rem;
+    font-size: 1.7rem; /* slightly reduced */
     font-weight: 800;
     outline: none;
-    color: var(--text-pure-black); 
+    color: var(--text-pure-black);
 }
-
 .primary-btn {
     width: 100%;
     padding: 16px;

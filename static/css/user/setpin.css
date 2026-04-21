@@ -82,16 +82,18 @@ body, html {
 }
 
 .pin-container input {
-    width: 70px;
-    height: 70px;
-    border-radius: 18px;
+    width: 60px;   /* was 70px */
+    height: 60px;  /* was 70px */
+
+    border-radius: 16px; /* slightly softer */
     border: 1px solid var(--text-pure-black);
     background-color: var(--fill-natural-beige);
+
     text-align: center;
-    font-size: 1.8rem;
+    font-size: 1.7rem; /* slightly reduced */
     font-weight: 800;
     outline: none;
-    color: var(--text-pure-black); 
+    color: var(--text-pure-black);
 }
 
 .primary-btn {
@@ -131,9 +133,45 @@ body, html {
     line-height: 1.2;
 }
 
-/* Ensure JS Error Message stays centered */
-#errorMessage {
-    display: block;
-    width: 100%;
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+}
+
+.modal-box {
+    background: #fff;
+    width: 90%;
+    max-width: 340px;
+    border-radius: 18px;
+    padding: 20px;
+    text-align: center;
+}
+
+.modal-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #1A323E;
     margin-bottom: 10px;
+}
+
+.modal-message {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 18px;
+}
+
+.modal-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 50px;
+    background: #A6171C;
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
 }

@@ -41,10 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(response => response.json().then(data => ({ ok: response.ok, status: response.status, data })))
         .then(({ ok, status, data }) => {
             if (ok) {
-                alert('PIN Updated Successfully');
-                window.location.href = '/profile';
+                showNotification('Success', 'PIN updated successfully');
+setTimeout(() => {
+    window.location.href = '/profile';
+}, 1200);
             } else {
-                errorDisplay.textContent = data.error || 'An unknown error occurred.';
+                showNotification('Error', data.error || 'An unknown error occurred.');
             }
         })
         .catch(err => {
@@ -57,3 +59,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+let notificationTimeout;
+
+function showNotification(title, message) {
+    const notif = document.getElementById('notification');
+
+    document.querySelector('.notif-title').innerText = title;
+    document.querySelector('.notif-msg').innerText = message;
+
+    notif.classList.remove('show');
+    void notif.offsetHeight;
+    notif.classList.add('show');
+
+    clearTimeout(notificationTimeout);
+    notificationTimeout = setTimeout(() => {
+        hideNotification();
+    }, 3000);
+}
+
+function hideNotification() {
+    const notif = document.getElementById('notification');
+    notif.classList.remove('show');
+}

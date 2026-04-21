@@ -9,6 +9,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body class="auth-page">
+<!-- ERROR MODAL -->
+<div id="errorModal" class="modal-overlay">
+    <div class="modal-box" role="dialog" aria-modal="true">
+
+        <h2 class="modal-title">Error</h2>
+
+        <p id="modalErrorText" class="modal-message">
+            Something went wrong.
+        </p>
+
+        <button type="button" id="modalOkBtn" class="modal-btn">
+            OK
+        </button>
+
+    </div>
+</div>
 
     <div class="mobile-container">
         <header class="header">
@@ -18,8 +34,6 @@
         <main class="auth-content">
             <h1 class="main-title">Enter 4-digit PIN</h1>
             
-            <p id="errorMessage" style="color:red; font-size:0.8rem; text-align:center; height: 1em;"></p>
-
             <form class="auth-form" action="/sign-in" method="POST" id="signInForm">
                 <div class="input-field" style="margin-bottom: 16px;">
                     <input type="tel" name="contact_no" id="contactNo" placeholder="CONTACT NO." required>

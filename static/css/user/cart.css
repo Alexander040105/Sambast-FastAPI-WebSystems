@@ -149,7 +149,13 @@ html, body {
 
     margin-top: 5px;   /* 🔥 pushes it slightly down */
 }
-
+.item-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #ddd;
+}
 .qty-btn {
     background: none;
     border: none;

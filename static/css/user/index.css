@@ -40,15 +40,91 @@ body, html {
     object-fit: contain;
     display: block;
 }
+.main-title {
+    width: 100%;
+    text-align: center;
+}
+/* ===== MODAL OVERLAY ===== */
+.modal-overlay {
+    position: fixed;
+    inset: 0; /* same as top:0 left:0 right:0 bottom:0 */
+    background: rgba(0, 0, 0, 0.6);
+
+    display: none;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 99999;
+}
+
+/* ===== MODAL BOX ===== */
+.modal-box {
+    background: #fff;
+    width: 90%;
+    max-width: 340px;
+
+    border-radius: 18px;
+    padding: 20px;
+
+    text-align: center;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+
+    animation: popIn 0.2s ease;
+}
+
+/* ===== TITLE ===== */
+.modal-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #1A323E;
+    margin-bottom: 10px;
+}
+
+/* ===== MESSAGE ===== */
+.modal-message {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 18px;
+}
+
+/* ===== BUTTON ===== */
+.modal-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 50px;
+
+    background: #A6171C;
+    color: #fff;
+
+    font-weight: 800;
+    font-size: 0.9rem;
+
+    cursor: pointer;
+}
+
+/* ===== ANIMATION ===== */
+@keyframes popIn {
+    from {
+        transform: scale(0.85);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
 
 .auth-content {
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center; 
+    justify-content: center;
     align-items: center;
-    margin-top: -10%; 
+    margin-top: 0; /* remove the -10% */
 }
+
 
 .main-title {
     font-size: 1.8rem; 
@@ -107,18 +183,4 @@ body, html {
     color: var(--accent-green);
     text-decoration: none;
     font-weight: 700;
-}
-/* Center the Error Message and any Flash Messages */
-#errorMessage, 
-.auth-content > p[style*="color:red"] {
-    width: 100%;
-    text-align: center !important; /* Force center alignment */
-    margin-bottom: 20px;          /* Space between message and first input */
-    font-weight: 700;             /* Match the bold feel of the UI */
-    display: block;
-}
-
-/* Fix for the hidden height issue */
-#errorMessage:empty {
-    display: none;
 }

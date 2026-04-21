@@ -5,10 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sambast | Change PIN</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/user/changepin.css') }}">
+        <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='image/logo.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body class="auth-page">
+<div id="notification" class="notification">
+    <div class="notif-icon">✓</div>
 
+    <div class="notif-content">
+        <div class="notif-title">Title</div>
+        <div class="notif-msg">Message</div>
+    </div>
+</div>
     <div class="mobile-container">
         <header class="profile-header">
     <button class="back-btn" onclick="history.back()">
