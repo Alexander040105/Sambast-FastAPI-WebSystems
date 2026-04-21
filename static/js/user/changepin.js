@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('changePinForm');
-    const errorDisplay = document.getElementById('errorMessage');
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -10,24 +9,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const confirmPin = document.querySelector('input[name="confirm_pin"]').value;
 
         if (!oldPin || !newPin || !confirmPin) {
-            errorDisplay.textContent = 'Please fill out all PIN fields.';
+            showErrorModal('Please fill out all PIN fields.');
             return;
         }
 
         if (oldPin.length !== 4 || newPin.length !== 4 || confirmPin.length !== 4) {
-            errorDisplay.textContent = 'All PINs must be exactly 4 digits.';
+            showErrorModal('All PINs must be exactly 4 digits.');
+            return;
+        }
+
+        if (oldPin === newPin) {
+            showErrorModal('New PIN cannot be the same as old PIN.');
             return;
         }
 
         if (newPin !== confirmPin) {
-            errorDisplay.textContent = 'New PINs do not match. Please try again.';
+            showErrorModal('New PINs do not match. Please try again.');
             return;
         }
 
         const submitButton = form.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.textContent = 'Updating PIN...';
-        errorDisplay.textContent = '';
 
         fetch('/change-pin', {
             method: 'POST',
@@ -38,20 +41,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 confirm_pin: confirmPin
             })
         })
-        .then(response => response.json().then(data => ({ ok: response.ok, status: response.status, data })))
-        .then(({ ok, status, data }) => {
+        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        .then(({ ok, data }) => {
             if (ok) {
                 showNotification('Success', 'PIN updated successfully');
-setTimeout(() => {
-    window.location.href = '/profile';
-}, 1200);
+                setTimeout(() => {
+                    window.location.href = '/profile';
+                }, 1200);
             } else {
-                showNotification('Error', data.error || 'An unknown error occurred.');
+                showErrorModal(data.error || 'An unknown error occurred.');
             }
         })
-        .catch(err => {
-            console.error('Fetch Error:', err);
-            errorDisplay.textContent = 'A network error occurred. Please try again.';
+        .catch(() => {
+            showErrorModal('A network error occurred. Please try again.');
         })
         .finally(() => {
             submitButton.disabled = false;
@@ -80,4 +82,24 @@ function showNotification(title, message) {
 function hideNotification() {
     const notif = document.getElementById('notification');
     notif.classList.remove('show');
+}
+function showErrorModal(message) {
+    const modal = document.getElementById("errorModal");
+    const text = document.getElementById("modalErrorText");
+    const okBtn = document.getElementById("modalOkBtn");
+
+    if (!modal || !text || !okBtn) return;
+
+    text.textContent = message;
+    modal.style.display = "flex";
+
+    okBtn.onclick = () => {
+        modal.style.display = "none";
+    };
+
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.style.display = "none";
+        }
+    };
 }
