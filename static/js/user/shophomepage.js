@@ -403,6 +403,9 @@ function addCartRec(id, pr) {
     var q = parseInt(document.getElementById("qval-rec-" + id).innerText);
     var product = data.find(p => p.product_id === id);
 
+    var unit = "1 pc";
+    var multiplier = 1;
+
     cartSet.add(id);
     globalQty += q;
     globalPrice += (pr * q);
@@ -424,13 +427,15 @@ function addCartRec(id, pr) {
         existing.qty += q;
     } else {
         cart.push({
-    product_id: product.product_id,
-    name: product.name,
-    basePrice: pr,   // ✅ FIX: store original price
-    qty: q,
-    unit: unit,
-    multiplier: multiplier
-});
+            product_id: product.product_id,
+            name: product.name,
+            basePrice: pr,
+            qty: q,
+            unit: unit,
+            multiplier: multiplier,
+            image: product.image_filename,
+            image_filename: product.image_filename
+        });
     }
     localStorage.setItem('cart', JSON.stringify(cart));
     updateRecommendationStatus("Cart updated. Click Generate AI Recommendations.");
@@ -476,7 +481,9 @@ function addCart(id, pr) {
             basePrice: pr,
             qty: q,
             unit: unit,
-            multiplier: multiplier
+            multiplier: multiplier,
+            image: product.image_filename,
+            image_filename: product.image_filename
         });
     }
 

@@ -1,6 +1,55 @@
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
 let selectedItems = new Set();
 
+function resolveCartImage(item) {
+    const rawImage = item?.image || item?.image_filename || item?.img || '';
+    if (!rawImage) return '/static/img/user/user-male-circle.png';
+
+    const image = String(rawImage).trim();
+    if (!image) return '/static/img/user/user-male-circle.png';
+
+    if (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('/')) {
+        return image;
+    }
+
+    return '/product-image/' + encodeURIComponent(image);
+}
+
+async function hydrateMissingCartImages() {
+    const needsHydration = cart.some(item => item && item.product_id && !(item.image || item.image_filename || item.img));
+    if (!needsHydration) return;
+
+    try {
+        const response = await fetch('/products');
+        if (!response.ok) return;
+
+        const products = await response.json();
+        const imageById = new Map((products || []).map(p => [p.product_id, p.image_filename]));
+
+        let changed = false;
+        cart = cart.map(item => {
+            if (!item || !item.product_id) return item;
+            if (item.image || item.image_filename || item.img) return item;
+
+            const filename = imageById.get(item.product_id);
+            if (!filename) return item;
+
+            changed = true;
+            return {
+                ...item,
+                image: filename,
+                image_filename: filename
+            };
+        });
+
+        if (changed) {
+            localStorage.setItem('cart', JSON.stringify(cart));
+        }
+    } catch (_) {
+        // Keep cart functional even if hydration request fails.
+    }
+}
+
 function renderCart() {
     const listContainer = document.getElementById('cartList');
     listContainer.innerHTML = '';
@@ -20,12 +69,14 @@ function renderCart() {
     const card = document.createElement('div');
     card.className = 'cart-item-card';
 
+    const imageSrc = resolveCartImage(item);
+
     card.innerHTML = `
         <input type="checkbox" class="item-checkbox"
             onchange="toggleSelect(${index})"
             ${selectedItems.has(index) ? 'checked' : ''}>
 
-        <div class="item-img-placeholder">image</div>
+        <img class="item-img" src="${imageSrc}" alt="${item.name}" onerror="this.onerror=null;this.src='/static/img/user/user-male-circle.png';">
 
         <div class="item-details">
             <h2 class="item-name">${item.name}</h2>
@@ -106,7 +157,10 @@ function calculateTotal() {
     document.getElementById('selectedCount').innerText = selectedItems.size;
 }
 
-document.addEventListener('DOMContentLoaded', renderCart);
+document.addEventListener('DOMContentLoaded', async () => {
+    await hydrateMissingCartImages();
+    renderCart();
+});
 
 document.querySelector('.checkout-btn').addEventListener('click', () => {
     const selectedData = cart.filter((item, index) => selectedItems.has(index));
