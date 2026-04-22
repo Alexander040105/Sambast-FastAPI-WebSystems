@@ -773,3 +773,28 @@ body.shop-body {
 .bottom-bar {
     display: none;
 }
+.qty-box input {
+    width: 20px;
+    border: none;
+    outline: none;
+    background: transparent;
+
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* remove arrows chrome */
+.qty-box input::-webkit-outer-spin-button,
+.qty-box input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* remove arrows firefox */
+.qty-box input[type=number] {
+    -moz-appearance: textfield;
+}
+.bottom-bar {
+    display: none !important;
+}

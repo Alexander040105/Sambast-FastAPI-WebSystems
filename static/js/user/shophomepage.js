@@ -1,8 +1,5 @@
 var data = [];
 var currentCheckout = [];
-var cartSet = new Set();
-var globalQty = 0;
-var globalPrice = 0;
 var recommendationInFlight = false;
 var lastRecommendationSignature = null;
 
@@ -52,7 +49,7 @@ function getUnitOptions(product) {
     const isPowder = name.includes("powder");
 
     // 🐔 FEEDS (fraction-based pricing)
-    if (isPetFeed || isPoultry || isRabbitFeed || isBirdFeed) {
+    if ((isPetFeed || isPoultry || isRabbitFeed || isBirdFeed) && !name.includes("feeder")) {
         return [
             { label: "1kg", value: "1kg", multiplier: 1 },
             { label: "1/2kg", value: "1/2kg", multiplier: 0.5 },
@@ -144,9 +141,20 @@ function render(list) {
                     <div class="input-row" onclick="event.stopPropagation()">
                         <div class="qty-box">
     <button onclick="qtyChange(${p.product_id},-1)">-</button>
-    <span id="qval-${p.product_id}">1</span>
+
+    <input
+    type="number"
+    id="qval-${p.product_id}"
+    value="1"
+    min="1"
+    onclick="event.stopPropagation()"
+    oninput="qtyTyping(${p.product_id})"
+    onblur="qtyTyping(${p.product_id})"
+>
+
     <button onclick="qtyChange(${p.product_id},1)">+</button>
 </div>
+
 
 <div class="unit-box">
     <select id="unit-${p.product_id}" class="unit-select"
@@ -184,16 +192,51 @@ function toggle(id) {
 
 function qtyChange(id, d) {
     var el = document.getElementById("qval-" + id);
-    var v = parseInt(el.innerText) + d;
-    if (v >= 1) el.innerText = v;
+
+    var current = parseInt(el.value || 1);
+    var v = current + d;
+
+    if (v < 1) v = 1;
+
+    el.value = v;
+
+    updateCardPrice(id);
+}
+
+function qtyTyping(id) {
+    var el = document.getElementById("qval-" + id);
+
+    // allow empty while typing
+    if (el.value === "") return;
+
+    // if invalid number
+    if (parseInt(el.value) < 1) {
+        el.value = 1;
+    }
+
+    updateCardPrice(id);
+}
+
+
+function updateCartCount() {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    // unique product IDs only
+    const uniqueIds = new Set(cart.map(item => item.product_id));
+
+    const count = uniqueIds.size;
+
+    const cartCount = document.getElementById('cartCount');
+    const btnQty = document.getElementById('btnQty');
+
+    if (cartCount) cartCount.innerText = count;
+    if (btnQty) btnQty.innerText = count;
 }
 
 function addCart(id, pr) {
     document.querySelector('.bottom-bar').style.display = 'flex';
-    document.getElementById('displaySubtotal').innerText = globalPrice.toFixed(2);
-document.getElementById('btnQty').innerText = globalQty;
-document.getElementById('cartCount').innerText = globalQty;
-    var q = parseInt(document.getElementById("qval-" + id).innerText);
+
+    var q = parseInt(document.getElementById("qval-" + id).value);
 
     var unitSelect = document.getElementById("unit-" + id);
     var selectedOption = unitSelect.options[unitSelect.selectedIndex];
@@ -202,12 +245,7 @@ document.getElementById('cartCount').innerText = globalQty;
     var multiplier = parseFloat(selectedOption.dataset.multiplier || 1);
 
     var product = data.find(p => p.product_id === id);
-
-    var computedPrice = pr * multiplier * q;
-
-    cartSet.add(id);
-    globalQty += q;
-    globalPrice += computedPrice;
+    if (!product) return;
 
     var cart = JSON.parse(localStorage.getItem('cart')) || [];
 
@@ -215,26 +253,35 @@ document.getElementById('cartCount').innerText = globalQty;
 
     if (existing) {
         existing.qty += q;
-        existing.totalPrice += computedPrice;
     } else {
-       cart.push({
+        cart.push({
     product_id: product.product_id,
     name: product.name,
     basePrice: pr,
     qty: q,
     unit: unit,
     multiplier: multiplier,
-    image: product.image_filename
+    image: product.image_filename,
+    selected: true   // ✅ ADD THIS
 });
+
     }
 
+    // ✅ SAVE FIRST
     localStorage.setItem('cart', JSON.stringify(cart));
 
-    showToast("Added " + product.name + " (" + unit + ")");
+    // ✅ THEN UPDATE UI
+    updateCartCount();
+    updateSubtotal();
+
+    showNotification();
 }
 
+
+
 function buyNow(id) {
-    var q = parseInt(document.getElementById("qval-" + id).innerText);
+    var q = parseInt(document.getElementById("qval-" + id).value);
+
     var product = data.find(p => p.product_id === id);
 
     var unitSelect = document.getElementById("unit-" + id);
@@ -295,7 +342,7 @@ async function fetchRecommendations(cartItems) {
             .map(item => ({
                 product_id: item.product_id,
                 qty: item.qty,
-                price: item.price
+                price: item.basePrice * item.multiplier * item.qty
             }))
             .sort((a, b) => Number(a.product_id) - Number(b.product_id))
     );
@@ -410,20 +457,21 @@ function addCartRec(id, pr) {
     var unit = "1 pc";
     var multiplier = 1;
 
-    cartSet.add(id);
-    globalQty += q;
-    globalPrice += (pr * q);
+    updateCartCount();
+
+   
 
     var bottomBar = document.querySelector('.bottom-bar');
     if (bottomBar) bottomBar.style.display = 'flex';
 
-    document.getElementById('cartCount').innerText = globalQty;
+   
 
     var btnQtyEl = document.getElementById('btnQty');
-    if (btnQtyEl) btnQtyEl.innerText = globalQty;
+    
 
     var subTotalEl = document.getElementById('displaySubtotal') || document.getElementById('subTotal');
-    if (subTotalEl) subTotalEl.innerText = globalPrice === 0 ? "0000" : globalPrice;
+    updateSubtotal();
+
 
     var cart = JSON.parse(localStorage.getItem('cart')) || [];
     var existing = cart.find(item => item.product_id === id);
@@ -445,58 +493,6 @@ function addCartRec(id, pr) {
     updateRecommendationStatus("Cart updated. Click Generate AI Recommendations.");
 
     alert(product.name + " added to cart!");
-}
-
-function addCart(id, pr) {
-    document.querySelector('.bottom-bar').style.display = 'flex';
-
-    var q = parseInt(document.getElementById("qval-" + id).innerText);
-
-    var unitSelect = document.getElementById("unit-" + id);
-    var selectedOption = unitSelect.options[unitSelect.selectedIndex];
-
-    var unit = selectedOption.value;
-    var multiplier = parseFloat(selectedOption.dataset.multiplier || 1);
-
-    var product = data.find(p => p.product_id === id);
-
-    var computedPrice = pr * multiplier * q;
-
-    // ✅ UPDATE VALUES FIRST
-    cartSet.add(id);
-    globalQty += q;
-    globalPrice += computedPrice;
-
-    // ✅ THEN UPDATE UI
-    document.getElementById('displaySubtotal').innerText = globalPrice.toFixed(2);
-    document.getElementById('btnQty').innerText = globalQty;
-    document.getElementById('cartCount').innerText = globalQty;
-
-    var cart = JSON.parse(localStorage.getItem('cart')) || [];
-
-    var existing = cart.find(item => item.product_id === id && item.unit === unit);
-
-    if (existing) {
-        existing.qty += q;
-    } else {
-        cart.push({
-            product_id: product.product_id,
-            name: product.name,
-            basePrice: pr,
-            qty: q,
-            unit: unit,
-            multiplier: multiplier,
-            image: product.image_filename,
-            image_filename: product.image_filename
-        });
-    }
-
-    localStorage.setItem('cart', JSON.stringify(cart));
-
-    document.querySelector('.notif-title').innerText = "Success!";
-document.querySelector('.notif-msg').innerText = "Added to cart!";
-showNotification();
-
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -640,23 +636,56 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 let notificationTimeout;
 let remainingTime = 4000;
+function loadCartState() {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-function showNotification() {
+    let totalQty = 0;
+    let totalPrice = 0;
+
+    cart.forEach(item => {
+        totalQty += parseInt(item.qty || 0);
+
+        const price = parseFloat(item.basePrice || 0);
+        const multiplier = parseFloat(item.multiplier || 1);
+
+        totalPrice += price * multiplier * item.qty;
+    });
+
+   
+
+    const uniqueIds = new Set(cart.map(item => item.product_id));
+const count = uniqueIds.size;
+
+document.getElementById('cartCount').innerText = count;
+document.getElementById('btnQty').innerText = count;
+
+    updateSubtotal();
+
+
+    if (cart.length > 0) {
+        document.querySelector('.bottom-bar').style.display = 'flex';
+    }
+}
+
+
+function showNotification(msg = "Added to cart!") {
     const notification = document.getElementById('notification');
     if (!notification) return;
 
+    const msgEl = notification.querySelector(".notif-msg");
+    if (msgEl) msgEl.innerText = msg;
+
     notification.classList.remove('show');
-    void notification.offsetHeight; // restart animation
+    void notification.offsetHeight;
     notification.classList.add('show');
 
-    if (notificationTimeout) {
-        clearTimeout(notificationTimeout);
-    }
+    if (notificationTimeout) clearTimeout(notificationTimeout);
 
     notificationTimeout = setTimeout(() => {
         hideNotification();
-    }, remainingTime);
+    }, 2000);
 }
+
 
 function hideNotification() {
     const notification = document.getElementById('notification');
@@ -690,6 +719,7 @@ function openTrackOrders() {
     window.location.href = "/order-progress?active=true";
 }
 document.addEventListener('DOMContentLoaded', () => {
+    loadCartState();
     fetch('/orders/history')
         .then(res => res.json())
         .then(orders => {
@@ -715,7 +745,8 @@ function updateCardPrice(productId) {
     const product = data.find(p => p.product_id === productId);
     if (!product) return;
 
-    const qty = parseInt(document.getElementById("qval-" + productId).innerText);
+    const qty = parseInt(document.getElementById("qval-" + productId).value);
+
 
     const unitSelect = document.getElementById("unit-" + productId);
     const selectedOption = unitSelect.options[unitSelect.selectedIndex];
@@ -753,17 +784,38 @@ function calculateTotal() {
     document.getElementById('displaySubtotal').innerText = total.toFixed(2);
     document.getElementById('selectedCount').innerText = count;
 }
-function updateCartIcon() {
+function updateSubtotal() {
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-    let totalQty = 0;
+    let totalPrice = 0;
 
     cart.forEach(item => {
-        totalQty += parseInt(item.qty || 0);
+        const price = parseFloat(item.basePrice || 0);
+        const multiplier = parseFloat(item.multiplier || 1);
+        const qty = parseInt(item.qty || 0);
+
+        totalPrice += price * multiplier * qty;
     });
 
-    const cartCount = document.getElementById('cartCount');
-    if (cartCount) {
-        cartCount.innerText = totalQty;
+    const subTotalEl =
+        document.getElementById('displaySubtotal') ||
+        document.getElementById('subTotal');
+
+    if (subTotalEl) {
+        subTotalEl.innerText = totalPrice.toFixed(2);
     }
+}
+function syncShopWithCart() {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    cart.forEach(item => {
+        const qtyEl = document.getElementById("qval-" + item.product_id);
+        const unitEl = document.getElementById("unit-" + item.product_id);
+
+        if (qtyEl) qtyEl.value = item.qty;
+
+        if (unitEl && item.unit) {
+            unitEl.value = item.unit;
+        }
+    });
 }

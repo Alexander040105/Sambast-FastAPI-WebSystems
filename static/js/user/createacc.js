@@ -1,5 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('createAccountForm');
+const contactInput = document.getElementById('contactNo');
+
+// allow numbers only + limit to 11 digits
+contactInput.addEventListener('input', () => {
+    contactInput.value = contactInput.value
+        .replace(/\D/g, '')   // remove letters/symbols
+        .slice(0, 11);        // max 11 digits
+});
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
