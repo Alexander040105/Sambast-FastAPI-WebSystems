@@ -81,12 +81,18 @@ if (totalDisplay) {
     }
 
     /**
-     * Polls the server for the latest order status
+     * Polls the server for the order status of the specific order being viewed
      */
     function pollStatus() {
-        fetch('/orders/latest/status')
+        // Use the specific order number stored from checkout, not just "latest"
+        if (!lastOrderNo) {
+            console.log("Status check: No order number in session");
+            return;
+        }
+
+        fetch(`/orders/${lastOrderNo}/status`)
             .then(res => {
-                if (!res.ok) throw new Error('No active order found');
+                if (!res.ok) throw new Error('Order not found');
                 return res.json();
             })
             .then(data => {

@@ -2970,8 +2970,32 @@ def order_progress():
     
     return render_template('user/myorderprogress.html', user=user)
 
+@app.route('/orders/<order_no>/status')
+def order_status(order_no):
+    if 'user_id' not in session:
+        return {'error': 'Unauthorized'}, 401
+
+    db = get_db()
+    order = db.execute(
+        '''SELECT order_no, status, total_price 
+           FROM orders 
+           WHERE order_no = ? AND user_id = ?''',
+        (order_no, session['user_id'])
+    ).fetchone()
+
+    if not order:
+        return {'error': 'Order not found.'}, 404
+
+    return {
+        'order_no'    : order['order_no'],
+        'status'      : order['status'],
+        'total_price' : order['total_price']
+    }
+
+
 @app.route('/orders/latest/status')
 def latest_order_status():
+    """Deprecated: Use /orders/<order_no>/status instead for accurate order tracking."""
     if 'user_id' not in session:
         return {'error': 'Unauthorized'}, 401
 
@@ -2979,14 +3003,14 @@ def latest_order_status():
     order = db.execute(
         '''SELECT order_no, status, total_price 
            FROM orders 
-           WHERE user_id = ? AND status NOT IN ('Completed', 'Cancelled')
+           WHERE user_id = ?
            ORDER BY created_at DESC 
            LIMIT 1''',
         (session['user_id'],)
     ).fetchone()
 
     if not order:
-        return {'error': 'No active order.'}, 404
+        return {'error': 'No order found.'}, 404
 
     return {
         'order_no'    : order['order_no'],
