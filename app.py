@@ -308,6 +308,29 @@ def _run_migrations(db):
             cursor.execute("ALTER TABLE audit_logs ADD COLUMN category TEXT DEFAULT 'System Actions'")
             db.commit()
             print("Migration: Added category column to audit_logs table.")
+
+        # Migration 1b: Ensure products.unit exists for stock unit display
+        cursor.execute("PRAGMA table_info(products)")
+        product_columns = [column[1] for column in cursor.fetchall()]
+        if product_columns and 'unit' not in product_columns:
+            cursor.execute("ALTER TABLE products ADD COLUMN unit TEXT DEFAULT 'pcs'")
+            db.commit()
+            print("Migration: Added unit column to products table.")
+
+        # Migration 1c: Ensure categories table exists and is backfilled from products
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL
+            )
+        ''')
+        cursor.execute("SELECT DISTINCT TRIM(category) AS category_name FROM products WHERE category IS NOT NULL AND TRIM(category) != ''")
+        existing_categories = cursor.fetchall()
+        for row in existing_categories:
+            category_name = (row[0] or '').strip()
+            if category_name:
+                cursor.execute("INSERT OR IGNORE INTO categories (name) VALUES (?)", (category_name,))
+        db.commit()
         
         # Migration 2: Backfill existing logs with correct categories
         cursor.execute("SELECT COUNT(*) FROM audit_logs WHERE category IS NULL OR category = ''")
@@ -366,10 +389,16 @@ def init_db():
             product_id INTEGER PRIMARY KEY AUTOINCREMENT, 
             name TEXT NOT NULL, 
             category TEXT, 
+            unit TEXT DEFAULT 'pcs',
             price REAL NOT NULL, 
             stock_status INTEGER DEFAULT 1, 
             image_filename TEXT, 
             description TEXT)''')
+
+        cursor.execute('''CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        )''')
         
         cursor.execute('''CREATE TABLE IF NOT EXISTS orders (
             order_id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -1017,6 +1046,7 @@ def _product_row_to_dict(product_row):
         'product_id': product_row['product_id'],
         'name': product_row['name'],
         'category': product_row['category'],
+        'unit': (product_row['unit'] if 'unit' in product_row.keys() else 'pcs') or 'pcs',
         'price': product_row['price'],
         'description': product_row['description'],
         'image_filename': product_row['image_filename'],
@@ -1347,18 +1377,54 @@ def admin_inventory():
     if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     db = get_db()
     products = db.execute('SELECT * FROM products ORDER BY name ASC').fetchall()
-    return render_template('admin/inventory.html', products=products)
+    categories = db.execute('SELECT id, name FROM categories ORDER BY name ASC').fetchall()
+    return render_template('admin/inventory.html', products=products, categories=categories)
+
+@app.route('/admin/categories/add', methods=['POST'])
+def add_category():
+    if 'admin_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    payload = request.get_json(silent=True) or {}
+    raw_name = payload.get('name', '')
+    category_name = str(raw_name).strip()
+
+    if not category_name:
+        return jsonify({'success': False, 'message': 'Category name cannot be empty.'}), 400
+
+    db = get_db()
+    existing = db.execute('SELECT id, name FROM categories WHERE LOWER(name) = LOWER(?)', (category_name,)).fetchone()
+    if existing:
+        return jsonify({
+            'success': True,
+            'category': {'id': existing['id'], 'name': existing['name']},
+            'message': 'Category already exists.'
+        }), 200
+
+    cursor = db.execute('INSERT INTO categories (name) VALUES (?)', (category_name,))
+    db.commit()
+    return jsonify({
+        'success': True,
+        'category': {'id': cursor.lastrowid, 'name': category_name},
+        'message': 'Category added successfully.'
+    }), 201
 
 @app.route('/admin/products/add', methods=['POST'])
 def add_product():
     if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     
     name = request.form.get('name')
-    category = request.form.get('category')
+    category = (request.form.get('category') or '').strip()
+    unit = (request.form.get('unit') or 'pcs').strip() or 'pcs'
     price = request.form.get('price')
     description = request.form.get('description')
     stock_status = request.form.get('stock_status', 1)
     file = request.files.get('image')
+
+    try:
+        stock_status = max(0, int(stock_status))
+    except (TypeError, ValueError):
+        stock_status = 0
 
     filename = 'logo.png' # Fallback image
     if file and allowed_file(file.filename):
@@ -1366,8 +1432,10 @@ def add_product():
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
     db = get_db()
-    db.execute('''INSERT INTO products (name, category, price, stock_status, image_filename, description) 
-                  VALUES (?, ?, ?, ?, ?, ?)''', (name, category, price, stock_status, filename, description))
+    if category:
+        db.execute('INSERT OR IGNORE INTO categories (name) VALUES (?)', (category,))
+    db.execute('''INSERT INTO products (name, category, unit, price, stock_status, image_filename, description) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?)''', (name, category, unit, price, stock_status, filename, description))
     action_text = f"Added product: {name}"
     db.execute('INSERT INTO audit_logs (admin_id, action_text, category) VALUES (?, ?, ?)', 
                (session['admin_id'], action_text, get_log_category(action_text)))
@@ -1380,12 +1448,21 @@ def edit_product(product_id):
     if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     
     name = request.form.get('name')
-    category = request.form.get('category')
+    category = (request.form.get('category') or '').strip()
+    unit = (request.form.get('unit') or 'pcs').strip() or 'pcs'
     price = request.form.get('price')
     description = request.form.get('description')
     stock_status = request.form.get('stock_status')
+    remove_image = request.form.get('remove_image', '0') == '1'
+
+    try:
+        stock_status = max(0, int(stock_status))
+    except (TypeError, ValueError):
+        stock_status = 0
     
     db = get_db()
+    if category:
+        db.execute('INSERT OR IGNORE INTO categories (name) VALUES (?)', (category,))
     
     # Handle Image Update if provided
     file = request.files.get('image')
@@ -1393,9 +1470,11 @@ def edit_product(product_id):
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         db.execute('UPDATE products SET image_filename = ? WHERE product_id = ?', (filename, product_id))
+    elif remove_image:
+        db.execute('UPDATE products SET image_filename = ? WHERE product_id = ?', ('', product_id))
 
-    db.execute('''UPDATE products SET name=?, category=?, price=?, description=?, stock_status=? 
-                  WHERE product_id = ?''', (name, category, price, description, stock_status, product_id))
+    db.execute('''UPDATE products SET name=?, category=?, unit=?, price=?, description=?, stock_status=? 
+                  WHERE product_id = ?''', (name, category, unit, price, description, stock_status, product_id))
     action_text = f"Edited product ID: {product_id}"
     db.execute('INSERT INTO audit_logs (admin_id, action_text, category) VALUES (?, ?, ?)', 
                (session['admin_id'], action_text, get_log_category(action_text)))
@@ -2212,6 +2291,7 @@ def get_products():
         'product_id'     : p['product_id'],
         'name'           : p['name'],
         'category'       : p['category'],
+        'unit'           : (p['unit'] if 'unit' in p.keys() else 'pcs') or 'pcs',
         'price'          : p['price'],
         'description'    : p['description'],
         'image_filename' : p['image_filename'],

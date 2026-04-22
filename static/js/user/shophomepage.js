@@ -132,6 +132,9 @@ function render(list) {
         var div = document.createElement('div');
         div.className = "product-card";
         div.id = "p-" + p.product_id;
+        var unitLabel = (p.unit || "pcs").trim();
+        var stockValue = Number(p.stock_status || 0);
+        var stockLabel = stockValue + " " + unitLabel + (stockValue === 0 ? " (Out of Stock)" : "");
         div.innerHTML = `
             <div class="flip-inner">
                 <div class="front-face" onclick="toggle(${p.product_id})">
@@ -159,6 +162,7 @@ function render(list) {
 </div>
                     </div>
                     <p class="label-price">₱${p.price}</p>
+                    <p class="label-cat">Stock: ${stockLabel}</p>
                     <div class="btn-row" onclick="event.stopPropagation()">
                         <button class="cart-act" onclick="addCart(${p.product_id},${p.price})">CART</button>
                         <button class="buy-act" onclick="buyNow(${p.product_id})">BUY</button>

@@ -55,7 +55,7 @@
 
         <div class="inventory-header">
             <h1>INVENTORY</h1>
-            <button class="add-btn" id="addProducpython seed.py --truncatetn">+ Add Product</button>
+            <button class="add-btn" id="addProductBtn">+ Add Product</button>
         </div>
 
         <div class="ai-sections">
@@ -65,6 +65,20 @@
                 </div>
                 <div class="ai-card-body">
                     <button id="generate-insights-btn" class="forecast-btn">Generate AI Insights</button>
+                    <div id="insights-actions" class="ai-actions" hidden>
+                        <button type="button" class="ai-action-btn" id="insights-minimize-btn" aria-label="Minimize insights">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="ai-action-btn" id="insights-download-btn" aria-label="Download insights as PDF">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 3v12"></path>
+                                <path d="m7 10 5 5 5-5"></path>
+                                <path d="M5 21h14"></path>
+                            </svg>
+                        </button>
+                    </div>
                     <div id="insights-result">Click the button to generate inventory insights.</div>
                 </div>
             </div>
@@ -75,6 +89,20 @@
                 </div>
                 <div class="ai-card-body">
                     <button id="generate-forecast-btn" class="forecast-btn">Generate AI Forecast</button>
+                    <div id="forecast-actions" class="ai-actions" hidden>
+                        <button type="button" class="ai-action-btn" id="forecast-minimize-btn" aria-label="Minimize forecast">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="ai-action-btn" id="forecast-download-btn" aria-label="Download forecast as PDF">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 3v12"></path>
+                                <path d="m7 10 5 5 5-5"></path>
+                                <path d="M5 21h14"></path>
+                            </svg>
+                        </button>
+                    </div>
                     <div id="forecast-result">Click the button to analyze inventory health.</div>
                 </div>
             </div>
@@ -88,13 +116,24 @@
             </svg>
         </div>
 
+        <div class="inventory-category-filter" id="inventoryCategoryFilter"></div>
+
         <div id="inventoryContainer">
             {% for product in products %}
-            <div class="inventory-card" data-name="{{ product['name']|lower }}">
+            <div class="inventory-card"
+                 data-name="{{ product['name']|lower }}"
+                 data-id="{{ product['product_id'] }}"
+                 data-pname="{{ product['name'] }}"
+                 data-price="{{ product['price'] }}"
+                 data-pcat="{{ product['category'] }}"
+                 data-desc="{{ product['description'] }}"
+                 data-stock="{{ product['stock_status'] }}"
+                  data-unit="{{ product['unit'] or 'pcs' }}"
+                 data-image="{{ product['image_filename'] or '' }}">
                 <div class="card-header">
                     <strong>{{ product['name'] }}</strong>
                     <span class="icons">
-                        <button class="edit" onclick="openEditModal('{{ product.product_id }}', '{{ product.name }}', '{{ product.price }}', '{{ product.category }}', '{{ product.description }}', '{{ product.stock_status }}')">
+                        <button class="edit" onclick="openEditModalFromCard(this)">
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M12 20h9"/>
                                 <path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
@@ -117,11 +156,14 @@
 
                 <div class="card-body">
                     {% if product['image_filename'] %}
-                        <img src="{{ url_for('product_image', filename=product['image_filename']) }}" alt="Product" class="prod-img-small" style="max-width: 50px; display: block; margin-bottom: 10px;">
+                        <img src="{{ url_for('product_image', filename=product['image_filename']) }}" alt="Product" class="prod-img-small">
+                    {% else %}
+                        <div class="prod-img-small prod-img-placeholder">No Image</div>
                     {% endif %}
                     <div><strong>CATEGORY:</strong> {{ product['category'] }}</div>
                     <div><strong>PRICE:</strong> ₱{{ product['price'] }}</div>
-                    <div><strong>STATUS:</strong> {{ 'Available' if product['stock_status'] == 1 else 'Out of Stock' }}</div>
+                    <div><strong>STOCK:</strong> {{ product['stock_status'] or 0 }} {{ product['unit'] or 'pcs' }}{{ ' (Out of Stock)' if (product['stock_status'] or 0)|int == 0 else '' }}</div>
+                    <div><strong>STATUS:</strong> {{ 'Out of Stock' if (product['stock_status'] or 0)|int == 0 else 'In Stock' }}</div>
                 </div>
             </div>
             {% endfor %}
@@ -141,8 +183,10 @@
                     <label>Product Image</label>
                     <div class="image-upload-container">
                         <div id="imagePreview" class="image-preview-box">
-                            <span>Upload Image</span>
+                            <span class="image-placeholder">Click to upload image</span>
+                            <button type="button" class="image-remove-btn" aria-label="Remove image">✕</button>
                         </div>
+                        <input type="hidden" name="remove_image" id="removeImageFlag" value="0">
                         <input type="file" name="image" id="productImage" accept="image/*">
                     </div>
                     
@@ -151,10 +195,43 @@
 
                     <label>Category</label>
                     <select name="category" id="formCategory">
-                        <option value="Feeds">Feeds</option>
-                        <option value="Supplies">Supplies</option>
-                        <option value="Medicine">Medicine</option>
+                        {% for category in categories %}
+                            <option value="{{ category['name'] }}">{{ category['name'] }}</option>
+                        {% endfor %}
+                        <option value="__add_new__">+ Add New Category</option>
                     </select>
+                    <div id="categoryQuickList" class="category-quick-list"></div>
+
+                    <div id="categoryBuilderModal" class="category-builder-modal" style="display:none;">
+                        <div class="category-builder-header">
+                            <strong>Add New Category</strong>
+                            <button type="button" id="closeCategoryBuilderModal" class="category-builder-close">✕</button>
+                        </div>
+
+                        <label style="margin-top:0;">Category Name</label>
+                        <input type="text" id="categoryNameInput" placeholder="Enter category name">
+
+                        <label>Quantity + Unit Options</label>
+                        <div class="flex-row" style="align-items:center;">
+                            <input type="number" id="categoryQtyInput" min="0" step="0.01" placeholder="e.g. 0.5">
+                            <select id="categoryUnitInput">
+                                <option value="pcs">pcs</option>
+                                <option value="kg">kg</option>
+                                <option value="g">g</option>
+                                <option value="liters">liters</option>
+                                <option value="boxes">boxes</option>
+                                <option value="packs">packs</option>
+                            </select>
+                            <button type="button" class="add-btn" id="addCategoryOptionBtn" style="padding:8px 12px;">Add</button>
+                        </div>
+
+                        <div id="categoryOptionList" class="category-option-list"></div>
+
+                        <div class="flex-row" style="margin-top:10px;">
+                            <button type="button" class="add-btn" id="saveCategoryBuilderBtn">Save Category</button>
+                            <button type="button" class="add-btn" id="cancelCategoryBuilderBtn">Cancel</button>
+                        </div>
+                    </div>
 
                     <div class="flex-row">
                         <div>
@@ -163,11 +240,22 @@
                         </div>
 
                         <div>
-                            <label>Stock Status</label>
-                            <select name="stock_status" id="formStock">
-                                <option value="1">Available</option>
-                                <option value="0">Out of Stock</option>
-                            </select>
+                            <label>Stock & Unit</label>
+                            <div class="flex-row stock-unit-row">
+                                <input type="number" min="0" step="1" name="stock_status" id="formStock" placeholder="0" required>
+                                <select id="formStockMode">
+                                    <option value="manual">Manual</option>
+                                    <option value="no_stock">No Stock</option>
+                                </select>
+                                <select name="unit" id="formUnit">
+                                    <option value="pcs">pcs</option>
+                                    <option value="kg">kg</option>
+                                    <option value="liters">liters</option>
+                                    <option value="boxes">boxes</option>
+                                    <option value="packs">packs</option>
+                                    <option value="bottles">bottles</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -180,6 +268,44 @@
         </div>
     </div>
 
+    <div class="modal" id="editCategoryModal">
+        <div class="modal-content category-edit-modal-content">
+            <div class="modal-header">
+                <h2>Edit Category</h2>
+                <span class="close" id="closeEditCategoryModal">✕</span>
+            </div>
+
+            <div class="modal-body category-edit-modal-body">
+                <label for="editCategoryNameInput">Category Name</label>
+                <input type="text" id="editCategoryNameInput" placeholder="Enter category name">
+
+                <label>Quantity + Unit Options</label>
+                <div class="flex-row category-option-builder-row">
+                    <input type="number" id="editCategoryQtyInput" min="0" step="0.01" placeholder="e.g. 0.5">
+                    <select id="editCategoryUnitInput">
+                        <option value="pcs">pcs</option>
+                        <option value="kg">kg</option>
+                        <option value="g">g</option>
+                        <option value="liters">liters</option>
+                        <option value="boxes">boxes</option>
+                        <option value="packs">packs</option>
+                        <option value="bottles">bottles</option>
+                    </select>
+                    <button type="button" class="add-btn" id="editCategoryAddOptionBtn">Add</button>
+                </div>
+
+                <div id="editCategoryOptionList" class="category-option-list"></div>
+
+                <div class="flex-row category-edit-actions-row">
+                    <button type="button" class="add-btn" id="saveEditCategoryBtn">Save Changes</button>
+                    <button type="button" class="add-btn" id="cancelEditCategoryBtn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
     <script src="{{ url_for('static', filename='js/admin/inventory.js') }}"></script>
 </body>
 </html>
