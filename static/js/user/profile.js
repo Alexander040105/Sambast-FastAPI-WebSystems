@@ -6,6 +6,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let pets = [];
     let selectedPetId = null;
+let notifTimer;
+
+function showNotification(title, message) {
+    const notif = document.getElementById("notification");
+
+    notif.querySelector(".notif-title").innerText = title;
+    notif.querySelector(".notif-msg").innerText = message;
+
+    notif.classList.add("show");
+
+    clearTimeout(notifTimer);
+    notifTimer = setTimeout(() => {
+        hideNotification();
+    }, 2500);
+}
+
+function hideNotification() {
+    const notif = document.getElementById("notification");
+    notif.classList.remove("show");
+}
+
 
     const clearPetForm = () => {
         document.getElementById('petName').value = '';
@@ -143,13 +164,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         selectedPetId = data.pet_id;
                     }
                     await loadPets();
-                    alert('Pet profile saved successfully!');
+                    showNotification("Success!", "Pet profile saved successfully!");
+
+
                 } else {
-                    alert(data.error || 'Failed to save pet profile.');
+                    showNotification("Error", data.error || "Failed to save pet profile.");
+
+
                 }
             } catch (error) {
                 console.error('Error saving pet profile:', error);
-                alert('An error occurred while saving.');
+                showNotification("Error", "An error occurred while saving.");
+
             } finally {
                 submitBtn.textContent = originalText;
                 submitBtn.disabled = false;

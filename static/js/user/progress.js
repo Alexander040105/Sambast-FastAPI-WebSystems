@@ -106,5 +106,5 @@ if (totalDisplay) {
 const helpBtn = document.getElementById("helpBtn");
 
 document.getElementById("helpBtn").addEventListener("click", () => {
-    window.location.href = "/static/user/cancelorder.html";
+    window.location.href = "/cancel-order";
 });

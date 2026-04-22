@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('verifyPinForm');
-    const errorDisplay = document.getElementById('errorMessage'); // Assumes an element with this ID exists
     const pinInputs = document.querySelectorAll('.pin-container input');
 
     // Auto-advance / backspace navigation for PIN
@@ -24,14 +23,14 @@ document.addEventListener('DOMContentLoaded', () => {
         pinInputs.forEach(input => pin += input.value);
 
         if (pin.length !== 4) {
-            errorDisplay.textContent = 'Please enter all 4 digits to verify your PIN.';
+            showErrorModal('Please enter all 4 digits to verify your PIN.');
+
             return;
         }
 
         const submitButton = form.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.textContent = 'Verifying...';
-        errorDisplay.textContent = ''; // Clear previous errors
 
         fetch('/verify-pin', {
             method: 'POST',
@@ -45,12 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = data.redirect_url;
             } else {
                 // Error
-                errorDisplay.textContent = data.error || 'An unknown error occurred.';
+                showErrorModal(data.error || 'An unknown error occurred.');
+
             }
         })
         .catch(err => {
             console.error('Fetch Error:', err);
-            errorDisplay.textContent = 'A network error occurred. Please try again.';
+            showErrorModal('A network error occurred. Please try again.');
+
         })
         .finally(() => {
             submitButton.disabled = false;
@@ -58,3 +59,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+function showErrorModal(message) {
+    const modal = document.getElementById("errorModal");
+    const text = document.getElementById("modalErrorText");
+    const okBtn = document.getElementById("modalOkBtn");
+
+    text.textContent = message;
+    modal.style.display = "flex";
+
+    const closeModal = () => {
+        modal.style.display = "none";
+    };
+
+    okBtn.onclick = closeModal;
+
+    modal.onclick = (e) => {
+        if (e.target === modal) closeModal();
+    };
+}
+
