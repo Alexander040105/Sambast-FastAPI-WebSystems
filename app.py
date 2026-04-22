@@ -63,6 +63,13 @@ AI_RATE_LIMIT_CONFIG = {
 
 AI_ENDPOINT_COOLDOWN_SECONDS = 90
 
+ANALYTICS_FULFILLED_STATUSES = ('Completed',)
+ANALYTICS_ACTIVE_STATUSES = ('Pending', 'Processing', 'Ready')
+
+LOW_STOCK_CRITICAL_MAX = 2
+LOW_STOCK_WARNING_MAX = 5
+LOW_STOCK_WATCH_MAX = 9
+
 # --- CONFIGURATION: IMAGE UPLOADS ---
 UPLOAD_FOLDER = 'static/uploads'
 PRODUCTS_FOLDER = 'static/products'
@@ -76,6 +83,9 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def _sql_placeholders(values):
+    return ', '.join(['?'] * len(values))
 
 def get_log_category(action_text):
     """
@@ -317,7 +327,23 @@ def _run_migrations(db):
             db.commit()
             print("Migration: Added unit column to products table.")
 
-        # Migration 1c: Ensure categories table exists and is backfilled from products
+        # Migration 1c: Ensure order_items unit transaction columns exist
+        cursor.execute("PRAGMA table_info(order_items)")
+        order_item_columns = [column[1] for column in cursor.fetchall()]
+        if order_item_columns and 'selected_unit' not in order_item_columns:
+            cursor.execute("ALTER TABLE order_items ADD COLUMN selected_unit TEXT DEFAULT '1 pc'")
+            db.commit()
+            print("Migration: Added selected_unit column to order_items table.")
+        if order_item_columns and 'unit_multiplier' not in order_item_columns:
+            cursor.execute("ALTER TABLE order_items ADD COLUMN unit_multiplier REAL DEFAULT 1")
+            db.commit()
+            print("Migration: Added unit_multiplier column to order_items table.")
+        if order_item_columns and 'base_price_at_time' not in order_item_columns:
+            cursor.execute("ALTER TABLE order_items ADD COLUMN base_price_at_time REAL")
+            db.commit()
+            print("Migration: Added base_price_at_time column to order_items table.")
+
+        # Migration 1d: Ensure categories table exists and is backfilled from products
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -414,7 +440,10 @@ def init_db():
             order_id INTEGER, 
             product_id INTEGER, 
             quantity INTEGER, 
-            price_at_time REAL, 
+            price_at_time REAL,
+            selected_unit TEXT DEFAULT '1 pc',
+            unit_multiplier REAL DEFAULT 1,
+            base_price_at_time REAL,
             FOREIGN KEY (order_id) REFERENCES orders (order_id), 
             FOREIGN KEY (product_id) REFERENCES products (product_id))''')
         
@@ -733,24 +762,30 @@ def _build_inventory_forecast_fallback(db):
     }
 
 def _get_business_summary_snapshot(db):
+    fulfilled_placeholders = _sql_placeholders(ANALYTICS_FULFILLED_STATUSES)
+
     revenue_row = db.execute(
-        "SELECT SUM(total_price) AS total FROM orders WHERE status != 'Cancelled'"
+        f"SELECT SUM(total_price) AS total FROM orders WHERE status IN ({fulfilled_placeholders})",
+        ANALYTICS_FULFILLED_STATUSES
     ).fetchone()
     total_revenue = float(revenue_row['total']) if revenue_row and revenue_row['total'] else 0.0
 
     orders_row = db.execute(
-        "SELECT COUNT(order_id) AS count FROM orders WHERE status != 'Cancelled'"
+        f"SELECT COUNT(order_id) AS count FROM orders WHERE status IN ({fulfilled_placeholders})",
+        ANALYTICS_FULFILLED_STATUSES
     ).fetchone()
     order_count = int(orders_row['count']) if orders_row and orders_row['count'] else 0
 
-    top_seller_rows = db.execute('''
+    top_seller_rows = db.execute(f'''
         SELECT p.name, IFNULL(SUM(oi.quantity), 0) AS count
         FROM order_items oi
+        JOIN orders o ON oi.order_id = o.order_id
         JOIN products p ON oi.product_id = p.product_id
+        WHERE o.status IN ({fulfilled_placeholders})
         GROUP BY p.product_id
-        ORDER BY count DESC
+        ORDER BY count DESC, p.name ASC
         LIMIT 3
-    ''').fetchall()
+    ''', ANALYTICS_FULFILLED_STATUSES).fetchall()
     top_sellers = [
         {
             'name': row['name'],
@@ -759,14 +794,15 @@ def _get_business_summary_snapshot(db):
         for row in top_seller_rows
     ]
 
-    slow_mover_rows = db.execute('''
-        SELECT p.name, IFNULL(SUM(oi.quantity), 0) AS count
+    slow_mover_rows = db.execute(f'''
+        SELECT p.name, IFNULL(SUM(CASE WHEN o.status IN ({fulfilled_placeholders}) THEN oi.quantity ELSE 0 END), 0) AS count
         FROM products p
         LEFT JOIN order_items oi ON p.product_id = oi.product_id
+        LEFT JOIN orders o ON oi.order_id = o.order_id
         GROUP BY p.product_id
-        ORDER BY count ASC
+        ORDER BY count ASC, p.name ASC
         LIMIT 3
-    ''').fetchall()
+    ''', ANALYTICS_FULFILLED_STATUSES).fetchall()
     slow_movers = [
         {
             'name': row['name'],
@@ -776,7 +812,8 @@ def _get_business_summary_snapshot(db):
     ]
 
     low_stock_rows = db.execute(
-        "SELECT name, stock_status AS stock FROM products WHERE stock_status < 10"
+        "SELECT name, stock_status AS stock FROM products WHERE stock_status <= ? ORDER BY stock_status ASC, name ASC",
+        (LOW_STOCK_WATCH_MAX,)
     ).fetchall()
     low_stock = [
         {
@@ -803,8 +840,15 @@ def _build_business_summary_fallback(snapshot):
     slow_movers = snapshot.get('slow_movers', [])
     low_stock = snapshot.get('low_stock', [])
 
-    critical_low_stock = [item for item in low_stock if item['stock'] <= 2]
-    warning_low_stock = [item for item in low_stock if 2 < item['stock'] < 10]
+    critical_low_stock = [item for item in low_stock if item['stock'] <= LOW_STOCK_CRITICAL_MAX]
+    warning_low_stock = [
+        item for item in low_stock
+        if LOW_STOCK_CRITICAL_MAX < item['stock'] <= LOW_STOCK_WARNING_MAX
+    ]
+    watch_low_stock = [
+        item for item in low_stock
+        if LOW_STOCK_WARNING_MAX < item['stock'] <= LOW_STOCK_WATCH_MAX
+    ]
 
     if order_count == 0:
         return (
@@ -836,8 +880,8 @@ def _build_business_summary_fallback(snapshot):
 
     if low_stock:
         inventory_risk_text = (
-            f"{len(low_stock)} item(s) are below 10 stock, "
-            f"including {len(critical_low_stock)} critical item(s) at 2 or below"
+            f"{len(low_stock)} item(s) are at watch level (<= {LOW_STOCK_WATCH_MAX}), "
+            f"including {len(critical_low_stock)} critical item(s) at {LOW_STOCK_CRITICAL_MAX} or below"
         )
     else:
         inventory_risk_text = "no low-stock pressure detected"
@@ -859,11 +903,15 @@ def _build_business_summary_fallback(snapshot):
         recommendation_parts.append(
             "schedule a near-term reorder for warning-level stock items"
         )
+    if watch_low_stock:
+        recommendation_parts.append(
+            "monitor watch-level items closely and replenish on the next cycle"
+        )
 
     recommendation_text = "; ".join(recommendation_parts[:3])
 
     return (
-        f"Executive summary (deterministic): Revenue is ₱{total_revenue:,.2f} across {order_count} non-cancelled order(s) "
+        f"Executive summary (deterministic): Revenue is ₱{total_revenue:,.2f} across {order_count} completed order(s) "
         f"with an average order value of ₱{avg_order_value:,.2f}; overall {demand_signal}. "
         f"Best-seller momentum is led by {top_seller_text}, while slow-moving exposure is seen in {slow_mover_text}. "
         f"Inventory risk status: {inventory_risk_text}. Recommended actions: {recommendation_text}."
@@ -1273,6 +1321,152 @@ def _build_budget_bundle(db, budget_amount, user_message):
 
     return bundle, total
 
+def _normalize_unit_key(unit_value):
+    raw = str(unit_value or '').strip().lower()
+    return re.sub(r'\s+', '', raw)
+
+def _normalize_default_unit_label(unit_value):
+    normalized = _normalize_unit_key(unit_value)
+    if normalized in ['pc', 'pcs', 'piece', 'pieces']:
+        return '1 pc'
+    if normalized in ['kg', 'kilo', 'kilos', 'kilogram', 'kilograms']:
+        return '1kg'
+    if normalized in ['tablet', 'tablets']:
+        return 'per tablet'
+    if normalized in ['strip', 'strips']:
+        return 'per strip'
+    if normalized in ['box', 'boxes']:
+        return 'per box'
+    if normalized in ['bottle', 'bottles']:
+        return 'per bottle'
+    if normalized in ['pack', 'packs']:
+        return 'per pack'
+    if normalized in ['pouch', 'pouches']:
+        return 'per pouch'
+    return str(unit_value or '').strip()
+
+def _get_backend_unit_options(product_name, category, default_unit='pcs'):
+    name = (product_name or '').lower()
+    cat = (category or '').lower()
+
+    is_feed_category = cat.startswith('feed') or cat.endswith('feed') or 'feed' in cat
+
+    is_pet_feed = (
+        is_feed_category and
+        (
+            'feed' in name or
+            'chicken' in name or
+            'dog food' in name or
+            'cat food' in name or
+            'rabbit feed' in name or
+            'bird feed' in name
+        )
+    )
+
+    is_poultry = 'chicken' in name or 'chick' in name
+    is_rabbit_feed = 'rabbit' in name
+    is_bird_feed = 'bird' in name
+
+    is_supply = (
+        'supplies' in cat or
+        'leash' in name or
+        'collar' in name or
+        'harness' in name or
+        'bowl' in name or
+        'feeder' in name or
+        'cage' in name or
+        'toy' in name
+    )
+
+    is_litter = 'litter' in name
+
+    is_medicine = (
+        'medicine' in cat or
+        'tablet' in name or
+        'capsule' in name or
+        'vitamin' in name
+    )
+
+    is_liquid = 'syrup' in name or 'milk' in name or 'gel' in name
+    is_wet_food = 'wet' in name or 'pouch' in name
+    is_powder = 'powder' in name
+
+    if (is_pet_feed or is_poultry or is_rabbit_feed or is_bird_feed) and 'feeder' not in name:
+        return [
+            {'label': '1kg', 'value': '1kg', 'multiplier': 1.0},
+            {'label': '1/2kg', 'value': '1/2kg', 'multiplier': 0.5},
+            {'label': '1/4kg', 'value': '1/4kg', 'multiplier': 0.25},
+            {'label': '1/8kg', 'value': '1/8kg', 'multiplier': 0.125},
+            {'label': '25kg sack', 'value': '25kg sack', 'multiplier': 25.0},
+            {'label': '50kg sack', 'value': '50kg sack', 'multiplier': 50.0}
+        ]
+
+    if is_litter:
+        return [
+            {'label': '5kg', 'value': '5kg', 'multiplier': 5.0},
+            {'label': '10kg', 'value': '10kg', 'multiplier': 10.0},
+            {'label': '20kg', 'value': '20kg', 'multiplier': 20.0}
+        ]
+
+    if is_supply:
+        return [
+            {'label': '1 pc', 'value': '1 pc', 'multiplier': 1.0},
+            {'label': '2 pcs', 'value': '2 pcs', 'multiplier': 2.0},
+            {'label': '3 pcs', 'value': '3 pcs', 'multiplier': 3.0}
+        ]
+
+    if is_medicine:
+        return [
+            {'label': 'per tablet', 'value': 'per tablet', 'multiplier': 1.0},
+            {'label': 'per strip', 'value': 'per strip', 'multiplier': 10.0},
+            {'label': 'per box', 'value': 'per box', 'multiplier': 100.0},
+            {'label': 'per bottle', 'value': 'per bottle', 'multiplier': 1.0}
+        ]
+
+    if is_liquid:
+        return [
+            {'label': 'per bottle', 'value': 'per bottle', 'multiplier': 1.0},
+            {'label': 'per box', 'value': 'per box', 'multiplier': 12.0}
+        ]
+
+    if is_wet_food:
+        return [
+            {'label': 'per pouch', 'value': 'per pouch', 'multiplier': 1.0},
+            {'label': 'per pack', 'value': 'per pack', 'multiplier': 6.0},
+            {'label': '3 packs', 'value': '3 packs', 'multiplier': 3.0},
+            {'label': '6 packs', 'value': '6 packs', 'multiplier': 6.0}
+        ]
+
+    if is_powder:
+        return [
+            {'label': 'per pack', 'value': 'per pack', 'multiplier': 1.0},
+            {'label': 'per kilo', 'value': 'per kilo', 'multiplier': 1.0},
+            {'label': 'per box', 'value': 'per box', 'multiplier': 10.0}
+        ]
+
+    fallback = [{'label': '1 pc', 'value': '1 pc', 'multiplier': 1.0}]
+    normalized_default = _normalize_default_unit_label(default_unit)
+    if normalized_default:
+        existing_values = {_normalize_unit_key(option['value']) for option in fallback}
+        if _normalize_unit_key(normalized_default) not in existing_values:
+            fallback.insert(0, {
+                'label': normalized_default,
+                'value': normalized_default,
+                'multiplier': 1.0
+            })
+    return fallback
+
+def _find_unit_option(options, requested_unit):
+    requested_key = _normalize_unit_key(requested_unit)
+    if not requested_key:
+        return None
+
+    for option in options:
+        option_key = _normalize_unit_key(option.get('value'))
+        if option_key == requested_key:
+            return option
+    return None
+
 # --- ROUTES ---
 
 @app.route('/')
@@ -1648,27 +1842,66 @@ def admin_stats():
     
     db = get_db()
     try:
-        # 1. Total Revenue (Completed only)
-        rev_res = db.execute("SELECT SUM(total_price) as total FROM orders WHERE status != 'Cancelled'").fetchone()
+        fulfilled_placeholders = _sql_placeholders(ANALYTICS_FULFILLED_STATUSES)
+        active_placeholders = _sql_placeholders(ANALYTICS_ACTIVE_STATUSES)
+
+        # 1. Financial metrics (Completed only)
+        rev_res = db.execute(
+            f"SELECT SUM(total_price) AS total FROM orders WHERE status IN ({fulfilled_placeholders})",
+            ANALYTICS_FULFILLED_STATUSES
+        ).fetchone()
         revenue = rev_res['total'] if rev_res['total'] else 0
 
-        # 2. Total Orders (All non-cancelled)
-        order_res = db.execute("SELECT COUNT(order_id) as count FROM orders WHERE status != 'Cancelled'").fetchone()
-        order_count = order_res['count'] if order_res['count'] else 0
+        completed_order_res = db.execute(
+            f"SELECT COUNT(order_id) AS count FROM orders WHERE status IN ({fulfilled_placeholders})",
+            ANALYTICS_FULFILLED_STATUSES
+        ).fetchone()
+        completed_order_count = completed_order_res['count'] if completed_order_res['count'] else 0
+
+        # 2. Operational metric (active pipeline)
+        active_order_res = db.execute(
+            f"SELECT COUNT(order_id) AS count FROM orders WHERE status IN ({active_placeholders})",
+            ANALYTICS_ACTIVE_STATUSES
+        ).fetchone()
+        active_order_count = active_order_res['count'] if active_order_res['count'] else 0
 
         # 3. Average Order Value
-        avg_value = revenue / order_count if order_count > 0 else 0
+        avg_value = revenue / completed_order_count if completed_order_count > 0 else 0
 
-        # 4. Low Stock Count (Items with stock_status 0 or very low)
-        # Note: If you used my seed_data, items with 0 stock have stock_status=0
-        low_stock_res = db.execute("SELECT name FROM products WHERE stock_status = 0").fetchall()
+        # 4. Tiered low-stock metrics
+        low_stock_res = db.execute(
+            "SELECT name, stock_status FROM products WHERE stock_status <= ? ORDER BY stock_status ASC, name ASC",
+            (LOW_STOCK_WATCH_MAX,)
+        ).fetchall()
         low_stock_items = [item['name'] for item in low_stock_res]
+
+        low_stock_tiers = {
+            'critical': [],
+            'warning': [],
+            'watch': []
+        }
+        for item in low_stock_res:
+            stock = int(item['stock_status'] or 0)
+            payload = {
+                'name': item['name'],
+                'stock': stock
+            }
+
+            if stock <= LOW_STOCK_CRITICAL_MAX:
+                low_stock_tiers['critical'].append(payload)
+            elif stock <= LOW_STOCK_WARNING_MAX:
+                low_stock_tiers['warning'].append(payload)
+            else:
+                low_stock_tiers['watch'].append(payload)
 
         return jsonify({
             "revenue": f"₱{revenue:,.2f}",
-            "order_count": order_count,
+            "order_count": active_order_count,
+            "active_order_count": active_order_count,
+            "completed_order_count": completed_order_count,
             "avg_value": f"₱{avg_value:,.2f}",
-            "low_stock": low_stock_items
+            "low_stock": low_stock_items,
+            "low_stock_tiers": low_stock_tiers
         })
     except Exception as e:
         print(f"Stats Error: {e}")
@@ -1681,17 +1914,30 @@ def top_products():
 
     db = get_db()
     try:
-        query = """
-            SELECT p.name, SUM(oi.quantity) as count
+        fulfilled_placeholders = _sql_placeholders(ANALYTICS_FULFILLED_STATUSES)
+        query = f"""
+            SELECT
+                p.name,
+                IFNULL(SUM(oi.quantity), 0) AS count,
+                IFNULL(SUM(oi.quantity * oi.price_at_time), 0) AS revenue
             FROM order_items oi
+            JOIN orders o ON oi.order_id = o.order_id
             JOIN products p ON oi.product_id = p.product_id
+            WHERE o.status IN ({fulfilled_placeholders})
             GROUP BY p.product_id
-            ORDER BY count DESC
+            ORDER BY revenue DESC, count DESC, p.name ASC
             LIMIT 5
         """
-        top_sellers = db.execute(query).fetchall()
+        top_sellers = db.execute(query, ANALYTICS_FULFILLED_STATUSES).fetchall()
         
-        result = [{'name': row['name'], 'count': row['count']} for row in top_sellers]
+        result = [
+            {
+                'name': row['name'],
+                'count': int(row['count'] or 0),
+                'revenue': float(row['revenue'] or 0)
+            }
+            for row in top_sellers
+        ]
         return jsonify(result)
     except Exception as e:
         print(f"Top products error: {e}")
@@ -2584,13 +2830,14 @@ def place_order():
 
     db = get_db()
 
-    # Build a server-trusted item list and total using DB prices only.
+    # Build a server-trusted item list and total using DB prices and validated units.
     total = 0.0
     validated_items = []
     for item in items:
         product_id = item.get('product_id')
         product_name = item.get('name')
         qty = item.get('qty')
+        requested_unit = str(item.get('unit', '')).strip()
 
         try:
             qty = int(qty)
@@ -2602,13 +2849,18 @@ def place_order():
 
         product_row = None
         if product_id is not None:
+            try:
+                product_id = int(product_id)
+            except (TypeError, ValueError):
+                return {'error': 'Invalid product id provided.'}, 400
+
             product_row = db.execute(
-                'SELECT product_id, price FROM products WHERE product_id = ?',
+                'SELECT product_id, name, category, unit, price FROM products WHERE product_id = ?',
                 (product_id,)
             ).fetchone()
         elif product_name:
             product_row = db.execute(
-                'SELECT product_id, price FROM products WHERE name = ?',
+                'SELECT product_id, name, category, unit, price FROM products WHERE name = ?',
                 (product_name,)
             ).fetchone()
         else:
@@ -2617,12 +2869,36 @@ def place_order():
         if not product_row:
             return {'error': 'One or more items reference an unknown product.'}, 400
 
-        db_price = float(product_row['price'])
-        total += db_price * qty
+        unit_options = _get_backend_unit_options(
+            product_row['name'],
+            product_row['category'],
+            product_row['unit']
+        )
+
+        if requested_unit:
+            selected_option = _find_unit_option(unit_options, requested_unit)
+            if not selected_option:
+                return {
+                    'error': f"Invalid unit '{requested_unit}' for product '{product_row['name']}'."
+                }, 400
+        else:
+            default_unit_label = _normalize_default_unit_label(product_row['unit'])
+            selected_option = _find_unit_option(unit_options, default_unit_label)
+            if not selected_option:
+                selected_option = unit_options[0]
+
+        base_price = float(product_row['price'])
+        unit_multiplier = float(selected_option['multiplier'])
+        effective_unit_price = base_price * unit_multiplier
+
+        total += effective_unit_price * qty
         validated_items.append({
             'product_id': product_row['product_id'],
             'qty': qty,
-            'price': db_price
+            'price': effective_unit_price,
+            'selected_unit': selected_option['value'],
+            'unit_multiplier': unit_multiplier,
+            'base_price_at_time': base_price
         })
 
     # Generate a unique order number
@@ -2641,9 +2917,24 @@ def place_order():
     # Insert each line item
     for item in validated_items:
         db.execute(
-            '''INSERT INTO order_items (order_id, product_id, quantity, price_at_time)
-               VALUES (?, ?, ?, ?)''',
-            (order_id, item['product_id'], item['qty'], item['price'])
+            '''INSERT INTO order_items (
+                   order_id,
+                   product_id,
+                   quantity,
+                   price_at_time,
+                   selected_unit,
+                   unit_multiplier,
+                   base_price_at_time
+               ) VALUES (?, ?, ?, ?, ?, ?, ?)''',
+            (
+                order_id,
+                item['product_id'],
+                item['qty'],
+                item['price'],
+                item['selected_unit'],
+                item['unit_multiplier'],
+                item['base_price_at_time']
+            )
         )
 
     db.commit()
@@ -2722,7 +3013,15 @@ def order_history():
     result = []
     for o in orders:
         items = db.execute(
-            '''SELECT oi.quantity, oi.price_at_time, p.name, p.image_filename, p.product_id
+            '''SELECT
+                   oi.quantity,
+                   oi.price_at_time,
+                   oi.base_price_at_time,
+                   oi.selected_unit,
+                   oi.unit_multiplier,
+                   p.name,
+                   p.image_filename,
+                   p.product_id
                FROM order_items oi
                LEFT JOIN products p ON oi.product_id = p.product_id
                WHERE oi.order_id = ?''',
@@ -2739,6 +3038,9 @@ def order_history():
                 'name'          : i['name'],
                 'qty'           : i['quantity'],
                 'price_at_time' : i['price_at_time'],
+                'basePrice'     : i['base_price_at_time'] if i['base_price_at_time'] is not None else i['price_at_time'],
+                'multiplier'    : float(i['unit_multiplier']) if i['unit_multiplier'] is not None else 1,
+                'unit'          : i['selected_unit'] if i['selected_unit'] else '1 pc',
                 'image_filename': i['image_filename']
             } for i in items]
         })
