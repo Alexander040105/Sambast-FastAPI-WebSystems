@@ -62,23 +62,17 @@
             <div id="ai-inventory-alert" class="ai-card">
                 <div class="ai-card-header">
                     <strong>AI Inventory Insights</strong>
+                    <div id="insights-actions" class="ai-actions">
+                        <button type="button" class="ai-action-btn" id="insights-minimize-btn">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"></path></svg>
+                        </button>
+                        <button type="button" class="ai-action-btn" id="insights-download-btn">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="ai-card-body">
                     <button id="generate-insights-btn" class="forecast-btn">Generate AI Insights</button>
-                    <div id="insights-actions" class="ai-actions" hidden>
-                        <button type="button" class="ai-action-btn" id="insights-minimize-btn" aria-label="Minimize insights">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14"></path>
-                            </svg>
-                        </button>
-                        <button type="button" class="ai-action-btn" id="insights-download-btn" aria-label="Download insights as PDF">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 3v12"></path>
-                                <path d="m7 10 5 5 5-5"></path>
-                                <path d="M5 21h14"></path>
-                            </svg>
-                        </button>
-                    </div>
                     <div id="insights-result">Click the button to generate inventory insights.</div>
                 </div>
             </div>
@@ -86,23 +80,17 @@
             <div id="ai-inventory-forecast" class="ai-card">
                 <div class="ai-card-header">
                     <strong>AI Inventory Forecast & Recommendations</strong>
+                    <div id="forecast-actions" class="ai-actions">
+                        <button type="button" class="ai-action-btn" id="forecast-minimize-btn">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"></path></svg>
+                        </button>
+                        <button type="button" class="ai-action-btn" id="forecast-download-btn">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="ai-card-body">
                     <button id="generate-forecast-btn" class="forecast-btn">Generate AI Forecast</button>
-                    <div id="forecast-actions" class="ai-actions" hidden>
-                        <button type="button" class="ai-action-btn" id="forecast-minimize-btn" aria-label="Minimize forecast">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14"></path>
-                            </svg>
-                        </button>
-                        <button type="button" class="ai-action-btn" id="forecast-download-btn" aria-label="Download forecast as PDF">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 3v12"></path>
-                                <path d="m7 10 5 5 5-5"></path>
-                                <path d="M5 21h14"></path>
-                            </svg>
-                        </button>
-                    </div>
                     <div id="forecast-result">Click the button to analyze inventory health.</div>
                 </div>
             </div>
@@ -140,8 +128,13 @@
                             </svg>
                         </button>
 
-                        <form action="{{ url_for('delete_product', product_id=product['product_id']) }}" method="POST" style="display:inline;">
-                            <button type="submit" class="delete" onclick="return confirm('Delete this product?')">
+                        <!-- DELETE BUTTON -->
+                        <form action="{{ url_for('delete_product', product_id=product['product_id']) }}" 
+                            method="POST" 
+                            class="delete-form"
+                            style="display:inline;">
+
+                            <button type="button" class="delete" onclick="openDeleteModal(this)">
                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="3 6 5 6 21 6"/>
                                     <path d="M19 6l-1 14H6L5 6"/>
@@ -151,6 +144,25 @@
                                 </svg>
                             </button>
                         </form>
+
+
+                        <!-- CUSTOM DELETE MODAL -->
+                        <div id="deleteModal" class="delete-modal">
+                            <div class="delete-modal-content">
+                                <h3>Delete Product</h3>
+                                <p>Are you sure you want to delete this product?</p>
+
+                                <div class="delete-modal-actions">
+                                    <button type="button" class="cancel-btn" onclick="closeDeleteModal()">
+                                        Cancel
+                                    </button>
+
+                                    <button type="button" class="confirm-btn" id="confirmDeleteBtn">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </span>
                 </div>
 

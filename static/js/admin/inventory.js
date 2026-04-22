@@ -792,6 +792,29 @@ if (auditSearch) {
     });
 }
 
+// --- DELETE MODAL LOGIC ---
+let selectedDeleteForm = null;
+
+function openDeleteModal(button) {
+    selectedDeleteForm = button.closest(".delete-form");
+    document.getElementById("deleteModal").style.display = "flex";
+}
+
+function closeDeleteModal() {
+    document.getElementById("deleteModal").style.display = "none";
+    selectedDeleteForm = null;
+}
+
+const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+
+if (confirmDeleteBtn) {
+    confirmDeleteBtn.addEventListener("click", function () {
+        if (selectedDeleteForm) {
+            selectedDeleteForm.submit();
+        }
+    });
+}
+
 // --- AI INVENTORY INSIGHTS + FORECAST (BUTTON-TRIGGERED, JSON RENDERED) ---
 let insightsInFlight = false;
 let forecastInFlight = false;
@@ -923,14 +946,17 @@ function bindAiActionControls(config) {
 
     return {
         show: function() {
-            actions.hidden = false;
+            actions.style.display = "flex";
+
             if (resultContainer.classList.contains("ai-result-collapsed")) {
                 resultContainer.classList.remove("ai-result-collapsed");
                 setMinimizeIcon(false);
             }
         },
+
         hide: function() {
-            actions.hidden = true;
+            actions.style.display = "none";
+
             if (resultContainer.classList.contains("ai-result-collapsed")) {
                 resultContainer.classList.remove("ai-result-collapsed");
                 setMinimizeIcon(false);
