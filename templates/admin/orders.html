@@ -68,6 +68,7 @@
             <div class="order-header">
                 <div>
                     <strong>ORDER NO. {{ order['order_no'] }}</strong>
+                    <div class="customer">Customer Name: {{ order['customer_name'] or 'Guest' }}</div>
                     <div class="customer">Customer ID: {{ order['user_id'] or 'Guest' }}</div>
                 </div>
                 <div class="price">
@@ -86,6 +87,12 @@
                     <div>No items found for this order.</div>
                 {% endif %}
             </div>
+
+            <div class="customer">
+                {% if order['status'] == 'Cancelled' %}
+                    Cancel Reason: {{ order.get('cancel_reason', 'No reason provided') }}
+                {% endif %}
+            </div>
             
             <div class="actions">
                 <form action="{{ url_for('update_order_status', order_id=order['order_id']) }}" method="POST" style="display:inline;">
@@ -102,8 +109,20 @@
                 </form>
 
                 {% if order['status'] not in ['Completed', 'Cancelled'] %}
-                <form action="{{ url_for('cancel_order', order_id=order['order_id']) }}" method="POST" style="display:inline;">
-                    <button type="submit" class="secondary">Cancel</button>
+                <form
+                    action="{{ url_for('cancel_order', order_id=order['order_id']) }}"
+                    method="POST"
+                    class="cancel-order-form"
+                    style="display:inline;"
+                >
+                    <input type="hidden" name="cancel_reason" class="cancel-reason-input">
+
+                    <button
+                        type="button"
+                        class="secondary open-cancel-modal"
+                    >
+                        Cancel
+                    </button>
                 </form>
                 {% endif %}
             </div>
@@ -115,6 +134,27 @@
         {% endfor %}
 
     </section>
+
+    <div id="cancelReasonModal" class="cancel-modal">
+        <div class="cancel-modal-content">
+            <h3>Cancel Order</h3>
+
+            <textarea
+                id="cancelReasonText"
+                placeholder="Enter reason for cancellation..."
+            ></textarea>
+
+            <div class="cancel-modal-actions">
+                <button type="button" id="confirmCancelOrder" class="primary">
+                    Confirm
+                </button>
+
+                <button type="button" id="closeCancelModal" class="secondary">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="{{ url_for('static', filename='js/admin/orders.js') }}"></script>
 </body>
