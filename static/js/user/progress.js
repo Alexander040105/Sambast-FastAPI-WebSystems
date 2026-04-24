@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalDisplay   = document.getElementById('progressTotal');
     const statusText     = document.getElementById('statusText');
     const statusDesc     = document.getElementById('statusDesc');
+    const cancelReasonText = document.getElementById('cancelReasonText');
     const orderNoDisplay = document.getElementById('orderNoDisplay');
     const backToShopBtn  = document.getElementById('backToShopBtn');
 
@@ -61,22 +62,41 @@ if (totalDisplay) {
     /**
      * Updates the UI text and colors based on the current order status
      */
-    function updateStatusUI(status) {
+    function updateStatusUI(status, cancellationReason) {
         if (!statusText) return;
         statusText.innerText = status.toUpperCase();
 
         if (status === 'Ready') {
             statusDesc.innerText = "Your order is ready! Please head to the store and show your order number.";
             statusText.style.color = "#28a745";
+            if (cancelReasonText) {
+                cancelReasonText.style.display = 'none';
+                cancelReasonText.innerText = '';
+            }
         } else if (status === 'Completed') {
             statusDesc.innerText = "Order completed. Thank you for your purchase!";
             statusText.style.color = "#28a745";
+            if (cancelReasonText) {
+                cancelReasonText.style.display = 'none';
+                cancelReasonText.innerText = '';
+            }
         } else if (status === 'Cancelled') {
             statusDesc.innerText = "Your order has been cancelled. Please contact the shop for assistance.";
             statusText.style.color = "#dc3545";
+            if (cancelReasonText) {
+                const reasonText = (cancellationReason || '').trim();
+                cancelReasonText.innerText = reasonText
+                    ? `Reason: ${reasonText}`
+                    : 'Reason: No reason provided.';
+                cancelReasonText.style.display = 'block';
+            }
         } else {
             statusDesc.innerText = "Your order is being prepared. We'll notify you when it's ready for pick-up!";
             statusText.style.color = "#1A323E";
+            if (cancelReasonText) {
+                cancelReasonText.style.display = 'none';
+                cancelReasonText.innerText = '';
+            }
         }
     }
 
@@ -97,7 +117,7 @@ if (totalDisplay) {
             })
             .then(data => {
                 if (data.status) {
-                    updateStatusUI(data.status);
+                    updateStatusUI(data.status, data.cancellation_reason);
                 }
             })
             .catch(err => {

@@ -353,6 +353,14 @@ def _run_migrations(db):
             db.commit()
             print("Migration: Added base_price_at_time column to order_items table.")
 
+        # Migration 1f: Ensure orders.cancellation_reason exists for cancel feedback loop
+        cursor.execute("PRAGMA table_info(orders)")
+        order_columns = [column[1] for column in cursor.fetchall()]
+        if order_columns and 'cancellation_reason' not in order_columns:
+            cursor.execute("ALTER TABLE orders ADD COLUMN cancellation_reason TEXT")
+            db.commit()
+            print("Migration: Added cancellation_reason column to orders table.")
+
             # Migration 1e: Ensure products.stock_quantity exists for inventory tracking
             cursor.execute("PRAGMA table_info(products)")
             product_columns = [column[1] for column in cursor.fetchall()]
@@ -452,6 +460,7 @@ def init_db():
             user_id INTEGER, 
             total_price REAL, 
             status TEXT DEFAULT "Pending", 
+            cancellation_reason TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
             FOREIGN KEY (user_id) REFERENCES users (user_id))''')
         
@@ -2304,8 +2313,12 @@ def update_order_status(order_id):
 @app.route('/admin/orders/<int:order_id>/cancel', methods=['POST'])
 def cancel_order(order_id):
     if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
+    cancel_reason = (request.form.get('cancel_reason') or '').strip()
     db = get_db()
-    db.execute('UPDATE orders SET status = "Cancelled" WHERE order_id = ?', (order_id,))
+    db.execute(
+        'UPDATE orders SET status = "Cancelled", cancellation_reason = ? WHERE order_id = ?',
+        (cancel_reason if cancel_reason else None, order_id)
+    )
     action_text = f"Cancelled Order #{order_id}"
     db.execute('INSERT INTO audit_logs (admin_id, action_text, category) VALUES (?, ?, ?)', 
                (session['admin_id'], action_text, get_log_category(action_text)))
@@ -4018,7 +4031,7 @@ def order_status(order_no):
 
     db = get_db()
     order = db.execute(
-        '''SELECT order_no, status, total_price 
+        '''SELECT order_no, status, total_price, cancellation_reason
            FROM orders 
            WHERE order_no = ? AND user_id = ?''',
         (order_no, session['user_id'])
@@ -4030,7 +4043,8 @@ def order_status(order_no):
     return {
         'order_no'    : order['order_no'],
         'status'      : order['status'],
-        'total_price' : order['total_price']
+        'total_price' : order['total_price'],
+        'cancellation_reason': order['cancellation_reason']
     }
 
 

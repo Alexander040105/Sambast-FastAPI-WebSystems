@@ -90,7 +90,7 @@
 
             <div class="customer">
                 {% if order['status'] == 'Cancelled' %}
-                    Cancel Reason: {{ order.get('cancel_reason', 'No reason provided') }}
+                    Cancel Reason: {{ order.get('cancellation_reason') or 'No reason provided' }}
                 {% endif %}
             </div>
             
