@@ -649,10 +649,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     chatHistory.removeChild(typingDiv);
                 }
 
+                // Helper to format basic markdown to HTML
+                const formatMarkdownToHTML = (text) => {
+                    if (!text) return '';
+                    let html = text
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')             // Italic
+                        .replace(/\n/g, '<br>');                         // Newlines
+                    return html;
+                };
+
                 // Append bot response
                 const botMsgDiv = document.createElement('div');
                 botMsgDiv.className = 'chat-msg bot';
-                botMsgDiv.innerText = response.ok && data.response ? data.response : 'Sorry, I am having trouble connecting right now.';
+                if (response.ok && data.response) {
+                    botMsgDiv.innerHTML = formatMarkdownToHTML(data.response);
+                } else {
+                    botMsgDiv.innerText = 'Sorry, I am having trouble connecting right now.';
+                }
                 chatHistory.appendChild(botMsgDiv);
                 
             } catch (error) {
