@@ -654,6 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!text) return '';
                     let html = text
                         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+                        .replace(/^(?:\*|\-)\s+/gm, '&bull; ')             // Bullets
                         .replace(/\*(.*?)\*/g, '<em>$1</em>')             // Italic
                         .replace(/\n/g, '<br>');                         // Newlines
                     return html;
