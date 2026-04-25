@@ -3,6 +3,7 @@ var currentCheckout = [];
 var recommendationInFlight = false;
 var lastRecommendationSignature = null;
 
+
 function normalizeUnitOptions(options) {
     if (!Array.isArray(options)) return [];
 
@@ -748,13 +749,18 @@ function adjustChatWidget() {
     const isVisible = window.getComputedStyle(bottomBar).display !== 'none';
 
     if (isVisible) {
-        chatBtn.style.bottom = '80px';
-        chatWindow.style.bottom = '90px';
-    } else {
-        chatBtn.style.bottom = '45px';
+        chatBtn.style.bottom = '40px';
         chatWindow.style.bottom = '50px';
+    } else {
+        chatBtn.style.bottom = '20px';
+        chatWindow.style.bottom = '30px';
     }
 }
+
+
+
+
+
 
 setInterval(adjustChatWidget, 300);
 
