@@ -617,8 +617,10 @@ async function loadLegacySummaryOnly() {
     const data = await response.json();
     const summaryText = data.summary || data.text || data.message || "Insights loaded.";
     setSummaryText(summaryText);
-    sessionStorage.setItem(summaryCacheKey, summaryText);
-    sessionStorage.setItem("ai_business_summary", summaryText);
+    if (data.source === "ai") {
+        sessionStorage.setItem(summaryCacheKey, summaryText);
+        sessionStorage.setItem("ai_business_summary", summaryText);
+    }
 }
 
 async function generateStructuredInsights() {
@@ -634,9 +636,11 @@ async function generateStructuredInsights() {
     setSummaryText(analytics.summary || "Insights loaded.");
     renderAiInsightsBlock(analytics, payload.source || "ai");
 
-    sessionStorage.setItem(summaryV2CacheKey, JSON.stringify(payload));
-    sessionStorage.setItem(summaryCacheKey, analytics.summary || "Insights loaded.");
-    sessionStorage.setItem("ai_business_summary", analytics.summary || "Insights loaded.");
+    if (payload.source === "ai") {
+        sessionStorage.setItem(summaryV2CacheKey, JSON.stringify(payload));
+        sessionStorage.setItem(summaryCacheKey, analytics.summary || "Insights loaded.");
+        sessionStorage.setItem("ai_business_summary", analytics.summary || "Insights loaded.");
+    }
 }
 
 function restoreCachedInsights() {

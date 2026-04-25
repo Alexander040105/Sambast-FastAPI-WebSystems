@@ -995,7 +995,7 @@ function bindAiActionControls(config) {
     };
 }
 
-function renderInsightsPayload(container, payload) {
+function renderInsightsPayload(container, payload, source) {
     container.innerHTML = "";
 
     if (!payload || typeof payload !== "object") {
@@ -1004,7 +1004,14 @@ function renderInsightsPayload(container, payload) {
     }
 
     if (payload.headline) {
-        container.appendChild(createTextElement("h4", "ai-block-title", payload.headline));
+        const titleEl = createTextElement("h4", "ai-block-title", payload.headline);
+        if (source) {
+            const badge = document.createElement("span");
+            badge.className = "ai-source-badge";
+            badge.textContent = String(source).replaceAll("_", " ");
+            titleEl.appendChild(badge);
+        }
+        container.appendChild(titleEl);
     }
 
     if (payload.summary) {
@@ -1032,7 +1039,7 @@ function renderInsightsPayload(container, payload) {
     }
 }
 
-function renderForecastPayload(container, payload) {
+function renderForecastPayload(container, payload, source) {
     container.innerHTML = "";
 
     if (!payload || typeof payload !== "object") {
@@ -1041,7 +1048,14 @@ function renderForecastPayload(container, payload) {
     }
 
     if (payload.headline) {
-        container.appendChild(createTextElement("h4", "ai-block-title", payload.headline));
+        const titleEl = createTextElement("h4", "ai-block-title", payload.headline);
+        if (source) {
+            const badge = document.createElement("span");
+            badge.className = "ai-source-badge";
+            badge.textContent = String(source).replaceAll("_", " ");
+            titleEl.appendChild(badge);
+        }
+        container.appendChild(titleEl);
     }
 
     if (payload.summary) {
@@ -1199,8 +1213,9 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 const cachedRaw = sessionStorage.getItem(insightsCacheKey);
                 if (cachedRaw) {
-                    const cachedPayload = JSON.parse(cachedRaw);
-                    renderInsightsPayload(insightsResult, cachedPayload);
+                    const cachedData = JSON.parse(cachedRaw);
+                    const cachedPayload = cachedData && cachedData.insights ? cachedData.insights : null;
+                    renderInsightsPayload(insightsResult, cachedPayload, cachedData && cachedData.source);
                     if (cachedPayload) insightsControls.show();
                     return;
                 }
@@ -1211,14 +1226,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await response.json();
                 const payload = data && data.insights ? data.insights : null;
 
-                renderInsightsPayload(insightsResult, payload);
+                renderInsightsPayload(insightsResult, payload, data && data.source);
                 if (payload) {
                     insightsControls.show();
                 } else {
                     insightsControls.hide();
                 }
-                if (payload) {
-                    sessionStorage.setItem(insightsCacheKey, JSON.stringify(payload));
+                if (payload && data.source === "ai") {
+                    sessionStorage.setItem(insightsCacheKey, JSON.stringify(data));
                 }
             } catch (error) {
                 console.error(error);
@@ -1246,8 +1261,9 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 const cachedRaw = sessionStorage.getItem(forecastCacheKey);
                 if (cachedRaw) {
-                    const cachedPayload = JSON.parse(cachedRaw);
-                    renderForecastPayload(forecastResult, cachedPayload);
+                    const cachedData = JSON.parse(cachedRaw);
+                    const cachedPayload = cachedData && cachedData.report ? cachedData.report : null;
+                    renderForecastPayload(forecastResult, cachedPayload, cachedData && cachedData.source);
                     if (cachedPayload) forecastControls.show();
                     return;
                 }
@@ -1258,14 +1274,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await response.json();
                 const payload = data && data.report ? data.report : null;
 
-                renderForecastPayload(forecastResult, payload);
+                renderForecastPayload(forecastResult, payload, data && data.source);
                 if (payload) {
                     forecastControls.show();
                 } else {
                     forecastControls.hide();
                 }
-                if (payload) {
-                    sessionStorage.setItem(forecastCacheKey, JSON.stringify(payload));
+                if (payload && data.source === "ai") {
+                    sessionStorage.setItem(forecastCacheKey, JSON.stringify(data));
                 }
             } catch (error) {
                 console.error(error);
