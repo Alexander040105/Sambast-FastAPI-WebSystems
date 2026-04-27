@@ -2483,6 +2483,8 @@ def admin_orders():
             SELECT
                 oi.quantity,
                 oi.price_at_time,
+                oi.base_price_at_time,
+                oi.discount_amount_at_time,
                 oi.selected_unit,
                 oi.unit_multiplier,
                 p.name AS product_name
@@ -2492,16 +2494,37 @@ def admin_orders():
             ORDER BY oi.item_id ASC
         ''', (order['order_id'],)).fetchall()
 
-        order_data['items'] = [
-            {
+        order_base_revenue = 0.0
+        order_discount_total = 0.0
+        normalized_items = []
+
+        for item in items:
+            quantity = int(item['quantity'] or 0)
+            net_unit_price = float(item['price_at_time'] or 0)
+            base_unit_price = float(item['base_price_at_time'] or net_unit_price)
+            discount_per_unit = float(item['discount_amount_at_time'] or max(0.0, base_unit_price - net_unit_price))
+
+            base_subtotal = max(0.0, base_unit_price * quantity)
+            discount_subtotal = max(0.0, discount_per_unit * quantity)
+            net_subtotal = max(0.0, net_unit_price * quantity)
+
+            order_base_revenue += base_subtotal
+            order_discount_total += discount_subtotal
+
+            normalized_items.append({
                 'product_name': item['product_name'] or 'Unknown Product',
-                'quantity': item['quantity'],
+                'quantity': quantity,
                 'selected_unit': item['selected_unit'] or '1 pc',
                 'unit_multiplier': float(item['unit_multiplier'] or 1),
-                'subtotal': (item['quantity'] or 0) * (item['price_at_time'] or 0)
-            }
-            for item in items
-        ]
+                'base_subtotal': base_subtotal,
+                'discount_subtotal': discount_subtotal,
+                'net_subtotal': net_subtotal
+            })
+
+        order_data['items'] = normalized_items
+        order_data['base_revenue'] = order_base_revenue
+        order_data['discount_applied'] = order_discount_total
+        order_data['net_collected'] = float(order['total_price'] or 0)
         enriched_orders.append(order_data)
 
     return render_template('admin/orders.html', orders=enriched_orders, active_filter=status_filter)

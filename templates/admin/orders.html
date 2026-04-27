@@ -72,7 +72,7 @@
                     <div class="customer">Customer ID: {{ order['user_id'] or 'Guest' }}</div>
                 </div>
                 <div class="price">
-                    ₱ {{ order['total_price'] }}
+                    ₱ {{ '%.2f'|format(order['net_collected']) }}
                     <span>{{ order['status'] }}</span>
                 </div>
             </div>
@@ -81,7 +81,12 @@
             <div class="products">
                 {% if order['items'] %}
                     {% for item in order['items'] %}
-                    <div>{{ item['product_name'] }} ({{ item['selected_unit'] or '1 pc' }}) × {{ item['quantity'] }} <span>₱ {{ '%.2f'|format(item['subtotal']) }}</span></div>
+                    <div style="display:flex; flex-direction:column; gap:2px; margin-bottom:8px;">
+                        <strong>{{ item['product_name'] }} ({{ item['selected_unit'] or '1 pc' }}) × {{ item['quantity'] }}</strong>
+                        <div>Base Revenue: <span>₱ {{ '%.2f'|format(item['base_subtotal']) }}</span></div>
+                        <div>Discount Applied: <span style="color:#a6171c;">-₱ {{ '%.2f'|format(item['discount_subtotal']) }}</span></div>
+                        <div>Net Collected: <span>₱ {{ '%.2f'|format(item['net_subtotal']) }}</span></div>
+                    </div>
                     {% endfor %}
                 {% else %}
                     <div>No items found for this order.</div>

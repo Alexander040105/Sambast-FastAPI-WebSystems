@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     const itemsContainer = document.getElementById('orderItemsList');
     const totalDisplay   = document.getElementById('progressTotal');
+    const subtotalDisplay = document.getElementById('progressSubtotal');
+    const discountPctDisplay = document.getElementById('progressDiscountPct');
     const statusText     = document.getElementById('statusText');
     const statusDesc     = document.getElementById('statusDesc');
     const cancelReasonText = document.getElementById('cancelReasonText');
@@ -11,15 +13,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const lastTotal = localStorage.getItem('lastOrderTotal');
     const lastItems = JSON.parse(localStorage.getItem('lastOrderItems')) || [];
     const lastOrderNo = localStorage.getItem('lastOrderNo');
+    const lastSubtotalRaw = localStorage.getItem('lastOrderSubtotal');
 
     const lastDiscount = parseFloat(localStorage.getItem('lastOrderDiscount') || 0);
-const lastSubtotal = parseFloat(lastTotal || 0);
+    const lastSubtotal = Number.isFinite(parseFloat(lastSubtotalRaw)) ? parseFloat(lastSubtotalRaw) : parseFloat(lastTotal || 0);
+    const finalTotal = Number.isFinite(parseFloat(lastTotal)) ? parseFloat(lastTotal) : Math.max(0, lastSubtotal - lastDiscount);
 
-const finalTotal = lastSubtotal - lastDiscount;
+    if (subtotalDisplay) {
+        subtotalDisplay.innerText = `${(lastSubtotal || 0).toFixed(2)}`;
+    }
 
-if (totalDisplay) {
-    totalDisplay.innerText = `₱${(finalTotal || 0).toFixed(2)}`;
-}
+    if (totalDisplay) {
+        totalDisplay.innerText = `₱${(finalTotal || 0).toFixed(2)}`;
+    }
 
 const discountRow = document.getElementById('discountRow');
 const discountDisplay = document.getElementById('progressDiscount');
@@ -27,8 +33,13 @@ const discountDisplay = document.getElementById('progressDiscount');
 if (lastDiscount > 0) {
     if (discountRow) discountRow.style.display = "flex";
     if (discountDisplay) discountDisplay.innerText = (lastDiscount || 0).toFixed(2);
+    if (discountPctDisplay) {
+        const pct = lastSubtotal > 0 ? ((lastDiscount / lastSubtotal) * 100) : 0;
+        discountPctDisplay.innerText = `(${pct.toFixed(1)}% Off)`;
+    }
 } else {
     if (discountRow) discountRow.style.display = "none";
+    if (discountPctDisplay) discountPctDisplay.innerText = "";
 }
 
     if (orderNoDisplay && lastOrderNo) orderNoDisplay.innerText = lastOrderNo;
@@ -66,6 +77,7 @@ if (lastDiscount > 0) {
         // clear order session (optional)
         localStorage.removeItem('lastOrderItems');
         localStorage.removeItem('lastOrderTotal');
+        localStorage.removeItem('lastOrderSubtotal');
         localStorage.removeItem('lastOrderDiscount');
         localStorage.removeItem('lastOrderNo');
 

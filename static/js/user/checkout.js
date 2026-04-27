@@ -253,7 +253,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     // Save for progress page
                     localStorage.setItem('lastOrderItems', JSON.stringify(checkoutItems));
-                    localStorage.setItem('lastOrderTotal', currentTotal);
+                    localStorage.setItem('lastOrderSubtotal', String(currentSubtotal || 0));
+                    localStorage.setItem('lastOrderDiscount', String(currentDiscount || 0));
+                    localStorage.setItem('lastOrderTotal', String(currentTotal || 0));
                     localStorage.setItem('lastOrderNo', data.order_no);
 
                     // Clean up cart
