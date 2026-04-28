@@ -21,6 +21,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.units import inch
 from io import BytesIO
 import csv
+import requests
 
 # --- AI SETUP ---
 load_dotenv() # Loads the .env file
@@ -182,6 +183,137 @@ def _send_user_registration_otp_email(recipient_email, otp_code):
         'If you did not request this, please ignore this email.'
     )
     _send_email_message(recipient_email, subject, body)
+
+def _get_emailjs_settings():
+    return {
+        'service_id': _env_first('EMAILJS_SERVICE_ID'),
+        'public_key': _env_first('EMAILJS_PUBLIC_KEY'),
+        'private_key': _env_first('EMAILJS_PRIVATE_KEY'),
+        'template_ready': _env_first('EMAILJS_TEMPLATE_READY'),
+        'template_cancelled': _env_first('EMAILJS_TEMPLATE_CANCELLED'),
+        'template_completed': _env_first('EMAILJS_TEMPLATE_COMPLETED')
+    }
+
+def _emailjs_enabled(settings):
+    if not settings:
+        return False
+    return all([
+        settings.get('service_id'),
+        settings.get('public_key'),
+        settings.get('private_key')
+    ])
+
+def _format_currency(value):
+    try:
+        return f"₱ {float(value):.2f}"
+    except (TypeError, ValueError):
+        return "₱ 0.00"
+
+def _build_order_email_payload(db, order_id, status_override=None, cancellation_reason_override=None):
+    order_row = db.execute('''
+        SELECT o.order_id, o.order_no, o.status, o.total_price, o.cancellation_reason,
+               u.name AS customer_name, u.email AS customer_email
+        FROM orders o
+        LEFT JOIN users u ON o.user_id = u.user_id
+        WHERE o.order_id = ?
+    ''', (order_id,)).fetchone()
+
+    if not order_row:
+        return None
+
+    customer_email = (order_row['customer_email'] or '').strip().lower()
+    if not customer_email:
+        return None
+
+    items = db.execute('''
+        SELECT
+            oi.quantity,
+            oi.price_at_time,
+            oi.selected_unit,
+            p.name AS product_name
+        FROM order_items oi
+        LEFT JOIN products p ON p.product_id = oi.product_id
+        WHERE oi.order_id = ?
+        ORDER BY oi.item_id ASC
+    ''', (order_id,)).fetchall()
+
+    item_lines = []
+    for item in items:
+        qty = int(item['quantity'] or 0)
+        unit_price = float(item['price_at_time'] or 0)
+        line_total = unit_price * qty
+        unit_label = item['selected_unit'] or '1 pc'
+        item_lines.append(
+            f"{item['product_name'] or 'Item'} x{qty} ({unit_label}) - {_format_currency(line_total)}"
+        )
+
+    status_value = status_override or order_row['status'] or 'Pending'
+    cancellation_reason = cancellation_reason_override or order_row['cancellation_reason'] or ''
+
+    return {
+        'customer_name': order_row['customer_name'] or 'Customer',
+        'customer_email': customer_email,
+        'order_id': order_row['order_id'],
+        'order_no': order_row['order_no'],
+        'status': status_value,
+        'total_price': order_row['total_price'] or 0,
+        'total_price_display': _format_currency(order_row['total_price'] or 0),
+        'item_lines': item_lines,
+        'items_summary': "\n".join(item_lines),
+        'cancellation_reason': cancellation_reason.strip()
+    }
+
+def _send_emailjs_message(template_id, template_params):
+    settings = _get_emailjs_settings()
+    if not _emailjs_enabled(settings) or not template_id:
+        return False, 'EmailJS not configured.'
+
+    payload = {
+        'service_id': settings['service_id'],
+        'template_id': template_id,
+        'user_id': settings['public_key'],
+        'accessToken': settings['private_key'],
+        'template_params': template_params
+    }
+
+    try:
+        response = requests.post(
+            'https://api.emailjs.com/api/v1.0/email/send',
+            json=payload,
+            timeout=15
+        )
+        if response.status_code in (200, 201):
+            return True, None
+        return False, response.text or 'EmailJS request failed.'
+    except Exception as exc:
+        return False, f"EmailJS error: {exc}"
+
+def _queue_order_status_email(payload, template_key):
+    if not payload:
+        return
+
+    settings = _get_emailjs_settings()
+    template_id = settings.get(template_key)
+    if not template_id:
+        return
+
+    template_params = {
+        'to_name': payload['customer_name'],
+        'to_email': payload['customer_email'],
+        'order_no': payload['order_no'],
+        'order_id': payload['order_id'],
+        'status': payload['status'],
+        'total_price': payload['total_price_display'],
+        'items_summary': payload['items_summary'],
+        'cancellation_reason': payload['cancellation_reason'] or 'N/A'
+    }
+
+    def _send_async():
+        success, error_message = _send_emailjs_message(template_id, template_params)
+        if not success and error_message:
+            print(error_message)
+
+    threading.Thread(target=_send_async, daemon=True).start()
 
 def _issue_user_registration_otp(db, user_id, recipient_email, is_resend=False):
     now_ts = int(time.time())
@@ -2683,12 +2815,13 @@ def update_order_status(order_id):
     new_status = request.form.get('status')
     db = get_db()
     current_order = db.execute(
-        'SELECT status FROM orders WHERE order_id = ?',
+        'SELECT status, user_id, order_no FROM orders WHERE order_id = ?',
         (order_id,)
     ).fetchone()
+    current_status = current_order['status'] if current_order else None
     
     # Implement Fulfillment Model: Deduct inventory only once when order transitions to Completed
-    if new_status == 'Completed' and current_order and current_order['status'] != 'Completed':
+    if new_status == 'Completed' and current_order and current_status != 'Completed':
         # Fetch all items in this order
         order_items = db.execute(
             'SELECT product_id, quantity, unit_multiplier FROM order_items WHERE order_id = ?',
@@ -2725,6 +2858,15 @@ def update_order_status(order_id):
     db.execute('INSERT INTO audit_logs (admin_id, action_text, category) VALUES (?, ?, ?)', 
                (session['admin_id'], action_text, get_log_category(action_text)))
     db.commit()
+
+    if current_order and current_status != new_status:
+        email_payload = _build_order_email_payload(db, order_id, status_override=new_status)
+        if new_status == 'Ready':
+            _queue_order_status_email(email_payload, 'template_ready')
+        # NOTE: Completed-email template not configured yet.
+        # elif new_status == 'Completed':
+        #     _queue_order_status_email(email_payload, 'template_completed')
+
     return redirect(url_for('admin_orders', status=new_status))
 
 @app.route('/admin/orders/<int:order_id>/cancel', methods=['POST'])
@@ -2732,6 +2874,10 @@ def cancel_order(order_id):
     if 'admin_id' not in session: return redirect(url_for('admin_login_page'))
     cancel_reason = (request.form.get('cancel_reason') or '').strip()
     db = get_db()
+    order_row = db.execute(
+        'SELECT status FROM orders WHERE order_id = ?',
+        (order_id,)
+    ).fetchone()
     db.execute(
         'UPDATE orders SET status = "Cancelled", cancellation_reason = ? WHERE order_id = ?',
         (cancel_reason if cancel_reason else None, order_id)
@@ -2740,6 +2886,15 @@ def cancel_order(order_id):
     db.execute('INSERT INTO audit_logs (admin_id, action_text, category) VALUES (?, ?, ?)', 
                (session['admin_id'], action_text, get_log_category(action_text)))
     db.commit()
+
+    if order_row and order_row['status'] != 'Cancelled':
+        email_payload = _build_order_email_payload(
+            db,
+            order_id,
+            status_override='Cancelled',
+            cancellation_reason_override=cancel_reason
+        )
+        _queue_order_status_email(email_payload, 'template_cancelled')
     return redirect(url_for('admin_orders'))
 
 # --- INVENTORY MANAGEMENT (CRUD) ---
