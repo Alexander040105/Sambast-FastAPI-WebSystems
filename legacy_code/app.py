@@ -652,13 +652,14 @@ def _run_migrations(db):
             db.commit()
             print("Migration: Added cancellation_reason column to orders table.")
 
-            # Migration 1e: Ensure products.stock_quantity exists for inventory tracking
-            cursor.execute("PRAGMA table_info(products)")
-            product_columns = [column[1] for column in cursor.fetchall()]
-            if product_columns and 'stock_quantity' not in product_columns:
-                cursor.execute("ALTER TABLE products ADD COLUMN stock_quantity INTEGER DEFAULT 0")
-                db.commit()
-                print("Migration: Added stock_quantity column to products table.")
+        # Migration 1e: Ensure products.stock_quantity exists for inventory tracking
+        cursor.execute("PRAGMA table_info(products)")
+        product_columns = [column[1] for column in cursor.fetchall()]
+        if product_columns and 'stock_quantity' not in product_columns:
+            cursor.execute("ALTER TABLE products ADD COLUMN stock_quantity INTEGER DEFAULT 0")
+            cursor.execute("UPDATE products SET stock_quantity = stock_status")
+            db.commit()
+            print("Migration: Added stock_quantity column to products table.")
 
         # Migration 1d: Ensure categories table exists and is backfilled from products
         cursor.execute('''
