@@ -234,18 +234,9 @@ export function DispatchQueue() {
     <section className="dispatch-page" aria-labelledby="dispatch-title">
       <header className="dispatch-page-header">
         <div>
-          <p className="dispatch-kicker">DISPATCHER / OPERATIONS</p>
           <h1 id="dispatch-title">Dispatch Queue</h1>
           <p className="dispatch-intro">Review ready orders and assign a driver.</p>
         </div>
-        <button
-          type="button"
-          className="dispatch-refresh"
-          onClick={() => loadQueue().catch(() => {})}
-          disabled={queueLoading}
-        >
-          {queueLoading ? 'Refreshing…' : 'Refresh queue'}
-        </button>
       </header>
 
       {queueError ? (
@@ -253,6 +244,9 @@ export function DispatchQueue() {
           <p>{getErrorMessage(queueError, 'Could not load the dispatch queue')}</p>
           <button type="button" className="dispatch-button dispatch-button-primary" onClick={() => loadQueue({ initial: true }).catch(() => {})} disabled={queueLoading}>
             {queueLoading ? 'Retrying…' : 'Retry'}
+          </button>
+          <button type="button" className="dispatch-button dispatch-button-secondary" onClick={() => loadQueue().catch(() => {})} disabled={queueLoading}>
+            {queueLoading ? 'Refreshing…' : 'Refresh queue'}
           </button>
         </div>
       ) : (
@@ -264,13 +258,20 @@ export function DispatchQueue() {
           <section className="dispatch-queue-pane" aria-labelledby="queue-heading">
             <div className="dispatch-pane-heading">
               <div>
-                <p className="dispatch-section-label">READY FOR DISPATCH</p>
-                <h2 id="queue-heading">Orders</h2>
+                <h2 id="queue-heading">Ready orders</h2>
               </div>
               <div className="dispatch-queue-tools">
                 <label className="dispatch-search">
                   <input type="search" aria-label="Search orders by order number or delivery address" value={search} placeholder="Search orders..." onChange={(event) => handleQueueSearch(event.target.value)} />
                 </label>
+                <button
+                  type="button"
+                  className="dispatch-refresh"
+                  onClick={() => loadQueue().catch(() => {})}
+                  disabled={queueLoading}
+                >
+                  {queueLoading ? 'Refreshing…' : 'Refresh queue'}
+                </button>
                 <span className="dispatch-count" aria-label={`${filteredOrders.length} matching orders`}>{queueLoading ? '—' : filteredOrders.length}</span>
               </div>
             </div>
@@ -340,7 +341,6 @@ export function DispatchQueue() {
           <aside className="dispatch-detail-pane" aria-labelledby="order-detail-heading">
             {!selectedOrder ? (
               <div className="dispatch-detail-empty">
-                <p className="dispatch-section-label">ORDER DETAILS</p>
                 <h2 id="order-detail-heading">Select an order</h2>
                 <p>Choose an order from the queue to review its delivery details and assignment options.</p>
               </div>
@@ -348,7 +348,6 @@ export function DispatchQueue() {
               <>
                 <div className="dispatch-pane-heading dispatch-detail-heading">
                   <div>
-                    <p className="dispatch-section-label">ORDER DETAILS</p>
                     <h2 id="order-detail-heading">{selectedOrder.order_no || `Order #${selectedOrder.id}`}</h2>
                   </div>
                   <span className="dispatch-record-id">#{selectedOrder.id}</span>
@@ -372,8 +371,7 @@ export function DispatchQueue() {
                 <section className="dispatch-recommendation" aria-labelledby="recommendation-heading">
                   <div className="dispatch-subsection-heading">
                     <div>
-                      <p className="dispatch-section-label">BACKEND SUGGESTION</p>
-                      <h3 id="recommendation-heading">Assignment recommendation</h3>
+                      <h3 id="recommendation-heading">Recommendation</h3>
                     </div>
                     <button
                       type="button"

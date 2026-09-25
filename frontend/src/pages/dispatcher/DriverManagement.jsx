@@ -136,7 +136,6 @@ export function DriverManagement() {
   return (
     <div className="fleet-records">
       <div className="section-header fleet-table-toolbar">
-        <h1>Drivers</h1>
         <div className="fleet-table-controls">
           <label className="fleet-search">
             <span className="sr-only">Search drivers by ID, user ID, or license number</span>
