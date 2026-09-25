@@ -43,7 +43,7 @@ export function DispatcherLayout() {
           </div>
         </div>
       </header>
-      <main className="page-container">
+      <main className="page-container dispatcher-workspace">
         <Outlet />
       </main>
     </div>

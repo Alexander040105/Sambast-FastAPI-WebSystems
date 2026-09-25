@@ -39,6 +39,18 @@ function clearAuth() {
   localStorage.removeItem('refresh_token');
 }
 
+function getAuthRole() {
+  const token = getAuthToken();
+  if (!token) return null;
+  try {
+    const payload = token.split('.')[1];
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(base64)).role || null;
+  } catch {
+    return null;
+  }
+}
+
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const token = getAuthToken();
@@ -58,23 +70,38 @@ async function request(endpoint, options = {}) {
     config.body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(url, config);
+  let response;
+  try {
+    response = await fetch(url, config);
+  } catch (error) {
+    throw new ApiError(error.message || 'Unable to connect to the server', 'NETWORK_ERROR', 0);
+  }
 
   if (response.status === 401) {
     clearAuth();
-    window.location.href = '/login';
     throw new ApiError('Unauthorized', 'UNAUTHORIZED', 401);
   }
 
   const contentType = response.headers.get('content-type');
   const isJson = contentType && contentType.includes('application/json');
-  const data = isJson ? await response.json() : await response.text();
+  const data = response.status === 204 ? null : (isJson ? await response.json() : await response.text());
 
   if (!response.ok) {
-    const error = isJson
-      ? data.error || { message: 'Request failed', code: 'REQUEST_FAILED' }
-      : { message: data || 'Request failed', code: 'REQUEST_FAILED' };
-    throw new ApiError(error.message, error.code, response.status, error.details);
+    const detail = isJson ? data.detail : null;
+    const validationMessage = Array.isArray(detail)
+      ? detail.map((item) => {
+        const field = Array.isArray(item.loc) ? item.loc.slice(1).join('.') : '';
+        return field ? `${field}: ${item.msg}` : item.msg;
+      }).join('; ')
+      : null;
+    const message = validationMessage
+      || (typeof detail === 'string' ? detail : null)
+      || data?.error?.message
+      || data?.message
+      || (typeof data === 'string' ? data : null)
+      || 'Request failed';
+    const code = data?.error?.code || data?.code || 'REQUEST_FAILED';
+    throw new ApiError(message, code, response.status, detail || data?.error?.details);
   }
 
   return data;
@@ -103,6 +130,7 @@ export const api = {
 
 export const auth = {
   getToken: getAuthToken,
+  getRole: getAuthRole,
   setToken: setAuthToken,
   getRefreshToken,
   setRefreshToken,
