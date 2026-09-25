@@ -1,3 +1,4 @@
+import '../css/shared-layout.css';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { auth } from '../api';
 
@@ -15,37 +16,26 @@ export function DriverLayout() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 sticky top-0 z-10">
-        <div className="max-w-screen-xl mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Driver App</h1>
-          <button
-            onClick={handleLogout}
-            className="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-          >
-            Logout
-          </button>
+    <div className="min-h-screen driver-layout" style={{ backgroundColor: 'var(--bg-page)' }}>
+      <header className="header-bar" style={{ padding: '0.75rem 1rem' }}>
+        <div className="header-inner" style={{ maxWidth: 'none' }}>
+          <h1 className="header-title" style={{ fontSize: '1rem' }}>Driver App</h1>
+          <button onClick={handleLogout} className="btn btn-ghost btn-sm">Logout</button>
         </div>
-        <nav className="mt-3 flex gap-2 overflow-x-auto pb-2 -mx-4 px-4" role="tablist">
+        <nav className="fleet-tabs" role="tablist" aria-label="Driver navigation">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               role="tab"
-              className={({ isActive }) =>
-                `whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`
-              }
+              className={({ isActive }) => `fleet-tab ${isActive ? 'active' : ''}`}
             >
               {item.label}
             </NavLink>
           ))}
         </nav>
       </header>
-      <main className="max-w-screen-xl mx-auto px-4 py-4 pb-20">
+      <main className="page-container" style={{ maxWidth: 'none', paddingLeft: '1rem', paddingRight: '1rem' }}>
         <Outlet />
       </main>
     </div>
