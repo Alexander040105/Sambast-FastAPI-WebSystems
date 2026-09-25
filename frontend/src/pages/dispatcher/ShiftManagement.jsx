@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { fetchShifts, createShift, updateShift, deleteShift } from '../../data/mockShifts.js';
-import { fetchDrivers } from '../../data/mockDrivers.js';
-import { fetchVehicles } from '../../data/mockVehicles.js';
+import { auth } from '../../api/index.js';
+import { fetchShifts, createShift, updateShift, deleteShift } from '../../api/shifts.js';
+import { fetchDrivers } from '../../api/drivers.js';
+import { fetchVehicles } from '../../api/vehicles.js';
 import { Modal } from '../../components/Modal.jsx';
 import { ConfirmDialog } from '../../components/ConfirmDialog.jsx';
 
@@ -9,6 +10,7 @@ const STATUS_OPTIONS = [
   { value: 'scheduled', label: 'Scheduled' },
   { value: 'active', label: 'Active' },
   { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
 ];
 
 const INITIAL_FORM = {
@@ -33,7 +35,7 @@ function validateForm(form, drivers, vehicles) {
   if (!form.driver_id) errors.driver_id = 'Driver is required';
   else if (!drivers.find((d) => d.id === Number(form.driver_id))) errors.driver_id = 'Invalid driver';
   if (!form.vehicle_id) errors.vehicle_id = 'Vehicle is required';
-  else if (!vehicles.find((v) => v.id === Number(form.vehicle_id))) errors.vehicle_id = 'Invalid vehicle';
+  else if (form.vehicle_id && !vehicles.find((v) => v.id === Number(form.vehicle_id))) errors.vehicle_id = 'Invalid vehicle';
   if (!form.starts_at) errors.starts_at = 'Start time is required';
   if (!form.ends_at) errors.ends_at = 'End time is required';
   if (form.starts_at && form.ends_at && new Date(form.starts_at) >= new Date(form.ends_at)) {
@@ -86,6 +88,7 @@ export function ShiftManagement() {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [shiftToDelete, setShiftToDelete] = useState(null);
+  const isAdmin = auth.getRole() === 'admin';
 
   const activeDrivers = useMemo(() => drivers.filter((d) => d.status === 'active'), [drivers]);
   const activeVehicles = useMemo(() => vehicles.filter((v) => v.is_active), [vehicles]);
@@ -128,7 +131,7 @@ export function ShiftManagement() {
     setEditingShift(shift);
     setFormData({
       driver_id: String(shift.driver_id),
-      vehicle_id: String(shift.vehicle_id),
+      vehicle_id: shift.vehicle_id == null ? '' : String(shift.vehicle_id),
       starts_at: shift.starts_at.slice(0, 16),
       ends_at: shift.ends_at.slice(0, 16),
       status: shift.status,
@@ -164,7 +167,7 @@ export function ShiftManagement() {
       setSubmitting(true);
       const payload = {
         driver_id: Number(formData.driver_id),
-        vehicle_id: Number(formData.vehicle_id),
+        vehicle_id: formData.vehicle_id ? Number(formData.vehicle_id) : null,
         starts_at: new Date(formData.starts_at).toISOString(),
         ends_at: new Date(formData.ends_at).toISOString(),
         status: formData.status,
@@ -204,8 +207,8 @@ export function ShiftManagement() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem' }}>
-        <span className="loading-spinner" style={{ color: 'var(--color-primary)' }} />
+      <div className="fleet-state" role="status">
+        <span className="loading-spinner" />
         <span className="sr-only">Loading shifts...</span>
       </div>
     );
@@ -213,8 +216,8 @@ export function ShiftManagement() {
 
   if (error) {
     return (
-      <div style={{ textAlign: 'center', padding: '3rem' }}>
-        <p className="error-message" style={{ fontSize: '0.8125rem', marginBottom: '0.75rem' }}>Failed to load shifts: {error}</p>
+      <div className="fleet-state fleet-state-error" role="alert">
+        <p className="error-message">Failed to load shifts: {error}</p>
         <button onClick={loadAll} className="btn btn-primary">
           Retry
         </button>
@@ -223,10 +226,10 @@ export function ShiftManagement() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div className="fleet-records" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <div className="section-header">
         <h1>Shifts</h1>
-        <button onClick={openCreateModal} className="btn btn-primary" disabled={activeDrivers.length === 0 || activeVehicles.length === 0}>
+        <button onClick={openCreateModal} className="btn btn-primary" disabled={activeDrivers.length === 0}>
           Add Shift
         </button>
       </div>
@@ -234,8 +237,8 @@ export function ShiftManagement() {
       {(activeDrivers.length === 0 || activeVehicles.length === 0) && (
         <div className="warning-banner">
           {activeDrivers.length === 0 && 'No active drivers available. '}
-          {activeVehicles.length === 0 && 'No active vehicles available. '}
-          Add drivers and vehicles first to create shifts.
+          {activeVehicles.length === 0 && 'No active vehicles available; shifts can be created without an assigned vehicle. '}
+          {activeDrivers.length === 0 && 'Add drivers first to create shifts.'}
         </div>
       )}
 
@@ -245,10 +248,7 @@ export function ShiftManagement() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="empty-state-title">No shifts scheduled</p>
-          <p className="empty-state-text">Create your first shift to get started.</p>
-          <button onClick={openCreateModal} className="btn btn-primary" disabled={activeDrivers.length === 0 || activeVehicles.length === 0}>
-            Create First Shift
-          </button>
+          <p className="empty-state-text">Use Add Shift above to schedule the first shift.</p>
         </div>
       ) : (
         <div className="table-container">
@@ -267,11 +267,11 @@ export function ShiftManagement() {
             <tbody>
               {shifts.map((shift) => (
                 <tr key={shift.id}>
-                  <td style={{ fontWeight: '500' }}>{shift.driver?.user?.name || '—'}</td>
+                  <td style={{ fontWeight: '500' }}>{(() => { const driver = drivers.find((item) => item.id === shift.driver_id); return driver ? `Driver #${driver.id}${driver.license_no ? ` · ${driver.license_no}` : ''}` : `Driver #${shift.driver_id}`; })()}</td>
                   <td>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: '500' }}>{shift.vehicle?.plate_no || '—'}</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: '500' }}>{vehicles.find((item) => item.id === shift.vehicle_id)?.plate_no || 'Unassigned'}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
-                      {shift.vehicle?.type || '—'}
+                      {vehicles.find((item) => item.id === shift.vehicle_id)?.type || '—'}
                     </div>
                   </td>
                   <td style={{ fontSize: '0.8125rem' }}>{formatDateTime(shift.starts_at)}</td>
@@ -286,22 +286,22 @@ export function ShiftManagement() {
                         onClick={() => openEditModal(shift)}
                         className="btn btn-ghost btn-sm"
                         style={{ padding: '0.3125rem' }}
-                        aria-label={`Edit shift for ${shift.driver?.user?.name}`}
+                        aria-label={`Edit shift ${shift.id}`}
                       >
                         <svg style={{ width: '1rem', height: '1rem' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
-                      <button
+                      {isAdmin && <button
                         onClick={() => confirmDelete(shift)}
                         className="btn btn-ghost btn-sm"
                         style={{ padding: '0.3125rem', color: 'var(--color-danger)' }}
-                        aria-label={`Delete shift for ${shift.driver?.user?.name}`}
+                        aria-label={`Delete shift ${shift.id}`}
                       >
                         <svg style={{ width: '1rem', height: '1rem' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                      </button>
+                      </button>}
                     </div>
                   </td>
                 </tr>
@@ -327,7 +327,7 @@ export function ShiftManagement() {
                 <option value="">Select driver</option>
                 {activeDrivers.map((d) => (
                   <option key={d.id} value={d.id}>
-                    {d.user?.name} ({d.license_no})
+                    Driver #{d.id}{d.license_no ? ` (${d.license_no})` : ''}
                   </option>
                 ))}
               </select>
@@ -343,7 +343,7 @@ export function ShiftManagement() {
                 className={`select ${formErrors.vehicle_id ? 'input-error' : ''}`}
                 disabled={submitting}
               >
-                <option value="">Select vehicle</option>
+                <option value="">Unassigned</option>
                 {activeVehicles.map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.plate_no} ({v.type}, {v.max_weight_kg}kg)
@@ -400,7 +400,7 @@ export function ShiftManagement() {
             <button type="button" onClick={closeModal} className="btn btn-secondary" disabled={submitting}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={submitting || activeDrivers.length === 0 || activeVehicles.length === 0}>
+            <button type="submit" className="btn btn-primary" disabled={submitting || activeDrivers.length === 0}>
               {submitting ? (
                 <>
                   <span className="loading-spinner" style={{ marginRight: '0.5rem' }} />
@@ -414,7 +414,7 @@ export function ShiftManagement() {
         </form>
       </Modal>
 
-      <ConfirmDialog
+      {isAdmin && <ConfirmDialog
         isOpen={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={handleDelete}
@@ -422,7 +422,7 @@ export function ShiftManagement() {
         message={`Are you sure you want to delete this shift? This action cannot be undone.`}
         confirmText="Delete"
         variant="danger"
-      />
+      />}
     </div>
   );
 }

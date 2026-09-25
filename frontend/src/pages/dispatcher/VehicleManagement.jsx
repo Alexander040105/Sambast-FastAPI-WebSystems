@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { fetchVehicles, createVehicle, updateVehicle, deleteVehicle } from '../../data/mockVehicles.js';
+import { auth } from '../../api/index.js';
+import { fetchVehicles, createVehicle, updateVehicle, deleteVehicle } from '../../api/vehicles.js';
 import { Modal } from '../../components/Modal.jsx';
 import { ConfirmDialog } from '../../components/ConfirmDialog.jsx';
 
@@ -23,8 +24,7 @@ function validateForm(form) {
   else if (!/^[A-Z]{3}-\d{4}$/.test(form.plate_no.toUpperCase())) errors.plate_no = 'Format: ABC-1234';
   if (!form.max_weight_kg) errors.max_weight_kg = 'Max weight is required';
   else if (Number(form.max_weight_kg) <= 0) errors.max_weight_kg = 'Must be greater than 0';
-  if (!form.max_volume_m3) errors.max_volume_m3 = 'Max volume is required';
-  else if (Number(form.max_volume_m3) <= 0) errors.max_volume_m3 = 'Must be greater than 0';
+  if (form.max_volume_m3 && Number(form.max_volume_m3) <= 0) errors.max_volume_m3 = 'Must be greater than 0';
   return errors;
 }
 
@@ -49,6 +49,7 @@ export function VehicleManagement() {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [vehicleToDelete, setVehicleToDelete] = useState(null);
+  const isAdmin = auth.getRole() === 'admin';
 
   useEffect(() => {
     loadVehicles();
@@ -117,7 +118,7 @@ export function VehicleManagement() {
         plate_no: formData.plate_no.toUpperCase().trim(),
         type: formData.type,
         max_weight_kg: Number(formData.max_weight_kg),
-        max_volume_m3: Number(formData.max_volume_m3),
+        max_volume_m3: formData.max_volume_m3 ? Number(formData.max_volume_m3) : null,
         is_active: formData.is_active,
       };
 
@@ -155,8 +156,8 @@ export function VehicleManagement() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem' }}>
-        <span className="loading-spinner" style={{ color: 'var(--color-primary)' }} />
+      <div className="fleet-state" role="status">
+        <span className="loading-spinner" />
         <span className="sr-only">Loading vehicles...</span>
       </div>
     );
@@ -164,8 +165,8 @@ export function VehicleManagement() {
 
   if (error) {
     return (
-      <div style={{ textAlign: 'center', padding: '3rem' }}>
-        <p className="error-message" style={{ fontSize: '0.8125rem', marginBottom: '0.75rem' }}>Failed to load vehicles: {error}</p>
+      <div className="fleet-state fleet-state-error" role="alert">
+        <p className="error-message">Failed to load vehicles: {error}</p>
         <button onClick={loadVehicles} className="btn btn-primary">
           Retry
         </button>
@@ -174,7 +175,7 @@ export function VehicleManagement() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div className="fleet-records" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <div className="section-header">
         <h1>Vehicles</h1>
         <button onClick={openCreateModal} className="btn btn-primary">
@@ -188,10 +189,7 @@ export function VehicleManagement() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10l4-8m-4 8l-4-8" />
           </svg>
           <p className="empty-state-title">No vehicles found</p>
-          <p className="empty-state-text">Get started by adding your first vehicle.</p>
-          <button onClick={openCreateModal} className="btn btn-primary">
-            Add First Vehicle
-          </button>
+          <p className="empty-state-text">Use Add Vehicle above to register the first vehicle.</p>
         </div>
       ) : (
         <div className="table-container">
@@ -213,7 +211,7 @@ export function VehicleManagement() {
                   <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '500' }}>{vehicle.plate_no}</td>
                   <td><span className="type-label">{vehicle.type.charAt(0).toUpperCase() + vehicle.type.slice(1)}</span></td>
                   <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{vehicle.max_weight_kg.toLocaleString()}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{vehicle.max_volume_m3.toLocaleString()}</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{vehicle.max_volume_m3 == null ? '—' : Number(vehicle.max_volume_m3).toLocaleString()}</td>
                   <td>
                     <span className={vehicle.is_active ? 'state-active' : 'state-inactive'}>
                       {vehicle.is_active ? 'Active' : 'Inactive'}
@@ -234,7 +232,7 @@ export function VehicleManagement() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
-                      <button
+                      {isAdmin && <button
                         onClick={() => confirmDelete(vehicle)}
                         className="btn btn-ghost btn-sm"
                         style={{ padding: '0.3125rem', color: 'var(--color-danger)' }}
@@ -243,7 +241,7 @@ export function VehicleManagement() {
                         <svg style={{ width: '1rem', height: '1rem' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                      </button>
+                      </button>}
                     </div>
                   </td>
                 </tr>
@@ -316,6 +314,7 @@ export function VehicleManagement() {
                 step="0.1"
                 disabled={submitting}
               />
+              <p className="empty-state-text">Optional.</p>
               {formErrors.max_volume_m3 && <p className="error-message">{formErrors.max_volume_m3}</p>}
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -350,7 +349,7 @@ export function VehicleManagement() {
         </form>
       </Modal>
 
-      <ConfirmDialog
+      {isAdmin && <ConfirmDialog
         isOpen={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={handleDelete}
@@ -358,7 +357,7 @@ export function VehicleManagement() {
         message={`Are you sure you want to delete ${vehicleToDelete?.plate_no || 'this vehicle'}? This action cannot be undone.`}
         confirmText="Delete"
         variant="danger"
-      />
+      />}
     </div>
   );
 }

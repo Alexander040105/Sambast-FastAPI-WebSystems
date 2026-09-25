@@ -16,10 +16,10 @@
   align-items: center;
   display: flex;
   justify-content: space-between;
-  margin: 0 auto;
-  max-width: 80rem;
-  min-height: 4rem;
-  padding: 0 1.5rem;
+  margin: 0;
+  max-width: none;
+  min-height: 4.125rem;
+  padding: 0 clamp(24px, 3vw, 64px);
 }
 
 .dispatcher-layout .header-title {
@@ -28,18 +28,18 @@
   display: flex;
   font-size: 0.9375rem;
   font-weight: 600;
-  gap: 0.875rem;
+  gap: 0.75rem;
   letter-spacing: -0.02em;
   margin: 0;
 }
 
 .dispatcher-layout .header-brand {
-  border-right: 1px solid var(--color-sambast-line);
+  border-left: 3px solid var(--color-primary);
   color: var(--color-primary-dark);
   font-size: 1.0625rem;
   font-weight: 750;
   letter-spacing: -0.045em;
-  padding-right: 0.875rem;
+  padding-left: 0.625rem;
 }
 
 .dispatcher-layout .header-context {
@@ -52,19 +52,20 @@
 .dispatcher-layout .nav-main {
   align-items: stretch;
   display: flex;
-  gap: 0.25rem;
-  height: 4rem;
+  gap: 0.15rem;
+  height: 4.125rem;
 }
 
 .dispatcher-layout .nav-main-item {
   align-items: center;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   color: var(--color-sambast-muted);
   display: inline-flex;
   font-size: 0.8125rem;
   font-weight: 500;
-  padding: 0 0.9rem;
+  padding: 0 0.8rem;
+  position: relative;
   text-decoration: none;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
@@ -75,49 +76,26 @@
 }
 
 .dispatcher-layout .nav-main-item.active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: #fff;
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-primary-dark);
   font-weight: 600;
+}
+
+.dispatcher-layout .nav-main-item.active::after {
+  background: var(--color-primary);
+  bottom: 0;
+  content: '';
+  height: 3px;
+  left: 0.8rem;
+  position: absolute;
+  right: 0.8rem;
 }
 
 .dispatcher-layout .page-container {
-  margin: 0 auto;
-  max-width: 80rem;
-  padding: 1.75rem 1.5rem 3rem;
-}
-
-.dispatcher-layout .fleet-tabs {
-  border-bottom: 1px solid var(--color-sambast-line);
-  display: flex;
-  gap: 0.25rem;
-  margin: 0 0 1.75rem;
-  overflow-x: auto;
-  padding-left: 0;
-}
-
-.dispatcher-layout .fleet-tab {
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  color: var(--color-sambast-muted);
-  flex: 0 0 auto;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  margin-bottom: -1px;
-  padding: 0.65rem 1rem;
-  text-decoration: none;
-  transition: border-color 120ms ease, color 120ms ease;
-}
-
-.dispatcher-layout .fleet-tab:hover { color: #252621; }
-
-.dispatcher-layout .fleet-tab.active {
-  background: var(--color-sambast-hover);
-  border-bottom-color: transparent;
-  border-left: 3px solid var(--color-primary);
-  color: var(--color-primary-dark);
-  font-weight: 600;
-  padding-left: calc(1rem - 3px);
+  margin: 0;
+  max-width: none;
+  padding: 1.5rem clamp(24px, 3vw, 64px) 3rem;
 }
 
 .dispatcher-layout .btn {
@@ -191,12 +169,19 @@
 @media (max-width: 767px) {
   .dispatcher-layout .header-inner {
     min-height: 3.5rem;
+    gap: 0.5rem;
     padding: 0 1rem;
   }
 
   .dispatcher-layout .nav-main { height: auto; }
 
   .dispatcher-layout .page-container { padding: 1.25rem 1rem 2.25rem; }
+}
+
+@media (min-width: 768px) and (max-width: 1100px) {
+  .dispatcher-layout .header-inner { padding-inline: 1.5rem; }
+  .dispatcher-layout .page-container { padding-inline: 1.5rem; }
+  .dispatcher-layout .nav-main-item { padding-inline: 0.55rem; }
 }
 
 /* Preserve the pre-existing shell presentation outside the Dispatcher T3 scope. */

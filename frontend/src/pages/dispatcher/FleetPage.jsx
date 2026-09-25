@@ -12,9 +12,13 @@ const fleetTabs = [
 
 export function FleetPage() {
   return (
-    <div className="page-container fleet-module">
+    <div className="fleet-module">
       <header className="page-header">
-        <h1 className="page-title">Fleet Management</h1>
+        <div>
+          <p className="workspace-kicker">DISPATCHER / FLEET</p>
+          <h1 className="page-title">Fleet</h1>
+          <p className="page-summary">Manage drivers, vehicles and operating shifts.</p>
+        </div>
       </header>
 
       <nav className="fleet-tabs" aria-label="Fleet tabs">
