@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from app.routers import drivers, vehicles, shifts, locations
+from app.routers import drivers, vehicles, shifts, locations, dispatch
 
 
 def create_app() -> FastAPI:
@@ -34,6 +34,7 @@ def create_app() -> FastAPI:
     application.include_router(vehicles.router, prefix="/api/v1")
     application.include_router(shifts.router, prefix="/api/v1")
     application.include_router(locations.router, prefix="/api/v1")
+    application.include_router(dispatch.router, prefix="/api/v1")
 
     # ── Static file serving for uploads ───────────────────────────────
     uploads_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
