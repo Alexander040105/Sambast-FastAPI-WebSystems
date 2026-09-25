@@ -1,0 +1,98 @@
+.fleet-module .modal-overlay {
+  align-items: center;
+  background: rgb(27 28 25 / 48%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1rem;
+  position: fixed;
+  z-index: 50;
+}
+
+.fleet-module .modal-content {
+  background: var(--color-sambast-surface);
+  border: 1px solid var(--color-sambast-line);
+  border-radius: var(--radius-md);
+  box-shadow: 0 16px 48px rgb(53 39 27 / 18%);
+  display: flex;
+  flex-direction: column;
+  max-height: min(90vh, 54rem);
+  overflow: hidden;
+  width: 100%;
+}
+
+.fleet-module .modal-header {
+  align-items: center;
+  background: var(--color-sambast-paper);
+  border-bottom: 1px solid var(--color-sambast-line);
+  border-left: 3px solid var(--color-primary);
+  display: flex;
+  justify-content: space-between;
+  min-height: 3.75rem;
+  padding: 0.75rem 1.25rem;
+}
+
+.fleet-module .modal-title {
+  color: var(--color-sambast-ink);
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.fleet-module .modal-close {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-sambast-muted);
+  cursor: pointer;
+  display: flex;
+  height: 2rem;
+  justify-content: center;
+  transition: background-color 120ms ease, color 120ms ease;
+  width: 2rem;
+}
+
+.fleet-module .modal-close:hover {
+  background: var(--color-sambast-hover);
+  color: var(--color-sambast-ink);
+}
+
+.fleet-module .modal-close:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.fleet-module .modal-body {
+  overflow-y: auto;
+  padding: 1.25rem;
+}
+
+.fleet-module .modal-footer {
+  background: var(--color-sambast-paper);
+  border-top: 1px solid var(--color-sambast-line);
+  display: flex;
+  gap: 0.625rem;
+  justify-content: flex-end;
+  padding: 0.875rem 1.25rem;
+}
+
+.fleet-module .modal-body .form-grid + .modal-footer {
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 640px) {
+  .fleet-module .modal-overlay { align-items: flex-end; padding: 0; }
+  .fleet-module .modal-content {
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border-right: 0;
+    max-height: 94vh;
+  }
+  .fleet-module .modal-body { padding: 1rem; }
+  .fleet-module .modal-header,
+  .fleet-module .modal-footer { padding-left: 1rem; padding-right: 1rem; }
+}
