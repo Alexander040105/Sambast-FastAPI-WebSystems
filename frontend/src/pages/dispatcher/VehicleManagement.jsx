@@ -196,7 +196,6 @@ export function VehicleManagement() {
   return (
     <div className="fleet-records">
       <div className="section-header fleet-table-toolbar">
-        <h1>Vehicles</h1>
         <div className="fleet-table-controls">
           <label className="fleet-search">
             <span className="sr-only">Search vehicles by ID, plate number, or type</span>
@@ -254,7 +253,7 @@ export function VehicleManagement() {
                       {vehicle.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                  <td style={{ fontSize: 'var(--dispatcher-size-meta)', color: 'var(--text-muted)' }}>
                     {formatDate(vehicle.created_at)}
                   </td>
                   <td className="actions-column">
@@ -370,7 +369,7 @@ export function VehicleManagement() {
                 onChange={handleChange}
                 style={{ width: '1rem', height: '1rem', accentColor: 'var(--color-primary)' }}
               />
-              <label htmlFor="is_active" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+              <label htmlFor="is_active" style={{ fontSize: 'var(--dispatcher-size-meta)', color: 'var(--text-secondary)' }}>
                 Active
               </label>
             </div>

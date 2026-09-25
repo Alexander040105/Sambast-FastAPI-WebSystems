@@ -246,7 +246,6 @@ export function ShiftManagement() {
   return (
     <div className="fleet-records">
       <div className="section-header fleet-table-toolbar">
-        <h1>Shifts</h1>
         <div className="fleet-table-controls">
           <label className="fleet-search">
             <span className="sr-only">Search shifts by shift ID, driver ID, or vehicle ID</span>
@@ -305,14 +304,14 @@ export function ShiftManagement() {
                   <td className="driver-cell" title={drivers.find((item) => item.id === shift.driver_id)?.license_no || undefined}>{(() => { const driver = drivers.find((item) => item.id === shift.driver_id); return driver ? `Driver #${driver.id}${driver.license_no ? ` · ${driver.license_no}` : ''}` : `Driver #${shift.driver_id}`; })()}</td>
                   <td>
                     <div style={{ fontFamily: 'var(--font-mono)', fontWeight: '500' }}>{vehicles.find((item) => item.id === shift.vehicle_id)?.plate_no || 'Unassigned'}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
+                    <div style={{ fontSize: 'var(--dispatcher-size-meta)', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
                       {vehicles.find((item) => item.id === shift.vehicle_id)?.type || '—'}
                     </div>
                   </td>
-                  <td style={{ fontSize: '0.8125rem' }}>{formatDateTime(shift.starts_at)}</td>
-                  <td style={{ fontSize: '0.8125rem' }}>{formatDateTime(shift.ends_at)}</td>
+                  <td style={{ fontSize: 'var(--dispatcher-size-meta)' }}>{formatDateTime(shift.starts_at)}</td>
+                  <td style={{ fontSize: 'var(--dispatcher-size-meta)' }}>{formatDateTime(shift.ends_at)}</td>
                   <td>{getStatusBadge(shift.status)}</td>
-                  <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                  <td style={{ fontSize: 'var(--dispatcher-size-meta)', color: 'var(--text-muted)' }}>
                     {formatDateShort(shift.created_at)}
                   </td>
                   <td className="actions-column">

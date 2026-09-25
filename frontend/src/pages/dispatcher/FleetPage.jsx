@@ -15,9 +15,8 @@ export function FleetPage() {
     <div className="fleet-module">
       <header className="page-header">
         <div>
-          <p className="workspace-kicker">DISPATCHER / FLEET</p>
           <h1 className="page-title">Fleet</h1>
-          <p className="page-summary">Manage drivers, vehicles and operating shifts.</p>
+          <p className="page-summary">Manage drivers, vehicles, and operating shifts.</p>
         </div>
       </header>
 
