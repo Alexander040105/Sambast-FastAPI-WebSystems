@@ -115,3 +115,17 @@ def update_driver(
     db.commit()
     db.refresh(driver)
     return driver
+
+
+@router.delete("/{driver_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_driver(
+    driver_id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("admin")),
+):
+    driver = db.query(Driver).filter(Driver.id == driver_id).first()
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    
+    db.delete(driver)
+    db.commit()

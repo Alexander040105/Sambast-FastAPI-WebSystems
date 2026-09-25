@@ -68,6 +68,14 @@ class ShiftCreate(BaseModel):
     status: str = "scheduled"
 
 
+class ShiftUpdate(BaseModel):
+    driver_id: Optional[int] = None
+    vehicle_id: Optional[int] = None
+    starts_at: Optional[datetime] = None
+    ends_at: Optional[datetime] = None
+    status: Optional[str] = None
+
+
 class ShiftOut(BaseModel):
     id: int
     driver_id: int
@@ -76,6 +84,8 @@ class ShiftOut(BaseModel):
     ends_at: datetime
     status: str
     created_at: datetime
+    driver: Optional[DriverOut] = None
+    vehicle: Optional[VehicleOut] = None
 
     model_config = {"from_attributes": True}
 
