@@ -1,6 +1,6 @@
 .fleet-module .modal-overlay {
   align-items: center;
-  background: rgb(27 28 25 / 48%);
+  background: rgb(28 28 26 / 52%);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -12,8 +12,8 @@
 .fleet-module .modal-content {
   background: var(--color-sambast-surface);
   border: 1px solid var(--color-sambast-line);
-  border-radius: var(--radius-md);
-  box-shadow: 0 16px 48px rgb(53 39 27 / 18%);
+  border-radius: 10px;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 18%);
   display: flex;
   flex-direction: column;
   max-height: min(90vh, 54rem);
@@ -25,7 +25,7 @@
   align-items: center;
   background: var(--color-sambast-paper);
   border-bottom: 1px solid var(--color-sambast-line);
-  border-left: 3px solid var(--color-primary);
+  border-left: 3px solid var(--color-sambast-line);
   display: flex;
   justify-content: space-between;
   min-height: 3.75rem;
@@ -45,7 +45,7 @@
   align-items: center;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   color: var(--color-sambast-muted);
   cursor: pointer;
   display: flex;

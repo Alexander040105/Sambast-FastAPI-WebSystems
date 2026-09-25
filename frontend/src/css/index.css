@@ -68,24 +68,24 @@
 @theme {
   /* Sambast accent: warm burnt-terracotta — distinctive earthy logistics identity, not blue/teal.
      Reserved for active navigation, primary actions, focus, and key highlights. */
-  --color-primary: #c2410c;
-  --color-primary-hover: #9a3412;
-  --color-primary-light: #ffedd5;
-  --color-primary-dark: #7c2d12;
+  --color-primary: #d9583b;
+  --color-primary-hover: #a93e2a;
+  --color-primary-light: #fbedE8;
+  --color-primary-dark: #a93e2a;
 
-  --color-success: #15803d;
-  --color-success-light: #f0fdf4;
-  --color-warning: #b45309;
-  --color-warning-light: #fefce8;
-  --color-danger: #b91c1c;
-  --color-danger-light: #fef2f2;
+  --color-success: #287a4b;
+  --color-success-light: #edf4ef;
+  --color-warning: #b66a00;
+  --color-warning-light: #f8f1e5;
+  --color-danger: #b9382f;
+  --color-danger-light: #f8ecea;
 
-  --color-sambast-paper: #f4f0e9;
-  --color-sambast-surface: #fffdf9;
-  --color-sambast-line: #ded4c8;
-  --color-sambast-ink: #2b2723;
-  --color-sambast-muted: #6a6259;
-  --color-sambast-hover: #f8eee4;
+  --color-sambast-paper: #f7f6f2;
+  --color-sambast-surface: #ffffff;
+  --color-sambast-line: #dddad2;
+  --color-sambast-ink: #252522;
+  --color-sambast-muted: #6f6d66;
+  --color-sambast-hover: #f1f0ed;
 
   --color-gray-50: #fafafa;
   --color-gray-100: #f5f5f5;
@@ -128,14 +128,14 @@
 }
 
 :root {
-  --bg-page: #fafafa;
+  --bg-page: #f7f6f2;
   --bg-surface: #ffffff;
-  --bg-hover: #f5f5f5;
-  --border-light: #e5e5e5;
-  --border-medium: #d4d4d4;
-  --text-primary: #171717;
-  --text-secondary: #525252;
-  --text-muted: #a3a3a3;
+  --bg-hover: #f1f0ed;
+  --border-light: #dddad2;
+  --border-medium: #c9c6be;
+  --text-primary: #252522;
+  --text-secondary: #6f6d66;
+  --text-muted: #6f6d66;
   --text-on-primary: #ffffff;
 
   font: 0.875rem/1.5 var(--font-sans);

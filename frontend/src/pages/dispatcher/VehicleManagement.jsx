@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { auth } from '../../api/index.js';
 import { fetchVehicles, createVehicle, updateVehicle, deleteVehicle } from '../../api/vehicles.js';
 import { Modal } from '../../components/Modal.jsx';
@@ -9,6 +9,7 @@ const TYPE_OPTIONS = [
   { value: 'truck', label: 'Truck' },
   { value: 'motorcycle', label: 'Motorcycle' },
 ];
+const PAGE_SIZE = 20;
 
 const INITIAL_FORM = {
   plate_no: '',
@@ -38,6 +39,9 @@ function formatDate(dateStr) {
 
 export function VehicleManagement() {
   const [vehicles, setVehicles] = useState([]);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -50,6 +54,22 @@ export function VehicleManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [vehicleToDelete, setVehicleToDelete] = useState(null);
   const isAdmin = auth.getRole() === 'admin';
+
+  const filteredVehicles = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    return vehicles.filter((vehicle) => {
+      const matchesStatus = statusFilter === 'all'
+        || (statusFilter === 'active' ? vehicle.is_active : !vehicle.is_active);
+      const matchesSearch = !query || [vehicle.id, vehicle.plate_no, vehicle.type]
+        .some((value) => String(value ?? '').toLocaleLowerCase().includes(query));
+      return matchesStatus && matchesSearch;
+    });
+  }, [vehicles, search, statusFilter]);
+  const pageCount = Math.max(1, Math.ceil(filteredVehicles.length / PAGE_SIZE));
+  const visiblePage = Math.min(currentPage, pageCount);
+  const visibleVehicles = filteredVehicles.slice((visiblePage - 1) * PAGE_SIZE, visiblePage * PAGE_SIZE);
+  const rangeStart = filteredVehicles.length ? (visiblePage - 1) * PAGE_SIZE + 1 : 0;
+  const rangeEnd = Math.min(visiblePage * PAGE_SIZE, filteredVehicles.length);
 
   useEffect(() => {
     loadVehicles();
@@ -156,9 +176,8 @@ export function VehicleManagement() {
 
   if (loading) {
     return (
-      <div className="fleet-state" role="status">
+      <div className="fleet-state" role="status" aria-label="Loading vehicles">
         <span className="loading-spinner" />
-        <span className="sr-only">Loading vehicles...</span>
       </div>
     );
   }
@@ -175,41 +194,59 @@ export function VehicleManagement() {
   }
 
   return (
-    <div className="fleet-records" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div className="section-header">
+    <div className="fleet-records">
+      <div className="section-header fleet-table-toolbar">
         <h1>Vehicles</h1>
+        <div className="fleet-table-controls">
+          <label className="fleet-search">
+            <span className="sr-only">Search vehicles by ID, plate number, or type</span>
+            <input className="input" type="search" value={search} placeholder="Search vehicles..." onChange={(event) => { setSearch(event.target.value); setCurrentPage(1); }} />
+          </label>
+          <label className="fleet-filter">
+            <span className="sr-only">Filter vehicles by active status</span>
+            <select className="select" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setCurrentPage(1); }}>
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </label>
+        </div>
         <button onClick={openCreateModal} className="btn btn-primary">
           Add Vehicle
         </button>
       </div>
 
-      {vehicles.length === 0 ? (
+      {filteredVehicles.length === 0 ? (
         <div className="empty-state">
           <svg className="empty-state-icon" style={{ width: '3rem', height: '3rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10l4-8m-4 8l-4-8" />
           </svg>
-          <p className="empty-state-title">No vehicles found</p>
-          <p className="empty-state-text">Use Add Vehicle above to register the first vehicle.</p>
+          <p className="empty-state-title">{vehicles.length === 0 ? 'No vehicles yet.' : 'No vehicles match your search or filter.'}</p>
+          {vehicles.length === 0 ? (
+            <p className="empty-state-text">Use Add Vehicle above to register the first vehicle.</p>
+          ) : (
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setSearch(''); setStatusFilter('all'); setCurrentPage(1); }}>Clear search and filter</button>
+          )}
         </div>
       ) : (
         <div className="table-container">
-          <table className="table">
+          <table className="table vehicles-table">
             <thead>
               <tr>
-                <th>Plate No.</th>
-                <th>Type</th>
-                <th style={{ textAlign: 'right' }}>Max Weight (kg)</th>
-                <th style={{ textAlign: 'right' }}>Max Volume (m³)</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th style={{ width: '5rem', textAlign: 'right' }}>Actions</th>
+                <th scope="col">Plate No.</th>
+                <th scope="col">Type</th>
+                <th scope="col" className="numeric-column">Max Weight (kg)</th>
+                <th scope="col" className="numeric-column">Max Volume (m³)</th>
+                <th scope="col">Status</th>
+                <th scope="col">Created</th>
+                <th scope="col" className="actions-column">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {vehicles.map((vehicle) => (
+              {visibleVehicles.map((vehicle) => (
                 <tr key={vehicle.id}>
                   <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '500' }}>{vehicle.plate_no}</td>
-                  <td><span className="type-label">{vehicle.type.charAt(0).toUpperCase() + vehicle.type.slice(1)}</span></td>
+                  <td className="type-cell" title={vehicle.type}><span className="type-label">{vehicle.type.charAt(0).toUpperCase() + vehicle.type.slice(1)}</span></td>
                   <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{vehicle.max_weight_kg.toLocaleString()}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{vehicle.max_volume_m3 == null ? '—' : Number(vehicle.max_volume_m3).toLocaleString()}</td>
                   <td>
@@ -220,7 +257,7 @@ export function VehicleManagement() {
                   <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
                     {formatDate(vehicle.created_at)}
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="actions-column">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.375rem' }}>
                       <button
                         onClick={() => openEditModal(vehicle)}
@@ -250,6 +287,13 @@ export function VehicleManagement() {
           </table>
         </div>
       )}
+      <div className="fleet-table-footer" aria-label="Vehicle table pagination">
+        <span>Showing {rangeStart}–{rangeEnd} of {filteredVehicles.length}</span>
+        <div className="fleet-pagination-actions">
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(visiblePage - 1)} disabled={visiblePage <= 1}>Previous</button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(visiblePage + 1)} disabled={visiblePage >= pageCount}>Next</button>
+        </div>
+      </div>
 
       <Modal isOpen={modalOpen} onClose={closeModal} title={editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'} size="lg">
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>

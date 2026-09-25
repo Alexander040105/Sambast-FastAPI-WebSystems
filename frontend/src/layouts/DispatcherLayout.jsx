@@ -11,38 +11,37 @@ export function DispatcherLayout() {
   };
 
   const navItems = [
-    { path: '/dispatcher', label: 'Dashboard' },
+    { path: '/dispatcher', label: 'Dashboard', end: true },
     { path: '/dispatcher/fleet', label: 'Fleet' },
     { path: '/dispatcher/queue', label: 'Dispatch Queue' },
     { path: '/dispatcher/routes', label: 'Routes' },
   ];
 
   return (
-    <div className="min-h-screen dispatcher-layout" style={{ backgroundColor: 'var(--color-sambast-paper)' }}>
-      <header className="header-bar">
-        <div className="header-inner">
-          <h1 className="header-title">
-            <span className="header-brand">Sambast</span>
-            <span className="header-context">Dispatcher Console</span>
-          </h1>
-          <div className="flex items-center gap-3">
-            <nav className="nav-main hidden md:flex" aria-label="Main navigation">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `nav-main-item ${isActive ? 'active' : ''}`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </nav>
-            <button onClick={handleLogout} className="btn btn-ghost btn-sm">Logout</button>
-          </div>
+    <div className="dispatcher-app-shell dispatcher-layout">
+      <aside className="dispatcher-sidebar">
+        <div className="dispatcher-brand-lockup">
+          <span className="dispatcher-brand-mark" aria-hidden="true">S</span>
+          <span className="dispatcher-brand-copy">
+            <span className="dispatcher-brand-name">Sambast</span>
+            <span className="dispatcher-brand-context">Dispatcher Console</span>
+          </span>
         </div>
-      </header>
+        <p className="dispatcher-nav-label">Workspace</p>
+        <nav className="dispatcher-nav" aria-label="Main navigation">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.end}
+              className={({ isActive }) => `dispatcher-nav-link ${isActive ? 'active' : ''}`}
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+        <button onClick={handleLogout} className="btn btn-ghost btn-sm dispatcher-logout">Logout</button>
+      </aside>
       <main className="page-container dispatcher-workspace">
         <Outlet />
       </main>
