@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { DispatcherLayout, DriverLayout, OpsManagerLayout } from '..';
 import { FleetPage, FleetDriversPage, FleetVehiclesPage, FleetShiftsPage } from '../../pages/dispatcher/FleetPage.jsx';
+import { DispatchQueue } from '../../pages/dispatcher/DispatchQueue.jsx';
 
 const routes = [
   {
@@ -21,7 +22,7 @@ const routes = [
           { index: true, element: <Navigate to="drivers" replace /> },
         ],
       },
-      { path: '/dispatcher/queue', element: null },
+      { path: '/dispatcher/queue', element: <DispatchQueue /> },
       { path: '/dispatcher/routes', element: null },
     ],
   },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { auth } from '../../api/index.js';
 import { createDriver, fetchDrivers, updateDriver, deleteDriver } from '../../api/drivers.js';
 import { Modal } from '../../components/Modal.jsx';
@@ -9,6 +9,7 @@ const STATUS_OPTIONS = [
   { value: 'off_duty', label: 'Off Duty' },
   { value: 'suspended', label: 'Suspended' },
 ];
+const PAGE_SIZE = 20;
 const INITIAL_FORM = { user_id: '', license_no: '', status: 'active' };
 
 function getStatusBadge(status) {
@@ -22,6 +23,9 @@ function formatDate(dateStr) {
 
 export function DriverManagement() {
   const [drivers, setDrivers] = useState([]);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -32,6 +36,21 @@ export function DriverManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [driverToDelete, setDriverToDelete] = useState(null);
   const isAdmin = auth.getRole() === 'admin';
+
+  const filteredDrivers = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    return drivers.filter((driver) => {
+      const matchesStatus = statusFilter === 'all' || driver.status === statusFilter;
+      const matchesSearch = !query || [driver.id, driver.user_id, driver.license_no]
+        .some((value) => String(value ?? '').toLocaleLowerCase().includes(query));
+      return matchesStatus && matchesSearch;
+    });
+  }, [drivers, search, statusFilter]);
+  const pageCount = Math.max(1, Math.ceil(filteredDrivers.length / PAGE_SIZE));
+  const visiblePage = Math.min(currentPage, pageCount);
+  const visibleDrivers = filteredDrivers.slice((visiblePage - 1) * PAGE_SIZE, visiblePage * PAGE_SIZE);
+  const rangeStart = filteredDrivers.length ? (visiblePage - 1) * PAGE_SIZE + 1 : 0;
+  const rangeEnd = Math.min(visiblePage * PAGE_SIZE, filteredDrivers.length);
 
   useEffect(() => { loadDrivers(); }, []);
 
@@ -116,24 +135,41 @@ export function DriverManagement() {
 
   return (
     <div className="fleet-records">
-      <div className="section-header">
+      <div className="section-header fleet-table-toolbar">
         <h1>Drivers</h1>
+        <div className="fleet-table-controls">
+          <label className="fleet-search">
+            <span className="sr-only">Search drivers by ID, user ID, or license number</span>
+            <input className="input" type="search" value={search} placeholder="Search drivers..." onChange={(event) => { setSearch(event.target.value); setCurrentPage(1); }} />
+          </label>
+          <label className="fleet-filter">
+            <span className="sr-only">Filter drivers by status</span>
+            <select className="select" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setCurrentPage(1); }}>
+              <option value="all">All statuses</option>
+              {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+        </div>
         <button onClick={openCreateModal} className="btn btn-primary">Add Driver</button>
       </div>
-      {drivers.length === 0 ? (
+      {filteredDrivers.length === 0 ? (
         <div className="empty-state">
-          <p className="empty-state-title">No drivers found</p>
-          <p className="empty-state-text">Add a driver using the ID of an existing user with the driver role. Use Add Driver above to begin.</p>
+          <p className="empty-state-title">{drivers.length === 0 ? 'No drivers yet.' : 'No drivers match your search or filter.'}</p>
+          {drivers.length === 0 ? (
+            <p className="empty-state-text">Add a driver using the ID of an existing user with the driver role. Use Add Driver above to begin.</p>
+          ) : (
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setSearch(''); setStatusFilter('all'); setCurrentPage(1); }}>Clear search and filter</button>
+          )}
         </div>
       ) : (
-        <div className="table-container"><table className="table">
-          <thead><tr><th>Driver</th><th>License No.</th><th>Status</th><th>Created</th><th style={{ width: '5rem', textAlign: 'right' }}>Actions</th></tr></thead>
-          <tbody>{drivers.map((driver) => <tr key={driver.id}>
+        <div className="table-container"><table className="table drivers-table">
+          <thead><tr><th scope="col">Driver</th><th scope="col">License No.</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col" className="actions-column">Actions</th></tr></thead>
+          <tbody>{visibleDrivers.map((driver) => <tr key={driver.id}>
             <td><div style={{ fontWeight: 500 }}>Driver #{driver.id}</div><div style={{ color: 'var(--text-muted)' }}>User ID {driver.user_id}</div></td>
-            <td style={{ fontFamily: 'var(--font-mono)' }}>{driver.license_no || '—'}</td>
+            <td className="license-cell" title={driver.license_no || undefined}>{driver.license_no || '—'}</td>
             <td>{getStatusBadge(driver.status)}</td>
             <td style={{ color: 'var(--text-muted)' }}>{formatDate(driver.created_at)}</td>
-            <td style={{ textAlign: 'right' }}>
+            <td className="actions-column">
               <button onClick={() => openEditModal(driver)} className="btn btn-ghost btn-sm" style={{ padding: '0.3125rem' }} aria-label={`Edit driver ${driver.id}`}>
                 <svg style={{ width: '1rem', height: '1rem' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               </button>
@@ -144,6 +180,13 @@ export function DriverManagement() {
           </tr>)}</tbody>
         </table></div>
       )}
+      <div className="fleet-table-footer" aria-label="Driver table pagination">
+        <span>Showing {rangeStart}–{rangeEnd} of {filteredDrivers.length}</span>
+        <div className="fleet-pagination-actions">
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(visiblePage - 1)} disabled={visiblePage <= 1}>Previous</button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(visiblePage + 1)} disabled={visiblePage >= pageCount}>Next</button>
+        </div>
+      </div>
 
       <Modal isOpen={modalOpen} onClose={closeModal} title={editingDriver ? 'Edit Driver' : 'Add Driver'} size="lg">
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>

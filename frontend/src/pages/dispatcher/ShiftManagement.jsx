@@ -12,6 +12,7 @@ const STATUS_OPTIONS = [
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
+const PAGE_SIZE = 20;
 
 const INITIAL_FORM = {
   driver_id: '',
@@ -75,6 +76,9 @@ function getStatusBadge(status) {
 
 export function ShiftManagement() {
   const [shifts, setShifts] = useState([]);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const [drivers, setDrivers] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,6 +96,21 @@ export function ShiftManagement() {
 
   const activeDrivers = useMemo(() => drivers.filter((d) => d.status === 'active'), [drivers]);
   const activeVehicles = useMemo(() => vehicles.filter((v) => v.is_active), [vehicles]);
+
+  const filteredShifts = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    return shifts.filter((shift) => {
+      const matchesStatus = statusFilter === 'all' || shift.status === statusFilter;
+      const matchesSearch = !query || [shift.id, shift.driver_id, shift.vehicle_id]
+        .some((value) => String(value ?? '').toLocaleLowerCase().includes(query));
+      return matchesStatus && matchesSearch;
+    });
+  }, [shifts, search, statusFilter]);
+  const pageCount = Math.max(1, Math.ceil(filteredShifts.length / PAGE_SIZE));
+  const visiblePage = Math.min(currentPage, pageCount);
+  const visibleShifts = filteredShifts.slice((visiblePage - 1) * PAGE_SIZE, visiblePage * PAGE_SIZE);
+  const rangeStart = filteredShifts.length ? (visiblePage - 1) * PAGE_SIZE + 1 : 0;
+  const rangeEnd = Math.min(visiblePage * PAGE_SIZE, filteredShifts.length);
 
   useEffect(() => {
     loadAll();
@@ -207,9 +226,8 @@ export function ShiftManagement() {
 
   if (loading) {
     return (
-      <div className="fleet-state" role="status">
+      <div className="fleet-state" role="status" aria-label="Loading shifts">
         <span className="loading-spinner" />
-        <span className="sr-only">Loading shifts...</span>
       </div>
     );
   }
@@ -226,9 +244,22 @@ export function ShiftManagement() {
   }
 
   return (
-    <div className="fleet-records" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div className="section-header">
+    <div className="fleet-records">
+      <div className="section-header fleet-table-toolbar">
         <h1>Shifts</h1>
+        <div className="fleet-table-controls">
+          <label className="fleet-search">
+            <span className="sr-only">Search shifts by shift ID, driver ID, or vehicle ID</span>
+            <input className="input" type="search" value={search} placeholder="Search shifts..." onChange={(event) => { setSearch(event.target.value); setCurrentPage(1); }} />
+          </label>
+          <label className="fleet-filter">
+            <span className="sr-only">Filter shifts by status</span>
+            <select className="select" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setCurrentPage(1); }}>
+              <option value="all">All statuses</option>
+              {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+        </div>
         <button onClick={openCreateModal} className="btn btn-primary" disabled={activeDrivers.length === 0}>
           Add Shift
         </button>
@@ -242,32 +273,36 @@ export function ShiftManagement() {
         </div>
       )}
 
-      {shifts.length === 0 ? (
+      {filteredShifts.length === 0 ? (
         <div className="empty-state">
           <svg className="empty-state-icon" style={{ width: '3rem', height: '3rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p className="empty-state-title">No shifts scheduled</p>
-          <p className="empty-state-text">Use Add Shift above to schedule the first shift.</p>
+          <p className="empty-state-title">{shifts.length === 0 ? 'No shifts yet.' : 'No shifts match your search or filter.'}</p>
+          {shifts.length === 0 ? (
+            <p className="empty-state-text">Use Add Shift above to schedule the first shift.</p>
+          ) : (
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setSearch(''); setStatusFilter('all'); setCurrentPage(1); }}>Clear search and filter</button>
+          )}
         </div>
       ) : (
         <div className="table-container">
-          <table className="table">
+          <table className="table shifts-table">
             <thead>
               <tr>
-                <th>Driver</th>
-                <th>Vehicle</th>
-                <th>Start</th>
-                <th>End</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th style={{ width: '5rem', textAlign: 'right' }}>Actions</th>
+                <th scope="col">Driver</th>
+                <th scope="col">Vehicle</th>
+                <th scope="col">Start</th>
+                <th scope="col">End</th>
+                <th scope="col">Status</th>
+                <th scope="col">Created</th>
+                <th scope="col" className="actions-column">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {shifts.map((shift) => (
+              {visibleShifts.map((shift) => (
                 <tr key={shift.id}>
-                  <td style={{ fontWeight: '500' }}>{(() => { const driver = drivers.find((item) => item.id === shift.driver_id); return driver ? `Driver #${driver.id}${driver.license_no ? ` · ${driver.license_no}` : ''}` : `Driver #${shift.driver_id}`; })()}</td>
+                  <td className="driver-cell" title={drivers.find((item) => item.id === shift.driver_id)?.license_no || undefined}>{(() => { const driver = drivers.find((item) => item.id === shift.driver_id); return driver ? `Driver #${driver.id}${driver.license_no ? ` · ${driver.license_no}` : ''}` : `Driver #${shift.driver_id}`; })()}</td>
                   <td>
                     <div style={{ fontFamily: 'var(--font-mono)', fontWeight: '500' }}>{vehicles.find((item) => item.id === shift.vehicle_id)?.plate_no || 'Unassigned'}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
@@ -280,7 +315,7 @@ export function ShiftManagement() {
                   <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
                     {formatDateShort(shift.created_at)}
                   </td>
-                  <td style={{ textAlign: 'right' }}>
+                  <td className="actions-column">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.375rem' }}>
                       <button
                         onClick={() => openEditModal(shift)}
@@ -310,6 +345,13 @@ export function ShiftManagement() {
           </table>
         </div>
       )}
+      <div className="fleet-table-footer" aria-label="Shift table pagination">
+        <span>Showing {rangeStart}–{rangeEnd} of {filteredShifts.length}</span>
+        <div className="fleet-pagination-actions">
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(visiblePage - 1)} disabled={visiblePage <= 1}>Previous</button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setCurrentPage(visiblePage + 1)} disabled={visiblePage >= pageCount}>Next</button>
+        </div>
+      </div>
 
       <Modal isOpen={modalOpen} onClose={closeModal} title={editingShift ? 'Edit Shift' : 'Create Shift'} size="lg">
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
