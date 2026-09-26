@@ -1,5 +1,5 @@
 import '../css/shared-layout.css';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { auth } from '../api';
 
 function NavigationIcon({ name }) {
@@ -20,6 +20,12 @@ function NavigationIcon({ name }) {
 
 export function DispatcherLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDriversPage = location.pathname === '/dispatcher/fleet/drivers';
+  const isVehiclesPage = location.pathname === '/dispatcher/fleet/vehicles';
+  const isShiftsPage = location.pathname === '/dispatcher/fleet/shifts';
+  const isDispatchQueuePage = location.pathname === '/dispatcher/queue';
+  const isApprovedFleetPage = isDriversPage || isVehiclesPage || isShiftsPage || isDispatchQueuePage;
 
   const handleLogout = () => {
     auth.clearAuth();
@@ -34,10 +40,11 @@ export function DispatcherLayout() {
   ];
 
   return (
-    <div className="dispatcher-app-shell dispatcher-layout">
+    <div className={`dispatcher-app-shell dispatcher-layout${isDriversPage ? ' drivers-figma-view' : ''}${isVehiclesPage ? ' vehicles-figma-view' : ''}${isShiftsPage ? ' shifts-figma-view' : ''}${isDispatchQueuePage ? ' dispatch-figma-view' : ''}`}>
       <aside className="dispatcher-sidebar">
         <div className="dispatcher-brand-lockup">
-          <span className="dispatcher-brand-mark" role="img" aria-label="Sambast" title="Sambast">S</span>
+          <span className="dispatcher-brand-mark" role="img" aria-label={isApprovedFleetPage ? 'DeliverEase' : 'Sambast'} title={isApprovedFleetPage ? 'DeliverEase' : 'Sambast'}>{isApprovedFleetPage ? 'D' : 'S'}</span>
+          <span className="dispatcher-brand-name">DeliverEase</span>
         </div>
         <nav className="dispatcher-nav" aria-label="Main navigation">
           {navItems.map((item) => (

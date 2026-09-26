@@ -1,5 +1,5 @@
 import '../../css/fleet.css';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { DriverManagement } from './DriverManagement.jsx';
 import { VehicleManagement } from './VehicleManagement.jsx';
 import { ShiftManagement } from './ShiftManagement.jsx';
@@ -11,12 +11,18 @@ const fleetTabs = [
 ];
 
 export function FleetPage() {
+  const location = useLocation();
+  const isDriversPage = location.pathname === '/dispatcher/fleet/drivers';
+  const isVehiclesPage = location.pathname === '/dispatcher/fleet/vehicles';
+  const isShiftsPage = location.pathname === '/dispatcher/fleet/shifts';
+  const isApprovedFleetPage = isDriversPage || isVehiclesPage || isShiftsPage;
+
   return (
-    <div className="fleet-module">
+    <div className={`fleet-module${isDriversPage ? ' drivers-figma-page' : ''}${isVehiclesPage ? ' vehicles-figma-page' : ''}${isShiftsPage ? ' shifts-figma-page' : ''}`}>
       <header className="page-header">
         <div>
-          <h1 className="page-title">Fleet</h1>
-          <p className="page-summary">Manage drivers, vehicles, and operating shifts.</p>
+          <h1 className="page-title">{isApprovedFleetPage ? 'Fleet Workspace' : 'Fleet'}</h1>
+          <p className="page-summary">{isApprovedFleetPage ? 'Manage drivers, vehicles, and active shifts.' : 'Manage drivers, vehicles, and operating shifts.'}</p>
         </div>
       </header>
 

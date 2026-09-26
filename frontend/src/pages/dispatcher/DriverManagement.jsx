@@ -139,17 +139,18 @@ export function DriverManagement() {
         <div className="fleet-table-controls">
           <label className="fleet-search">
             <span className="sr-only">Search drivers by ID, user ID, or license number</span>
-            <input className="input" type="search" value={search} placeholder="Search drivers..." onChange={(event) => { setSearch(event.target.value); setCurrentPage(1); }} />
+            <svg className="driver-search-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="10.8" cy="10.8" r="6.3" /><path d="m15.5 15.5 4.2 4.2" /></svg>
+            <input className="input" type="search" value={search} placeholder="Search driver ID, user ID, or license..." onChange={(event) => { setSearch(event.target.value); setCurrentPage(1); }} />
           </label>
           <label className="fleet-filter">
             <span className="sr-only">Filter drivers by status</span>
             <select className="select" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setCurrentPage(1); }}>
-              <option value="all">All statuses</option>
+              <option value="all">Status: All</option>
               {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </label>
         </div>
-        <button onClick={openCreateModal} className="btn btn-primary">Add Driver</button>
+        <button onClick={openCreateModal} className="btn btn-primary"><span aria-hidden="true">＋</span>Add Driver</button>
       </div>
       {filteredDrivers.length === 0 ? (
         <div className="empty-state">
@@ -162,16 +163,15 @@ export function DriverManagement() {
         </div>
       ) : (
         <div className="table-container"><table className="table drivers-table">
-          <thead><tr><th scope="col">Driver</th><th scope="col">License No.</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col" className="actions-column">Actions</th></tr></thead>
+          <thead><tr><th scope="col">Driver</th><th scope="col">User ID</th><th scope="col">License No.</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col" className="actions-column">Actions</th></tr></thead>
           <tbody>{visibleDrivers.map((driver) => <tr key={driver.id}>
-            <td><div style={{ fontWeight: 500 }}>Driver #{driver.id}</div><div style={{ color: 'var(--text-muted)' }}>User ID {driver.user_id}</div></td>
+            <td><div className="driver-primary-id">Driver #{driver.id}</div></td>
+            <td className="driver-user-id">{driver.user_id}</td>
             <td className="license-cell" title={driver.license_no || undefined}>{driver.license_no || '—'}</td>
             <td>{getStatusBadge(driver.status)}</td>
             <td style={{ color: 'var(--text-muted)' }}>{formatDate(driver.created_at)}</td>
             <td className="actions-column">
-              <button onClick={() => openEditModal(driver)} className="btn btn-ghost btn-sm" style={{ padding: '0.3125rem' }} aria-label={`Edit driver ${driver.id}`}>
-                <svg style={{ width: '1rem', height: '1rem' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-              </button>
+              <button onClick={() => openEditModal(driver)} className="driver-edit-action" aria-label={`Edit driver ${driver.id}`}>Edit</button>
               {isAdmin && <button onClick={() => { setDriverToDelete(driver); setDeleteDialogOpen(true); }} className="btn btn-ghost btn-sm" style={{ padding: '0.3125rem', color: 'var(--color-danger)' }} aria-label={`Delete driver ${driver.id}`}>
                 <svg style={{ width: '1rem', height: '1rem' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>}

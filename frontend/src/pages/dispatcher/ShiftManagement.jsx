@@ -249,17 +249,18 @@ export function ShiftManagement() {
         <div className="fleet-table-controls">
           <label className="fleet-search">
             <span className="sr-only">Search shifts by shift ID, driver ID, or vehicle ID</span>
-            <input className="input" type="search" value={search} placeholder="Search shifts..." onChange={(event) => { setSearch(event.target.value); setCurrentPage(1); }} />
+            <svg className="shift-search-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="10.8" cy="10.8" r="6.3" /><path d="m15.5 15.5 4.2 4.2" /></svg>
+            <input className="input" type="search" value={search} placeholder="Search shift ID, driver ID, or vehicle ID..." onChange={(event) => { setSearch(event.target.value); setCurrentPage(1); }} />
           </label>
           <label className="fleet-filter">
             <span className="sr-only">Filter shifts by status</span>
             <select className="select" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setCurrentPage(1); }}>
-              <option value="all">All statuses</option>
+              <option value="all">Status: All</option>
               {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </label>
         </div>
-        <button onClick={openCreateModal} className="btn btn-primary" disabled={activeDrivers.length === 0}>
+        <button onClick={openCreateModal} className="btn btn-primary" disabled={activeDrivers.length === 0}><span aria-hidden="true">＋</span>
           Add Shift
         </button>
       </div>
@@ -289,6 +290,7 @@ export function ShiftManagement() {
           <table className="table shifts-table">
             <thead>
               <tr>
+                <th scope="col">Shift ID</th>
                 <th scope="col">Driver</th>
                 <th scope="col">Vehicle</th>
                 <th scope="col">Start</th>
@@ -301,17 +303,18 @@ export function ShiftManagement() {
             <tbody>
               {visibleShifts.map((shift) => (
                 <tr key={shift.id}>
+                  <td className="shift-id-cell">Shift #{shift.id}</td>
                   <td className="driver-cell" title={drivers.find((item) => item.id === shift.driver_id)?.license_no || undefined}>{(() => { const driver = drivers.find((item) => item.id === shift.driver_id); return driver ? `Driver #${driver.id}${driver.license_no ? ` · ${driver.license_no}` : ''}` : `Driver #${shift.driver_id}`; })()}</td>
-                  <td>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: '500' }}>{vehicles.find((item) => item.id === shift.vehicle_id)?.plate_no || 'Unassigned'}</div>
-                    <div style={{ fontSize: 'var(--dispatcher-size-meta)', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
+                  <td className="shift-vehicle-cell">
+                    <div>{vehicles.find((item) => item.id === shift.vehicle_id)?.plate_no || 'Unassigned'}</div>
+                    <div className="shift-vehicle-type">
                       {vehicles.find((item) => item.id === shift.vehicle_id)?.type || '—'}
                     </div>
                   </td>
-                  <td style={{ fontSize: 'var(--dispatcher-size-meta)' }}>{formatDateTime(shift.starts_at)}</td>
-                  <td style={{ fontSize: 'var(--dispatcher-size-meta)' }}>{formatDateTime(shift.ends_at)}</td>
+                  <td className="shift-time-cell">{formatDateTime(shift.starts_at)}</td>
+                  <td className="shift-time-cell">{formatDateTime(shift.ends_at)}</td>
                   <td>{getStatusBadge(shift.status)}</td>
-                  <td style={{ fontSize: 'var(--dispatcher-size-meta)', color: 'var(--text-muted)' }}>
+                  <td className="shift-created-cell">
                     {formatDateShort(shift.created_at)}
                   </td>
                   <td className="actions-column">

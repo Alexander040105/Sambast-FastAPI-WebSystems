@@ -162,6 +162,116 @@
   .dispatcher-layout .page-container { padding: 1.25rem 1rem 2.25rem; }
 }
 
+.dispatcher-brand-name { display: none; }
+
+/* Approved light sidebar shell treatment for the implemented Fleet and Dispatch Queue screens. */
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) {
+  --drivers-canvas: #f7f7fb;
+  --drivers-sidebar: #f4f4f8;
+  --drivers-surface: #ffffff;
+  --drivers-header: #f1f1f6;
+  --drivers-border: #e2e4ed;
+  --drivers-border-strong: #d6d8e2;
+  --drivers-text: #262831;
+  --drivers-secondary: #666a79;
+  --drivers-muted: #858998;
+  --drivers-accent: #efb91a;
+  --drivers-accent-soft: #fff4d2;
+  --drivers-action: #635bc5;
+  --drivers-success: #168044;
+  --drivers-success-soft: #def5e5;
+  --drivers-warning: #98600b;
+  --drivers-warning-soft: #fff1c9;
+  --drivers-danger: #b83c38;
+  --drivers-danger-soft: #fce5e3;
+  background: var(--drivers-canvas);
+  color: var(--drivers-text);
+}
+
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-sidebar {
+  align-items: stretch;
+  background: var(--drivers-sidebar);
+  border-right: 1px solid var(--drivers-border);
+  flex: 0 0 181px;
+  padding: 14px 11px 12px;
+  width: 181px;
+}
+
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-brand-lockup {
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  margin: 0 0 22px;
+  min-height: 26px;
+  padding: 0 3px;
+}
+
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-brand-mark {
+  background: var(--drivers-accent);
+  border-radius: 4px;
+  color: #3b3524;
+  flex: 0 0 22px;
+  font-size: 13px;
+  font-weight: 700;
+  height: 22px;
+  justify-content: center;
+  letter-spacing: -0.04em;
+  width: 22px;
+}
+
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-brand-name {
+  color: var(--drivers-text);
+  display: block;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav {
+  align-items: stretch;
+  gap: 4px;
+}
+
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link {
+  align-items: center;
+  border-radius: 5px;
+  color: var(--drivers-secondary);
+  height: 29px;
+  justify-content: flex-start;
+  padding: 0 8px;
+  width: 100%;
+}
+
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link[aria-label="Dashboard"] { display: none; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link .dispatcher-nav-icon { flex: 0 0 16px; height: 16px; margin-right: 8px; width: 16px; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-text { display: inline; font-size: 12px; font-weight: 450; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link:hover { background: #ececf2; color: var(--drivers-text); }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link.active { background: var(--drivers-accent-soft); color: var(--drivers-text); font-weight: 600; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link.active::before { background: var(--drivers-accent); height: 18px; left: 0; width: 2px; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-sidebar .dispatcher-logout { color: var(--drivers-secondary); justify-content: flex-start; margin-top: auto; padding: 0 8px; width: 100%; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-sidebar .dispatcher-logout .dispatcher-nav-icon { flex: 0 0 16px; height: 16px; margin-right: 8px; width: 16px; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-sidebar .dispatcher-logout .dispatcher-nav-text { display: inline; font-size: 12px; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-workspace { background: transparent; padding: 22px 24px 28px; }
+
+@media (max-width: 767px) {
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-sidebar {
+    align-items: center;
+    flex-direction: row;
+    height: auto;
+    min-height: 48px;
+    padding: 6px 10px;
+    position: relative;
+    width: 100%;
+  }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-brand-lockup { flex: 0 0 auto; margin: 0; }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav { flex-direction: row; gap: 2px; margin-left: auto; overflow-x: auto; width: auto; }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link { height: 34px; padding: 0 7px; width: auto; }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link .dispatcher-nav-icon { margin-right: 4px; }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-sidebar .dispatcher-logout { margin: 0 0 0 4px; width: auto; }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-workspace { padding: 16px 12px 22px; }
+}
+
 /* Preserve the pre-existing shell presentation outside the Dispatcher T3 scope. */
 .driver-layout,
 .ops-manager-layout { color: var(--text-primary); min-height: 100vh; }
