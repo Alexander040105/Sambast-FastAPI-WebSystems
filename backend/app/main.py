@@ -9,7 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from app.routers import drivers, vehicles, shifts, locations, dispatch
+from app.core.errors import register_error_handlers
+from app.routers import drivers, vehicles, shifts, locations, dispatch, auth
 
 
 def create_app() -> FastAPI:
@@ -29,7 +30,11 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # ── Error envelope (§7) ───────────────────────────────────────────
+    register_error_handlers(application)
+
     # ── API v1 routers ────────────────────────────────────────────────
+    application.include_router(auth.router, prefix="/api/v1")
     application.include_router(drivers.router, prefix="/api/v1")
     application.include_router(vehicles.router, prefix="/api/v1")
     application.include_router(shifts.router, prefix="/api/v1")

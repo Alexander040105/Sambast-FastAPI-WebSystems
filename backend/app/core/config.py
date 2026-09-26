@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = ""
 
     # ── Geocoding ─────────────────────────────────────────────────────────
     NOMINATIM_USER_AGENT: str = "sambast-delivery/1.0"
