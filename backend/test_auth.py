@@ -299,15 +299,92 @@ log("C logout no bearer -> 401/403", r.status_code in (401, 403),
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# D — STAFF PROVISIONING (real emails)
+# ═══════════════════════════════════════════════════════════════════════
+print("\n" + "=" * 60)
+print("D — STAFF PROVISIONING")
+print("=" * 60)
+
+ADMIN_H = {"Authorization": f"Bearer {tokens['admin']}"}
+DISP_H = {"Authorization": f"Bearer {tokens['dispatcher']}"}
+NEW_DISP_EMAIL = f"real.dispatcher.{TS}@gmail.com"
+NEW_DRIVER_EMAIL = f"real.driver.{TS}@gmail.com"
+
+r = httpx.post(f"{API}/admin/users", headers=ADMIN_H, json={
+    "email": NEW_DISP_EMAIL, "name": "Real Dispatcher",
+    "password": "secret12345", "role": "dispatcher"})
+log("D admin creates dispatcher -> 201",
+    r.status_code == 201 and r.json().get("role") == "dispatcher",
+    f"{r.status_code}")
+
+r = httpx.post(f"{API}/admin/users", headers=ADMIN_H, json={
+    "email": NEW_DISP_EMAIL, "name": "Dup", "password": "secret12345",
+    "role": "dispatcher"})
+log("D admin/users duplicate email -> 409", r.status_code == 409,
+    f"{r.status_code}")
+
+r = httpx.post(f"{API}/admin/users", headers=DISP_H, json={
+    "email": f"nope.{TS}@gmail.com", "name": "Nope",
+    "password": "secret12345", "role": "admin"})
+log("D dispatcher hits /admin/users -> 403 (no admin work)",
+    r.status_code == 403, f"{r.status_code}")
+
+r = httpx.post(f"{API}/admin/users", headers=ADMIN_H, json={
+    "email": f"badrole.{TS}@gmail.com", "name": "Bad",
+    "password": "secret12345", "role": "customer"})
+log("D admin/users role=customer -> 422", r.status_code == 422,
+    f"{r.status_code}")
+
+# New dispatcher can log in and do dispatcher work
+r = httpx.post(f"{AUTH}/login",
+               json={"email": NEW_DISP_EMAIL, "password": "secret12345"})
+log("D new dispatcher login -> 200", r.status_code == 200, f"{r.status_code}")
+NEW_DISP_H = {"Authorization": f"Bearer {r.json()['access_token']}"}
+r = httpx.get(f"{API}/drivers", headers=NEW_DISP_H)
+log("D new dispatcher can GET /drivers -> 200", r.status_code == 200,
+    f"{r.status_code}")
+
+# Dispatcher creates a driver with the driver's own gmail
+r = httpx.post(f"{API}/drivers", headers=DISP_H, json={
+    "email": NEW_DRIVER_EMAIL, "name": "Real Driver",
+    "password": "driverpass1", "license_no": f"L-{TS}"})
+log("D dispatcher creates driver w/ email -> 201",
+    r.status_code == 201, f"{r.status_code}")
+NEW_DRIVER_USER_ID = r.json().get("user_id")
+
+r = httpx.post(f"{AUTH}/login",
+               json={"email": NEW_DRIVER_EMAIL, "password": "driverpass1"})
+log("D new driver logs in -> 200",
+    r.status_code == 200 and r.json().get("user", {}).get("role") == "driver",
+    f"{r.status_code}")
+
+# Old user_id path still works; admin can do dispatcher work
+r = httpx.post(f"{API}/drivers", headers=ADMIN_H, json={
+    "user_id": NEW_DRIVER_USER_ID, "license_no": "X"})
+log("D admin -> POST /drivers (admin can dispatch) -> 409 dup",
+    r.status_code == 409, f"{r.status_code}")
+
+r = httpx.post(f"{API}/admin/users", headers={"Authorization": f"Bearer {tokens['customer']}"},
+               json={"email": f"c.{TS}@gmail.com", "name": "C",
+                     "password": "secret12345", "role": "admin"})
+log("D customer hits /admin/users -> 403", r.status_code == 403,
+    f"{r.status_code}")
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # CLEANUP
 # ═══════════════════════════════════════════════════════════════════════
 print("\n--- Cleanup ---")
 db = SessionLocal()
-for email in [TEST_EMAIL, TEST_EMAIL_2, TEST_EMAIL_3]:
+from app.models.driver import Driver  # noqa: E402
+for email in [TEST_EMAIL, TEST_EMAIL_2, TEST_EMAIL_3,
+              NEW_DISP_EMAIL, NEW_DRIVER_EMAIL]:
     u = db.query(User).filter(User.email == email).first()
     if u:
+        db.query(Driver).filter(Driver.user_id == u.id).delete()
         db.query(AuditLog).filter(AuditLog.user_id == u.id).delete()
         db.delete(u)
+db.query(AuditLog).filter(AuditLog.action.like("%account for %")).delete()
 db.commit()
 db.close()
 print("  Test users removed.")
