@@ -417,3 +417,202 @@
   .dispatch-subsection-heading,
   .dispatch-assignment { padding-inline: 0.8rem; }
 }
+
+/* Approved Dispatch Queue Figma treatment, scoped to the queue route. */
+.dispatcher-layout.dispatch-figma-view .dispatcher-workspace { padding: 0; }
+.dispatcher-layout.dispatch-figma-view .dispatch-page { min-height: calc(100dvh - 44px); }
+.dispatcher-layout.dispatch-figma-view .dispatch-page > .dispatch-state-error { margin: 24px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-workspace {
+  align-items: stretch;
+  display: grid;
+  gap: 0;
+  grid-template-columns: minmax(19rem, 0.4fr) minmax(0, 0.6fr);
+  min-height: calc(100dvh - 44px);
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-queue-pane {
+  background: var(--drivers-surface);
+  border: 0;
+  border-right: 1px solid var(--drivers-border);
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-detail-pane {
+  background: var(--drivers-canvas);
+  border: 0;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 22px 24px 30px;
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-pane-heading {
+  align-items: flex-start;
+  border-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 18px 18px 14px;
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-pane-heading h2,
+.dispatcher-layout.dispatch-figma-view .dispatch-detail-empty h2,
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment-heading h2 {
+  color: var(--drivers-text);
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 22px;
+  margin: 0;
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-queue-subtitle,
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment-heading p {
+  color: var(--drivers-muted);
+  font-size: 10px;
+  line-height: 15px;
+  margin: 1px 0 0;
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-queue-tools { gap: 8px; width: 100%; }
+.dispatcher-layout.dispatch-figma-view .dispatch-search { flex: 1 1 auto; min-width: 0; }
+.dispatcher-layout.dispatch-figma-view .dispatch-search input {
+  background: var(--drivers-header);
+  border: 1px solid var(--drivers-border);
+  border-radius: 5px;
+  color: var(--drivers-text);
+  font: 400 10px/15px var(--font-sans);
+  min-height: 28px;
+  padding: 5px 9px;
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-search input::placeholder { color: var(--drivers-muted); }
+.dispatcher-layout.dispatch-figma-view .dispatch-search input:focus-visible { border-color: var(--drivers-accent); outline: 2px solid var(--drivers-accent-soft); outline-offset: 1px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-refresh {
+  background: var(--drivers-surface);
+  border: 1px solid var(--drivers-border);
+  border-radius: 5px;
+  color: var(--drivers-secondary);
+  font-size: 10px;
+  min-height: 28px;
+  padding: 4px 8px;
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-refresh:hover:not(:disabled) { background: var(--drivers-header); }
+.dispatcher-layout.dispatch-figma-view .dispatch-refresh:focus-visible,
+.dispatcher-layout.dispatch-figma-view .dispatch-button:focus-visible,
+.dispatcher-layout.dispatch-figma-view .dispatch-text-button:focus-visible,
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment select:focus-visible { outline: 2px solid var(--drivers-accent); outline-offset: 2px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-list { flex: 1 1 auto; min-height: 0; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-card {
+  align-items: stretch;
+  background: var(--drivers-surface);
+  border: 0;
+  border-bottom: 1px solid var(--drivers-border);
+  border-left: 2px solid transparent;
+  color: var(--drivers-secondary);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 12px 10px 11px;
+  text-align: left;
+  transition: background-color 120ms ease, border-color 120ms ease;
+  width: 100%;
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-order-card:hover { background: #f8f8fb; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-card.is-selected { background: var(--drivers-accent-soft); border-left-color: var(--drivers-accent); }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-card:focus-visible { outline: 2px solid var(--drivers-accent); outline-offset: -2px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-card-top { align-items: baseline; display: flex; gap: 8px; justify-content: space-between; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-number { color: var(--drivers-text); font-size: 11px; font-weight: 650; line-height: 16px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-card.is-selected .dispatch-order-number { color: var(--drivers-text); }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-weight { color: var(--drivers-action); font-size: 10px; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-address { font-size: 10px; line-height: 14px; overflow-wrap: anywhere; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-window { color: var(--drivers-muted); font-size: 9px; line-height: 13px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-queue-footer {
+  border-top: 1px solid var(--drivers-border);
+  color: var(--drivers-muted);
+  font-size: 9px;
+  gap: 8px;
+  min-height: 46px;
+  padding: 8px 12px;
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-queue-footer .fleet-pagination-actions { gap: 5px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-queue-footer .dispatch-button { min-height: 25px; padding: 3px 8px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment-heading { margin-bottom: 0; }
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment-heading h2 { font-size: 16px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-summary,
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment,
+.dispatcher-layout.dispatch-figma-view .dispatch-detail-empty {
+  background: var(--drivers-surface);
+  border: 1px solid var(--drivers-border);
+  border-radius: 6px;
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-order-summary { padding: 14px 14px 12px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-summary-heading { align-items: center; display: flex; justify-content: space-between; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-summary-heading h3,
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment h3 {
+  color: var(--drivers-text);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 15px;
+  margin: 0;
+  text-transform: uppercase;
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-record-id { color: var(--drivers-muted); font-size: 9px; padding: 0; }
+.dispatcher-layout.dispatch-figma-view .dispatch-selected-order-number { color: var(--drivers-text); font-size: 12px; font-weight: 650; margin: 7px 0 10px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-facts { display: grid; gap: 9px 16px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-facts > div { border: 0; display: block; padding: 0; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-facts .dispatch-destination-fact { border-top: 1px solid var(--drivers-border); grid-column: 1 / -1; padding-top: 9px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-facts dt,
+.dispatcher-layout.dispatch-figma-view .dispatch-recommendation-facts dt { color: var(--drivers-muted); font-size: 8px; font-weight: 500; line-height: 12px; text-transform: uppercase; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-facts dd,
+.dispatcher-layout.dispatch-figma-view .dispatch-recommendation-facts dd { color: var(--drivers-text); font-size: 10px; font-weight: 550; line-height: 15px; margin-top: 2px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-recommendation {
+  background: #f0effa;
+  border: 1px solid #dfdef0;
+  border-radius: 6px;
+  padding: 0 13px 10px;
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-subsection-heading { align-items: center; gap: 8px; padding: 11px 0 8px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-subsection-heading h3 { color: var(--drivers-action); font-size: 10px; font-weight: 650; line-height: 15px; margin: 0; text-transform: uppercase; }
+.dispatcher-layout.dispatch-figma-view .dispatch-subsection-heading .dispatch-button-secondary { background: transparent; border: 0; color: var(--drivers-action); font-size: 9px; min-height: 24px; padding: 3px 5px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-recommendation-facts { display: grid; gap: 9px 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.dispatcher-layout.dispatch-figma-view .dispatch-recommendation-facts > div { border: 0; display: block; padding: 0; }
+.dispatcher-layout.dispatch-figma-view .dispatch-recommendation-facts .dispatch-reason { grid-column: 1 / -1; }
+.dispatcher-layout.dispatch-figma-view .dispatch-recommendation-prompt { color: var(--drivers-secondary); font-size: 10px; line-height: 15px; margin: 0 0 2px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-inline-error { color: var(--drivers-danger); font-size: 10px; margin: 3px 0; }
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment { gap: 7px; padding: 13px 14px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment h3 { margin: 0 0 2px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment label { color: var(--drivers-muted); font-size: 8px; font-weight: 500; text-transform: uppercase; }
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment select { background-color: var(--drivers-surface); border-color: var(--drivers-border); border-radius: 5px; font-size: 10px; min-height: 30px; padding: 5px 9px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-help { color: var(--drivers-muted); font-size: 9px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-button { border-radius: 5px; font-size: 10px; min-height: 28px; padding: 5px 10px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-button-primary {
+  background: var(--drivers-accent);
+  border-color: var(--drivers-accent);
+  color: #302a18;
+  font-weight: 650;
+}
+.dispatcher-layout.dispatch-figma-view .dispatch-button-primary:hover:not(:disabled) { background: #e4ac12; border-color: #e4ac12; color: #302a18; }
+.dispatcher-layout.dispatch-figma-view .dispatch-button-secondary { background: var(--drivers-surface); border-color: var(--drivers-border); color: var(--drivers-secondary); }
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment > .dispatch-button-primary { justify-self: end; margin-top: 2px; min-width: 150px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-detail-empty { align-self: stretch; color: var(--drivers-muted); padding: 18px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-detail-empty h3 { color: var(--drivers-text); font-size: 12px; margin: 0 0 5px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-detail-empty p { color: var(--drivers-secondary); font-size: 10px; line-height: 15px; margin: 0; }
+.dispatcher-layout.dispatch-figma-view .dispatch-success { background: var(--drivers-success-soft); border: 1px solid #c6e8cf; border-radius: 5px; color: var(--drivers-success); font-size: 10px; padding: 8px 10px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-page-feedback { margin: 0; }
+.dispatcher-layout.dispatch-figma-view .dispatch-empty,
+.dispatcher-layout.dispatch-figma-view .dispatch-state { color: var(--drivers-secondary); font-size: 10px; padding: 18px 12px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-empty h3 { color: var(--drivers-text); font-size: 11px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-empty p { font-size: 10px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-state-error { background: var(--drivers-surface); border: 1px solid var(--drivers-border); border-radius: 6px; color: var(--drivers-danger); }
+
+@media (max-width: 767px) {
+  .dispatcher-layout.dispatch-figma-view .dispatcher-workspace { padding: 0; }
+  .dispatcher-layout.dispatch-figma-view .dispatch-workspace { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .dispatcher-layout.dispatch-figma-view .dispatch-queue-pane { border-bottom: 1px solid var(--drivers-border); border-right: 0; }
+  .dispatcher-layout.dispatch-figma-view .dispatch-detail-pane { padding: 18px 14px 24px; }
+  .dispatcher-layout.dispatch-figma-view .dispatch-pane-heading { padding: 14px 14px 12px; }
+  .dispatcher-layout.dispatch-figma-view .dispatch-order-card { padding-inline: 12px; }
+  .dispatcher-layout.dispatch-figma-view .dispatch-queue-footer { flex-wrap: wrap; }
+}

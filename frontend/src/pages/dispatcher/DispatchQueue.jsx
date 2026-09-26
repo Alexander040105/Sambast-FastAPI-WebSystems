@@ -232,12 +232,7 @@ export function DispatchQueue() {
 
   return (
     <section className="dispatch-page" aria-labelledby="dispatch-title">
-      <header className="dispatch-page-header">
-        <div>
-          <h1 id="dispatch-title">Dispatch Queue</h1>
-          <p className="dispatch-intro">Review ready orders and assign a driver.</p>
-        </div>
-      </header>
+      <h1 className="sr-only" id="dispatch-title">Dispatch Queue</h1>
 
       {queueError ? (
         <div className="dispatch-state dispatch-state-error" role="alert">
@@ -251,18 +246,17 @@ export function DispatchQueue() {
         </div>
       ) : (
         <>
-        {successMessage && (
-          <p className="dispatch-success dispatch-page-feedback" role="status" aria-live="polite">{successMessage}</p>
-        )}
         <div className="dispatch-workspace">
           <section className="dispatch-queue-pane" aria-labelledby="queue-heading">
             <div className="dispatch-pane-heading">
               <div>
-                <h2 id="queue-heading">Ready orders</h2>
+                <h2 id="queue-heading">Dispatch Queue</h2>
+                <p className="dispatch-queue-subtitle">{queueLoading ? '—' : filteredOrders.length} Pending Orders</p>
               </div>
               <div className="dispatch-queue-tools">
                 <label className="dispatch-search">
-                  <input type="search" aria-label="Search orders by order number or delivery address" value={search} placeholder="Search orders..." onChange={(event) => handleQueueSearch(event.target.value)} />
+                  <span className="sr-only">Search orders by order number or delivery address</span>
+                  <input type="search" aria-label="Search orders by order number or delivery address" value={search} placeholder="Filter queue by order or location..." onChange={(event) => handleQueueSearch(event.target.value)} />
                 </label>
                 <button
                   type="button"
@@ -270,9 +264,8 @@ export function DispatchQueue() {
                   onClick={() => loadQueue().catch(() => {})}
                   disabled={queueLoading}
                 >
-                  {queueLoading ? 'Refreshing…' : 'Refresh queue'}
+                  {queueLoading ? 'Refreshing…' : 'Refresh'}
                 </button>
-                <span className="dispatch-count" aria-label={`${filteredOrders.length} matching orders`}>{queueLoading ? '—' : filteredOrders.length}</span>
               </div>
             </div>
 
@@ -295,36 +288,23 @@ export function DispatchQueue() {
                 <button type="button" className="dispatch-text-button" onClick={() => { setSearch(''); setCurrentPage(1); }}>Clear search</button>
               </div>
             ) : (
-              <div className="dispatch-table-wrap" aria-busy={queueLoading}>
-                <table className="dispatch-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Order #</th>
-                      <th scope="col">Delivery window</th>
-                      <th scope="col">Delivery address</th>
-                      <th scope="col" className="dispatch-weight-column">Weight</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleOrders.map((order) => (
-                      <tr key={order.id} className={Number(order.id) === Number(selectedOrderId) ? 'is-selected' : ''}>
-                        <td>
-                          <button
-                            type="button"
-                            className="dispatch-order-link"
-                            aria-pressed={Number(order.id) === Number(selectedOrderId)}
-                            onClick={() => selectOrder(order)}
-                          >
-                            {order.order_no || `Order #${order.id}`}
-                          </button>
-                        </td>
-                        <td>{formatWindow(order)}</td>
-                        <td className="dispatch-address-cell">{formatAddress(order.delivery_location)}</td>
-                        <td className="dispatch-weight-column">{formatWeight(order.total_weight_kg)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="dispatch-order-list" aria-busy={queueLoading}>
+                {visibleOrders.map((order) => (
+                  <button
+                    key={order.id}
+                    type="button"
+                    className={`dispatch-order-card${Number(order.id) === Number(selectedOrderId) ? ' is-selected' : ''}`}
+                    aria-pressed={Number(order.id) === Number(selectedOrderId)}
+                    onClick={() => selectOrder(order)}
+                  >
+                    <span className="dispatch-order-card-top">
+                      <span className="dispatch-order-number">{order.order_no || `Order #${order.id}`}</span>
+                      <span className="dispatch-order-weight">{formatWeight(order.total_weight_kg)}</span>
+                    </span>
+                    <span className="dispatch-order-address">{formatAddress(order.delivery_location)}</span>
+                    <span className="dispatch-order-window">{formatWindow(order)}</span>
+                  </button>
+                ))}
               </div>
             )}
             {(!queueLoading || orders.length > 0) && (
@@ -339,39 +319,46 @@ export function DispatchQueue() {
           </section>
 
           <aside className="dispatch-detail-pane" aria-labelledby="order-detail-heading">
+            <div className="dispatch-assignment-heading">
+              <h2 id="order-detail-heading">Assignment Workspace</h2>
+              <p>Evaluate suggestions and assign a driver for the selected order.</p>
+            </div>
+            {successMessage && (
+              <p className="dispatch-success dispatch-page-feedback" role="status" aria-live="polite">{successMessage}</p>
+            )}
             {!selectedOrder ? (
               <div className="dispatch-detail-empty">
-                <h2 id="order-detail-heading">Select an order</h2>
+                <h3>Select an order</h3>
                 <p>Choose an order from the queue to review its delivery details and assignment options.</p>
               </div>
             ) : (
               <>
-                <div className="dispatch-pane-heading dispatch-detail-heading">
-                  <div>
-                    <h2 id="order-detail-heading">{selectedOrder.order_no || `Order #${selectedOrder.id}`}</h2>
+                <section className="dispatch-order-summary" aria-labelledby="dispatch-order-summary-heading">
+                  <div className="dispatch-order-summary-heading">
+                    <h3 id="dispatch-order-summary-heading">Order details</h3>
+                    <span className="dispatch-record-id">#{selectedOrder.id}</span>
                   </div>
-                  <span className="dispatch-record-id">#{selectedOrder.id}</span>
-                </div>
-
-                <dl className="dispatch-order-facts">
-                  <div>
-                    <dt>Delivery window</dt>
-                    <dd>{formatWindow(selectedOrder)}</dd>
-                  </div>
-                  <div>
-                    <dt>Delivery address</dt>
-                    <dd>{formatAddress(selectedOrder.delivery_location)}</dd>
-                  </div>
-                  <div>
-                    <dt>Total weight</dt>
-                    <dd>{formatWeight(selectedOrder.total_weight_kg)}</dd>
-                  </div>
-                </dl>
+                  <p className="dispatch-selected-order-number">{selectedOrder.order_no || `Order #${selectedOrder.id}`}</p>
+                  <dl className="dispatch-order-facts">
+                    <div>
+                      <dt>Delivery window</dt>
+                      <dd>{formatWindow(selectedOrder)}</dd>
+                    </div>
+                    <div>
+                      <dt>Total weight</dt>
+                      <dd>{formatWeight(selectedOrder.total_weight_kg)}</dd>
+                    </div>
+                    <div className="dispatch-destination-fact">
+                      <dt>Delivery destination</dt>
+                      <dd>{formatAddress(selectedOrder.delivery_location)}</dd>
+                    </div>
+                  </dl>
+                </section>
 
                 <section className="dispatch-recommendation" aria-labelledby="recommendation-heading">
                   <div className="dispatch-subsection-heading">
                     <div>
-                      <h3 id="recommendation-heading">Recommendation</h3>
+                      <h3 id="recommendation-heading">Recommended dispatch plan</h3>
                     </div>
                     <button
                       type="button"
@@ -405,10 +392,14 @@ export function DispatchQueue() {
                       </div>
                     </dl>
                   )}
+                  {!recommendation && !recommendationError && !recommendationLoading && (
+                    <p className="dispatch-recommendation-prompt">Request a recommendation to see the suggested driver and reason.</p>
+                  )}
                 </section>
 
                 <form className="dispatch-assignment" onSubmit={handleAssignment}>
-                  <label htmlFor="dispatch-driver">Assign driver</label>
+                  <h3>Manual override assignment</h3>
+                  <label htmlFor="dispatch-driver">Select driver</label>
                   <select
                     id="dispatch-driver"
                     value={selectedDriverId}
@@ -441,7 +432,7 @@ export function DispatchQueue() {
                     className="dispatch-button dispatch-button-primary"
                     disabled={!selectedDriverId || driversLoading || Boolean(driversError) || assignmentLoading}
                   >
-                    {assignmentLoading ? 'Assigning…' : 'Assign driver'}
+                    {assignmentLoading ? 'Assigning…' : 'Assign to Driver'}
                   </button>
                 </form>
               </>

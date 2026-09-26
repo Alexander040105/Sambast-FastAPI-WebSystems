@@ -294,6 +294,136 @@
   .fleet-module .table { min-width: 38rem; }
 }
 
+/* Approved Fleet Figma visual system, shared by Drivers, Vehicles, and Shifts. */
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) { color: var(--drivers-text); }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .page-header { border-bottom-color: var(--drivers-border); margin-bottom: 8px; padding-bottom: 0; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .page-title { color: var(--drivers-text); font-size: 19px; font-weight: 650; letter-spacing: -0.025em; line-height: 25px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .page-summary { color: var(--drivers-secondary); font-size: 11px; line-height: 16px; margin-top: 2px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-tabs { border-bottom-color: var(--drivers-border); gap: 18px; margin: 0 0 10px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-tab { color: var(--drivers-secondary); font-size: 11px; font-weight: 450; line-height: 16px; margin-bottom: -1px; padding: 7px 0 8px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-tab:hover { color: var(--drivers-text); }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-tab.active { background: transparent; border-bottom: 2px solid var(--drivers-accent); color: var(--drivers-text); font-weight: 600; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-tab:focus-visible { outline: 2px solid var(--drivers-accent); outline-offset: 2px; }
+
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-records { background: transparent; border: 0; border-radius: 0; overflow: visible; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .section-header { border: 0; margin: 0; min-height: 0; padding: 8px 0 16px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-toolbar { align-items: center; gap: 12px; grid-template-columns: minmax(0, 1fr) auto; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-controls { gap: 9px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-search { flex: 0 1 214px; max-width: 260px; min-width: 150px; position: relative; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .driver-search-icon { color: var(--drivers-muted); height: 13px; left: 9px; pointer-events: none; position: absolute; top: 50%; transform: translateY(-50%); width: 13px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-controls .input { background: var(--drivers-surface); border: 1px solid var(--drivers-border); border-radius: 5px; color: var(--drivers-text); font-size: 10px; height: 27px; min-height: 27px; padding: 4px 9px 4px 28px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-controls .input::placeholder { color: var(--drivers-muted); }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-controls .input:focus,
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-controls .select:focus { border-color: var(--drivers-accent); box-shadow: 0 0 0 2px var(--drivers-accent-soft); }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-filter { flex: 0 0 88px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-controls .select { background-color: var(--drivers-surface); border: 1px solid var(--drivers-border); border-radius: 5px; color: var(--drivers-text); font-size: 10px; height: 27px; min-height: 27px; padding: 3px 22px 3px 8px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .section-header .btn-primary { background: var(--drivers-accent); border: 1px solid var(--drivers-accent); border-radius: 5px; color: #302a18; font-size: 10px; font-weight: 600; height: 28px; min-height: 28px; padding: 0 10px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .section-header .btn-primary:hover:not(:disabled) { background: #e4ac12; border-color: #e4ac12; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .section-header .btn-primary span { font-size: 15px; font-weight: 500; line-height: 1; }
+
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .table-container { background: var(--drivers-surface); border: 1px solid var(--drivers-border); border-radius: 6px; overflow-x: auto; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) { border-collapse: separate; border-spacing: 0; font-size: 11px; line-height: 16px; min-width: 650px; table-layout: fixed; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th,
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) td { border-bottom: 1px solid #e9eaf0; padding: 8px 11px; text-align: left; vertical-align: middle; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th { background: var(--drivers-header); color: var(--drivers-secondary); font-size: 9px; font-weight: 600; letter-spacing: 0.015em; line-height: 13px; text-transform: uppercase; white-space: nowrap; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th:first-child { border-top-left-radius: 5px; width: 21%; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th:nth-child(2) { width: 15%; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th:nth-child(3) { width: 22%; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th:nth-child(4) { width: 15%; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th:nth-child(5) { width: 16%; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th:last-child { border-top-right-radius: 5px; text-align: right; width: 11%; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) td { color: var(--drivers-secondary); font-size: 11px; height: 37px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) td:first-child { color: var(--drivers-text); font-weight: 600; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) td:nth-child(2) { color: var(--drivers-secondary); font-variant-numeric: tabular-nums; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) td:nth-child(3) { color: var(--drivers-secondary); }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) tbody tr:hover { background: #fafafd; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) tbody tr:last-child td { border-bottom: 0; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .driver-primary-id { color: var(--drivers-text); font-size: 11px; font-weight: 600; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .driver-user-id { font-variant-numeric: tabular-nums; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th.actions-column,
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) td.actions-column { text-align: right; white-space: nowrap; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .status { border: 0; border-radius: 3px; font-size: 8px; font-weight: 600; line-height: 12px; min-height: 16px; padding: 2px 5px; text-transform: uppercase; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .status::before { display: none; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .status-active { background: var(--drivers-success-soft); color: var(--drivers-success); }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .status-off_duty { background: #e9eaee; color: #59606c; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .status-suspended { background: var(--drivers-danger-soft); color: var(--drivers-danger); }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .driver-edit-action { background: transparent; border: 0; color: var(--drivers-action); cursor: pointer; font: 500 10px/16px var(--font-sans); padding: 3px 5px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .driver-edit-action:hover { text-decoration: underline; text-underline-offset: 2px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .driver-edit-action:focus-visible,
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) .btn-ghost:focus-visible { outline: 2px solid var(--drivers-accent); outline-offset: 1px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) .btn-ghost { min-height: 24px; min-width: 24px; padding: 3px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-footer { border: 0; color: var(--drivers-muted); font-size: 10px; min-height: 48px; padding: 10px 0 0; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-pagination-actions { gap: 6px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-pagination-actions .btn { background: var(--drivers-surface); border: 1px solid var(--drivers-border); border-radius: 5px; color: var(--drivers-secondary); font-size: 10px; height: 25px; min-height: 25px; padding: 0 9px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-pagination-actions .btn:hover:not(:disabled) { background: var(--drivers-header); }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .empty-state,
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-state { background: var(--drivers-surface); border: 1px solid var(--drivers-border); border-radius: 6px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .empty-state { padding: 22px 16px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .empty-state-title { color: var(--drivers-text); font-size: 13px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .empty-state-text { color: var(--drivers-secondary); font-size: 11px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-state { color: var(--drivers-secondary); font-size: 12px; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-state-error .error-message { color: var(--drivers-danger); }
+
+@media (max-width: 767px) {
+  .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .page-header { margin-bottom: 7px; }
+  .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-tabs { gap: 15px; margin-bottom: 8px; }
+  .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-toolbar { grid-template-columns: minmax(0, 1fr) auto; padding-bottom: 12px; }
+  .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-controls { flex-wrap: wrap; grid-column: 1 / -1; grid-row: 2; }
+  .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-search { flex: 1 1 100%; max-width: none; }
+  .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-filter { flex: 0 0 110px; }
+  .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-toolbar > .btn-primary { grid-column: 2; grid-row: 1; }
+  .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) { min-width: 650px; }
+  .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th,
+  .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) td { padding-inline: 8px; }
+}
+
+/* Vehicle-only field alignment within the shared approved Fleet table style. */
+.fleet-module.vehicles-figma-page .vehicle-search-icon { color: var(--drivers-muted); height: 13px; left: 9px; pointer-events: none; position: absolute; top: 50%; transform: translateY(-50%); width: 13px; }
+.fleet-module.vehicles-figma-page .vehicles-table { min-width: 900px; }
+.fleet-module.vehicles-figma-page .vehicles-table th:first-child { border-top-left-radius: 5px; width: 12%; }
+.fleet-module.vehicles-figma-page .vehicles-table th:nth-child(2) { width: 14%; }
+.fleet-module.vehicles-figma-page .vehicles-table th:nth-child(3) { width: 12%; }
+.fleet-module.vehicles-figma-page .vehicles-table th:nth-child(4) { width: 14%; }
+.fleet-module.vehicles-figma-page .vehicles-table th:nth-child(5) { width: 14%; }
+.fleet-module.vehicles-figma-page .vehicles-table th:nth-child(6) { width: 11%; }
+.fleet-module.vehicles-figma-page .vehicles-table th:nth-child(7) { width: 13%; }
+.fleet-module.vehicles-figma-page .vehicles-table th:last-child { border-top-right-radius: 5px; text-align: right; width: 10%; }
+.fleet-module.vehicles-figma-page .vehicles-table .vehicle-id-cell { color: var(--drivers-text); font-weight: 600; white-space: nowrap; }
+.fleet-module.vehicles-figma-page .vehicles-table .vehicle-plate-cell,
+.fleet-module.vehicles-figma-page .vehicles-table .numeric-column { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fleet-module.vehicles-figma-page .vehicles-table .numeric-column { text-align: right; }
+.fleet-module.vehicles-figma-page .vehicles-table .vehicle-created-cell { color: var(--drivers-muted); white-space: nowrap; }
+.fleet-module.vehicles-figma-page .vehicles-table .status-inactive { background: #e9eaee; color: #59606c; }
+
+@media (max-width: 767px) {
+  .fleet-module.vehicles-figma-page .vehicles-table { min-width: 900px; }
+}
+
+/* Shift-only fields within the shared Fleet table visual system. */
+.fleet-module.shifts-figma-page .shift-search-icon { color: var(--drivers-muted); height: 13px; left: 9px; pointer-events: none; position: absolute; top: 50%; transform: translateY(-50%); width: 13px; }
+.fleet-module.shifts-figma-page .shifts-table { min-width: 900px; }
+.fleet-module.shifts-figma-page .shifts-table th:first-child { border-top-left-radius: 5px; width: 12%; }
+.fleet-module.shifts-figma-page .shifts-table th:nth-child(2) { width: 17%; }
+.fleet-module.shifts-figma-page .shifts-table th:nth-child(3) { width: 16%; }
+.fleet-module.shifts-figma-page .shifts-table th:nth-child(4),
+.fleet-module.shifts-figma-page .shifts-table th:nth-child(5) { width: 12%; }
+.fleet-module.shifts-figma-page .shifts-table th:nth-child(6) { width: 10%; }
+.fleet-module.shifts-figma-page .shifts-table th:nth-child(7) { width: 12%; }
+.fleet-module.shifts-figma-page .shifts-table th:last-child { border-top-right-radius: 5px; text-align: right; width: 9%; }
+.fleet-module.shifts-figma-page .shifts-table .shift-id-cell { color: var(--drivers-text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fleet-module.shifts-figma-page .shifts-table .driver-cell { color: var(--drivers-secondary); }
+.fleet-module.shifts-figma-page .shifts-table .shift-vehicle-cell > div:first-child { color: var(--drivers-text); font-weight: 550; white-space: nowrap; }
+.fleet-module.shifts-figma-page .shifts-table .shift-vehicle-type { color: var(--drivers-muted); font-size: 9px; text-transform: capitalize; }
+.fleet-module.shifts-figma-page .shifts-table .shift-time-cell { color: var(--drivers-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fleet-module.shifts-figma-page .shifts-table .shift-created-cell { color: var(--drivers-muted); white-space: nowrap; }
+.fleet-module.shifts-figma-page .status-scheduled { background: var(--drivers-warning-soft); color: var(--drivers-warning); }
+.fleet-module.shifts-figma-page .status-completed { background: #e9eaee; color: #59606c; }
+.fleet-module.shifts-figma-page .warning-banner { background: var(--drivers-warning-soft); border: 1px solid #f0dda2; border-radius: 5px; color: var(--drivers-warning); font-size: 11px; margin: 0 0 10px; padding: 8px 10px; }
+
+@media (max-width: 767px) {
+  .fleet-module.shifts-figma-page .shifts-table { min-width: 900px; }
+}
+
 /* Dispatcher T3 workspace language */
 .fleet-module {
   min-width: 0;

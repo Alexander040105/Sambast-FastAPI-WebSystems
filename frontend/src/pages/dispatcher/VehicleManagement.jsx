@@ -199,18 +199,19 @@ export function VehicleManagement() {
         <div className="fleet-table-controls">
           <label className="fleet-search">
             <span className="sr-only">Search vehicles by ID, plate number, or type</span>
-            <input className="input" type="search" value={search} placeholder="Search vehicles..." onChange={(event) => { setSearch(event.target.value); setCurrentPage(1); }} />
+            <svg className="vehicle-search-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="10.8" cy="10.8" r="6.3" /><path d="m15.5 15.5 4.2 4.2" /></svg>
+            <input className="input" type="search" value={search} placeholder="Search vehicle ID, plate, or type..." onChange={(event) => { setSearch(event.target.value); setCurrentPage(1); }} />
           </label>
           <label className="fleet-filter">
             <span className="sr-only">Filter vehicles by active status</span>
             <select className="select" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setCurrentPage(1); }}>
-              <option value="all">All statuses</option>
+              <option value="all">Status: All</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
           </label>
         </div>
-        <button onClick={openCreateModal} className="btn btn-primary">
+        <button onClick={openCreateModal} className="btn btn-primary"><span aria-hidden="true">＋</span>
           Add Vehicle
         </button>
       </div>
@@ -232,6 +233,7 @@ export function VehicleManagement() {
           <table className="table vehicles-table">
             <thead>
               <tr>
+                <th scope="col">Vehicle ID</th>
                 <th scope="col">Plate No.</th>
                 <th scope="col">Type</th>
                 <th scope="col" className="numeric-column">Max Weight (kg)</th>
@@ -244,16 +246,17 @@ export function VehicleManagement() {
             <tbody>
               {visibleVehicles.map((vehicle) => (
                 <tr key={vehicle.id}>
-                  <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '500' }}>{vehicle.plate_no}</td>
+                  <td className="vehicle-id-cell">Vehicle #{vehicle.id}</td>
+                  <td className="vehicle-plate-cell">{vehicle.plate_no}</td>
                   <td className="type-cell" title={vehicle.type}><span className="type-label">{vehicle.type.charAt(0).toUpperCase() + vehicle.type.slice(1)}</span></td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{vehicle.max_weight_kg.toLocaleString()}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{vehicle.max_volume_m3 == null ? '—' : Number(vehicle.max_volume_m3).toLocaleString()}</td>
+                  <td className="numeric-column">{vehicle.max_weight_kg.toLocaleString()}</td>
+                  <td className="numeric-column">{vehicle.max_volume_m3 == null ? '—' : Number(vehicle.max_volume_m3).toLocaleString()}</td>
                   <td>
-                    <span className={vehicle.is_active ? 'state-active' : 'state-inactive'}>
+                    <span className={`status ${vehicle.is_active ? 'status-active' : 'status-inactive'}`}>
                       {vehicle.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td style={{ fontSize: 'var(--dispatcher-size-meta)', color: 'var(--text-muted)' }}>
+                  <td className="vehicle-created-cell">
                     {formatDate(vehicle.created_at)}
                   </td>
                   <td className="actions-column">
