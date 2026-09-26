@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { DispatcherLayout, DriverLayout, OpsManagerLayout } from '..';
 import { FleetPage, FleetDriversPage, FleetVehiclesPage, FleetShiftsPage } from '../../pages/dispatcher/FleetPage.jsx';
 import { DispatchQueue } from '../../pages/dispatcher/DispatchQueue.jsx';
+import { RouteDetailPage } from '../../pages/dispatcher/RouteDetailPage.jsx';
 import { DriverWorkflow } from '../../pages/driver/DriverWorkflow.jsx';
 
 const routes = [
@@ -24,7 +25,8 @@ const routes = [
         ],
       },
       { path: '/dispatcher/queue', element: <DispatchQueue /> },
-      { path: '/dispatcher/routes', element: null },
+      { path: '/dispatcher/routes', element: <RouteDetailPage /> },
+      { path: '/dispatcher/routes/:routeId', element: <RouteDetailPage /> },
     ],
   },
   {

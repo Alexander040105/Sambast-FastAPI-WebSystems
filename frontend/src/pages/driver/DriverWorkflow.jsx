@@ -47,9 +47,23 @@ export function DriverWorkflow() {
   const [actionFeedback, setActionFeedback] = useState({ stopId: null, error: '' });
   const [actionLoading, setActionLoading] = useState(false);
   const [podFile, setPodFile] = useState(null);
+  const [podPreviewUrl, setPodPreviewUrl] = useState('');
+  const podPreviewUrlRef = useRef('');
   const [recipientName, setRecipientName] = useState('');
   const [failureReason, setFailureReason] = useState('');
   const [failureNotes, setFailureNotes] = useState('');
+
+  function handlePhotoChange(file) {
+    if (podPreviewUrlRef.current) URL.revokeObjectURL(podPreviewUrlRef.current);
+    const nextPreviewUrl = file ? URL.createObjectURL(file) : '';
+    podPreviewUrlRef.current = nextPreviewUrl;
+    setPodPreviewUrl(nextPreviewUrl);
+    setPodFile(file);
+  }
+
+  useEffect(() => () => {
+    if (podPreviewUrlRef.current) URL.revokeObjectURL(podPreviewUrlRef.current);
+  }, []);
 
   async function refreshManifest() {
     setLoadError('');
@@ -111,7 +125,6 @@ export function DriverWorkflow() {
         {!stopId && <span className="driver-stop-count">{loading ? '—' : `${stops.length} Stops`}</span>}
       </header>
 
-      <p className="driver-preview-note">Temporary development preview · local mock data</p>
       {actionError && screen === 'manifest' && <p className="driver-action-error" role="alert">{actionError}</p>}
 
       {loading ? <div className="driver-state" role="status">Loading manifest…</div>
@@ -129,13 +142,14 @@ export function DriverWorkflow() {
               failureNotes={failureNotes}
               recipientName={recipientName}
               podFile={podFile}
+              previewUrl={podPreviewUrl}
               onFailureReasonChange={setFailureReason}
               onFailureNotesChange={setFailureNotes}
               onRecipientNameChange={setRecipientName}
-              onPhotoChange={setPodFile}
+              onPhotoChange={handlePhotoChange}
               onStart={() => beginRoute(selectedStop)}
               onArrive={() => runAction(() => arriveAtStop(selectedStop.id), selectedStop.id)}
-              onComplete={() => runAction(() => completeStop(selectedStop.id, podFile?.name, recipientName), selectedStop.id, () => { setPodFile(null); setRecipientName(''); navigate('/driver/route'); })}
+              onComplete={() => runAction(() => completeStop(selectedStop.id, podFile?.name, recipientName), selectedStop.id, () => { handlePhotoChange(null); setRecipientName(''); navigate('/driver/route'); })}
               onFail={() => runAction(() => failStop(selectedStop.id, failureReason, failureNotes), selectedStop.id, () => { setFailureReason(''); setFailureNotes(''); navigate('/driver/route'); })}
               onBack={(path) => navigate(path || '/driver')}
             /> : <div className="driver-state" role="status">This stop is not in today’s manifest. <Link to="/driver">Return to manifest</Link></div>
@@ -162,19 +176,11 @@ export function DriverWorkflow() {
 
 function StopWorkflowScreen({
   screen, stop, isCurrentStop, routeStarted, failureReasons, actionError, actionLoading,
-  failureReason, failureNotes, recipientName, podFile, onFailureReasonChange, onFailureNotesChange,
+  failureReason, failureNotes, recipientName, podFile, previewUrl, onFailureReasonChange, onFailureNotesChange,
   onRecipientNameChange, onPhotoChange, onStart, onArrive, onComplete, onFail, onBack,
 }) {
   const cameraRef = useRef(null);
   const galleryRef = useRef(null);
-  const [previewUrl, setPreviewUrl] = useState('');
-  useEffect(() => {
-    if (!podFile) { setPreviewUrl(''); return undefined; }
-    const url = URL.createObjectURL(podFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [podFile]);
-
   const isFinished = ['delivered', 'failed'].includes(stop.status);
 
   if (screen === 'complete') return (
@@ -189,7 +195,6 @@ function StopWorkflowScreen({
           <button className="driver-button driver-button-secondary" type="button" onClick={() => cameraRef.current?.click()}>{podFile ? 'Retake' : 'Take Photo'}</button>
           <button className="driver-button driver-button-secondary" type="button" onClick={() => galleryRef.current?.click()}>From Gallery</button>
         </div>
-        {podFile && <p className="driver-photo-name">Local preview: {podFile.name}. The temporary workflow stores the filename only.</p>}
         <label className="driver-field-label" htmlFor="recipient-name">Recipient name (optional)</label>
         <input id="recipient-name" className="driver-text-input" type="text" value={recipientName} onChange={(event) => onRecipientNameChange(event.target.value)} autoComplete="name" />
       </section>

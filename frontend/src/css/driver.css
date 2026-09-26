@@ -43,7 +43,6 @@
 .driver-back-button:hover { background: #e9e9f0; }
 .driver-back-button:focus-visible { outline: 2px solid var(--driver-action); outline-offset: 2px; }
 .driver-stop-count { background: #efeff9; border-radius: 6px; color: var(--driver-action); font-size: 11px; font-weight: 600; margin-top: 1px; padding: 4px 8px; white-space: nowrap; }
-.driver-preview-note { color: var(--driver-muted); font-size: 9px; line-height: 12px; margin: -6px 1px 9px; }
 
 .driver-stop-list, .driver-route-view { display: grid; gap: 10px; }
 .driver-stop-card { background: var(--driver-surface); border: 1px solid var(--driver-border); border-radius: 9px; color: inherit; display: grid; gap: 9px; padding: 11px 10px; transition: background-color 120ms ease, border-color 120ms ease; }
@@ -92,7 +91,6 @@
 .driver-photo-preview img { height: 100%; object-fit: cover; width: 100%; }
 .driver-photo-empty { color: var(--driver-muted); font-size: 12px; }
 .driver-upload-actions { display: grid; gap: 9px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.driver-photo-name { color: var(--driver-success) !important; overflow-wrap: anywhere; }
 .driver-field-label { color: var(--driver-secondary); font-size: 10px; font-weight: 650; margin: 2px 0 -5px; text-transform: uppercase; }
 .driver-text-input, .driver-notes-input { background: var(--driver-surface); border: 1px solid var(--driver-border); border-radius: 7px; color: var(--driver-text); font: 400 13px/18px var(--font-sans); min-height: 42px; padding: 10px 11px; width: 100%; }
 .driver-notes-input { min-height: 96px; resize: vertical; }

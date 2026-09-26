@@ -165,7 +165,7 @@
 .dispatcher-brand-name { display: none; }
 
 /* Approved light sidebar shell treatment for the implemented Fleet and Dispatch Queue screens. */
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) {
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) {
   --drivers-canvas: #f7f7fb;
   --drivers-sidebar: #f4f4f8;
   --drivers-surface: #ffffff;
@@ -188,7 +188,7 @@
   color: var(--drivers-text);
 }
 
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-sidebar {
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-sidebar {
   align-items: stretch;
   background: var(--drivers-sidebar);
   border-right: 1px solid var(--drivers-border);
@@ -197,7 +197,7 @@
   width: 181px;
 }
 
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-brand-lockup {
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-brand-lockup {
   align-items: center;
   gap: 8px;
   justify-content: flex-start;
@@ -206,7 +206,7 @@
   padding: 0 3px;
 }
 
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-brand-mark {
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-brand-mark {
   background: var(--drivers-accent);
   border-radius: 4px;
   color: #3b3524;
@@ -219,7 +219,7 @@
   width: 22px;
 }
 
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-brand-name {
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-brand-name {
   color: var(--drivers-text);
   display: block;
   font-size: 12px;
@@ -228,12 +228,12 @@
   white-space: nowrap;
 }
 
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav {
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav {
   align-items: stretch;
   gap: 4px;
 }
 
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link {
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link {
   align-items: center;
   border-radius: 5px;
   color: var(--drivers-secondary);
@@ -243,19 +243,19 @@
   width: 100%;
 }
 
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link[aria-label="Dashboard"] { display: none; }
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link .dispatcher-nav-icon { flex: 0 0 16px; height: 16px; margin-right: 8px; width: 16px; }
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-text { display: inline; font-size: 12px; font-weight: 450; }
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link:hover { background: #ececf2; color: var(--drivers-text); }
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link.active { background: var(--drivers-accent-soft); color: var(--drivers-text); font-weight: 600; }
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link.active::before { background: var(--drivers-accent); height: 18px; left: 0; width: 2px; }
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-sidebar .dispatcher-logout { color: var(--drivers-secondary); justify-content: flex-start; margin-top: auto; padding: 0 8px; width: 100%; }
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-sidebar .dispatcher-logout .dispatcher-nav-icon { flex: 0 0 16px; height: 16px; margin-right: 8px; width: 16px; }
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-sidebar .dispatcher-logout .dispatcher-nav-text { display: inline; font-size: 12px; }
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-workspace { background: transparent; padding: 22px 24px 28px; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link[aria-label="Dashboard"] { display: none; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link .dispatcher-nav-icon { flex: 0 0 16px; height: 16px; margin-right: 8px; width: 16px; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-text { display: inline; font-size: 12px; font-weight: 450; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link:hover { background: #ececf2; color: var(--drivers-text); }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link.active { background: var(--drivers-accent-soft); color: var(--drivers-text); font-weight: 600; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link.active::before { background: var(--drivers-accent); height: 18px; left: 0; width: 2px; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-sidebar .dispatcher-logout { color: var(--drivers-secondary); justify-content: flex-start; margin-top: auto; padding: 0 8px; width: 100%; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-sidebar .dispatcher-logout .dispatcher-nav-icon { flex: 0 0 16px; height: 16px; margin-right: 8px; width: 16px; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-sidebar .dispatcher-logout .dispatcher-nav-text { display: inline; font-size: 12px; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-workspace { background: transparent; padding: 22px 24px 28px; }
 
 @media (max-width: 767px) {
-  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-sidebar {
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-sidebar {
     align-items: center;
     flex-direction: row;
     height: auto;
@@ -264,12 +264,12 @@
     position: relative;
     width: 100%;
   }
-  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-brand-lockup { flex: 0 0 auto; margin: 0; }
-  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav { flex-direction: row; gap: 2px; margin-left: auto; overflow-x: auto; width: auto; }
-  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link { height: 34px; padding: 0 7px; width: auto; }
-  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-nav-link .dispatcher-nav-icon { margin-right: 4px; }
-  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-sidebar .dispatcher-logout { margin: 0 0 0 4px; width: auto; }
-  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view) .dispatcher-workspace { padding: 16px 12px 22px; }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-brand-lockup { flex: 0 0 auto; margin: 0; }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav { flex-direction: row; gap: 2px; margin-left: auto; overflow-x: auto; width: auto; }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link { height: 34px; padding: 0 7px; width: auto; }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link .dispatcher-nav-icon { margin-right: 4px; }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-sidebar .dispatcher-logout { margin: 0 0 0 4px; width: auto; }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-workspace { padding: 16px 12px 22px; }
 }
 
 /* Preserve the pre-existing shell presentation outside the Dispatcher T3 scope. */
