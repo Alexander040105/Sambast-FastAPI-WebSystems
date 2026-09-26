@@ -1,7 +1,7 @@
 """
 Registration OTP service — stateless port of the legacy session-based flow.
 
-All OTP state lives on `users` columns (otp_code_hash, otp_expires_at,
+All OTP state lives on `customers` columns (otp_code_hash, otp_expires_at,
 otp_attempts, otp_last_sent_at, otp_resend_count, otp_verified) — no sessions.
 
 Guardrails (ported exactly from legacy_code/app.py):
@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password, verify_password
-from app.models.user import User
+from app.models.customer import Customer
 from app.services.email import send_registration_otp_email
 
 OTP_LENGTH = 6
@@ -46,7 +46,7 @@ def mask_email(email: str) -> str:
 
 
 def issue_otp(
-    db: Session, user: User, is_resend: bool = False
+    db: Session, user: Customer, is_resend: bool = False
 ) -> tuple[bool, str | None, int | None]:
     """
     Generate + email an OTP and stamp the users columns (caller commits).
@@ -87,7 +87,7 @@ def issue_otp(
     return True, None, None
 
 
-def verify_otp(user: User, code: str) -> tuple[bool, str | None, str | None]:
+def verify_otp(user: Customer, code: str) -> tuple[bool, str | None, str | None]:
     """
     Check a submitted OTP against the users columns.
 

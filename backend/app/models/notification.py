@@ -14,7 +14,11 @@ class Notification(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     user_id = Column(
         BigInteger, ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        nullable=True, index=True, comment="staff recipient (nullable)",
+    )
+    customer_id = Column(
+        BigInteger, ForeignKey("customers.id", ondelete="CASCADE"),
+        nullable=True, index=True, comment="customer recipient",
     )
     channel = Column(
         String(20), nullable=False, default="email",

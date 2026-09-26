@@ -10,7 +10,23 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 from app.core.errors import register_error_handlers
-from app.routers import drivers, vehicles, shifts, locations, dispatch, auth, admin
+from app.routers import (
+    admin,
+    analytics,
+    auth,
+    categories,
+    customer_addresses,
+    dispatch,
+    drivers,
+    locations,
+    notifications,
+    orders,
+    payments,
+    products,
+    shifts,
+    tracking,
+    vehicles,
+)
 
 
 def create_app() -> FastAPI:
@@ -41,6 +57,14 @@ def create_app() -> FastAPI:
     application.include_router(shifts.router, prefix="/api/v1")
     application.include_router(locations.router, prefix="/api/v1")
     application.include_router(dispatch.router, prefix="/api/v1")
+    application.include_router(products.router, prefix="/api/v1")
+    application.include_router(categories.router, prefix="/api/v1")
+    application.include_router(orders.router, prefix="/api/v1")
+    application.include_router(customer_addresses.router, prefix="/api/v1")
+    application.include_router(payments.router, prefix="/api/v1")
+    application.include_router(tracking.router, prefix="/api/v1")
+    application.include_router(notifications.router, prefix="/api/v1")
+    application.include_router(analytics.router, prefix="/api/v1")
 
     # ── Static file serving for uploads ───────────────────────────────
     uploads_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")

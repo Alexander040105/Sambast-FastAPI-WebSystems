@@ -1,4 +1,9 @@
-"""delivery_status_events — immutable audit trail, powers SSE + tracking."""
+"""delivery_statuses — immutable status log; powers SSE + tracking.
+
+(Renamed from delivery_status_events to match the instructor's
+DeliveryStatus entity. deliveries.status holds the CURRENT state;
+this table is the append-only history.)
+"""
 
 from sqlalchemy import (
     BigInteger, Column, DateTime, ForeignKey, Numeric, String, Text, func,
@@ -7,8 +12,8 @@ from sqlalchemy import (
 from app.db.session import Base
 
 
-class DeliveryStatusEvent(Base):
-    __tablename__ = "delivery_status_events"
+class DeliveryStatus(Base):
+    __tablename__ = "delivery_statuses"
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     delivery_id = Column(

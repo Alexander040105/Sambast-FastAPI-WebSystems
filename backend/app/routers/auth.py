@@ -1,7 +1,8 @@
 """
-/api/v1/auth — registration OTP → PIN flow (customers), staff login,
-token refresh, logout. Stateless port of the legacy Flask session flow;
-all OTP state lives on the users table. Errors use the §7 envelope.
+/api/v1/auth — registration OTP → PIN flow (customers), driver
+self-registration, staff login, token refresh, logout. Stateless port of
+the legacy Flask session flow; all OTP state lives on the customers table.
+Errors use the §7 envelope.
 """
 
 from fastapi import APIRouter, Depends, Response, status
@@ -10,7 +11,7 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_current_user
+from app.core.deps import Principal, get_current_user
 from app.core.errors import api_error
 from app.core.security import (
     create_access_token,
@@ -21,11 +22,13 @@ from app.core.security import (
 )
 from app.db.session import get_db
 from app.models.audit_log import AuditLog
+from app.models.customer import Customer
+from app.models.driver import Driver
 from app.models.user import User
 from app.schemas.auth import (
     AccessTokenResponse,
+    DriverRegisterRequest,
     LoginRequest,
-    MessageResponse,
     OtpResendRequest,
     OtpVerifyRequest,
     PinSetRequest,
@@ -61,26 +64,33 @@ def _user_by_email(db: Session, email: str) -> User | None:
     )
 
 
-def _tokens_for(user: User) -> TokenResponse:
-    return TokenResponse(
-        access_token=create_access_token(user.id, user.role),
-        refresh_token=create_refresh_token(user.id, user.role),
-        user=UserOut.model_validate(user),
+def _customer_by_email(db: Session, email: str) -> Customer | None:
+    return (
+        db.query(Customer)
+        .filter(func.lower(Customer.email) == email.strip().lower())
+        .first()
     )
 
 
-def _is_registered(user: User) -> bool:
-    """Any real account — customer with PIN or any staff row — counts as
-    registered (staff rows must never enter the pending-customer flow)."""
-    return bool(user.pin_hash or user.password_hash or user.role != "customer")
+def _tokens_for(principal: Principal) -> TokenResponse:
+    return TokenResponse(
+        access_token=create_access_token(principal.id, principal.role),
+        refresh_token=create_refresh_token(principal.id, principal.role),
+        user=UserOut.model_validate(principal),
+    )
+
+
+def _is_registered(customer: Customer) -> bool:
+    """A customer row counts as registered once a PIN is set."""
+    return bool(customer.pin_hash)
 
 
 @router.post("/register", response_model=RegisterResponse)
 def register(body: RegisterRequest, db: Session = Depends(get_db)):
     existing_contact = (
-        db.query(User).filter(User.phone == body.contact_no).first()
+        db.query(Customer).filter(Customer.phone == body.contact_no).first()
     )
-    existing_email = _user_by_email(db, body.email)
+    existing_email = _customer_by_email(db, body.email)
 
     if (
         existing_contact
@@ -91,6 +101,14 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
             409,
             "CONFLICT",
             "Contact number and email are already linked to different accounts.",
+        )
+
+    # A staff email must never end up in the customers table.
+    if _user_by_email(db, body.email):
+        raise api_error(
+            409,
+            "CONFLICT",
+            "An account with that email already exists.",
         )
 
     target = existing_email or existing_contact
@@ -109,19 +127,18 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
             target.name = body.full_name
             target.phone = body.contact_no
             target.email = body.email
-            user = target
+            customer = target
         else:
-            user = User(
-                role="customer",
+            customer = Customer(
                 name=body.full_name,
                 phone=body.contact_no,
                 email=body.email,
                 is_active=True,
             )
-            db.add(user)
+            db.add(customer)
             db.flush()
 
-        issue_otp(db, user, is_resend=False)
+        issue_otp(db, customer, is_resend=False)
         db.commit()
     except IntegrityError:
         db.rollback()
@@ -134,23 +151,23 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
         raise api_error(500, "INTERNAL_ERROR", "Failed to create account. Please try again.")
 
     return RegisterResponse(
-        user_id=user.id,
-        email_masked=mask_email(user.email),
+        user_id=customer.id,
+        email_masked=mask_email(customer.email),
         resend_available_in=OTP_RESEND_COOLDOWN_SECONDS,
     )
 
 
 @router.post("/otp/verify")
 def otp_verify(body: OtpVerifyRequest, db: Session = Depends(get_db)):
-    user = _user_by_email(db, body.email)
-    if user is None or user.role != "customer":
+    customer = _customer_by_email(db, body.email)
+    if customer is None:
         raise api_error(400, "OTP_NOT_FOUND", "No pending verification for this email.")
 
     # Idempotent — already verified (or fully registered).
-    if user.pin_hash or user.otp_verified:
+    if customer.pin_hash or customer.otp_verified:
         return {"verified": True}
 
-    ok, message, kind = verify_otp(user, body.otp)
+    ok, message, kind = verify_otp(customer, body.otp)
     db.commit()  # persist attempt counter either way
     if not ok:
         raise api_error(400, _OTP_ERROR_CODES[kind], message)
@@ -159,17 +176,17 @@ def otp_verify(body: OtpVerifyRequest, db: Session = Depends(get_db)):
 
 @router.post("/otp/resend")
 def otp_resend(body: OtpResendRequest, db: Session = Depends(get_db)):
-    user = _user_by_email(db, body.email)
-    if user is None or user.role != "customer":
+    customer = _customer_by_email(db, body.email)
+    if customer is None:
         raise api_error(
             400, "OTP_NOT_FOUND", "Registration not found. Please register again."
         )
 
-    if user.pin_hash or user.otp_verified:
+    if customer.pin_hash or customer.otp_verified:
         return {"message": "Already verified."}
 
     try:
-        ok, message, retry_after = issue_otp(db, user, is_resend=True)
+        ok, message, retry_after = issue_otp(db, customer, is_resend=True)
         if not ok:
             db.rollback()
             if retry_after is not None:
@@ -194,26 +211,62 @@ def otp_resend(body: OtpResendRequest, db: Session = Depends(get_db)):
 
 @router.post("/pin/set", response_model=TokenResponse)
 def pin_set(body: PinSetRequest, db: Session = Depends(get_db)):
-    user = _user_by_email(db, body.email)
-    if user is None or user.role != "customer":
+    customer = _customer_by_email(db, body.email)
+    if customer is None:
         raise api_error(400, "OTP_NOT_FOUND", "No pending registration for this email.")
 
-    if user.pin_hash:
+    if customer.pin_hash:
         raise api_error(409, "PIN_ALREADY_SET", "PIN already set. Please sign in.")
-    if not user.otp_verified:
+    if not customer.otp_verified:
         raise api_error(
             403, "OTP_NOT_VERIFIED", "Email not verified. Please verify the OTP first."
         )
 
-    user.pin_hash = hash_password(body.pin)
-    user.otp_code_hash = None
-    user.otp_expires_at = None
-    user.otp_last_sent_at = None
-    user.otp_attempts = 0
-    user.otp_resend_count = 0
+    customer.pin_hash = hash_password(body.pin)
+    customer.otp_code_hash = None
+    customer.otp_expires_at = None
+    customer.otp_last_sent_at = None
+    customer.otp_attempts = 0
+    customer.otp_resend_count = 0
     db.commit()
-    db.refresh(user)
+    db.refresh(customer)
 
+    return _tokens_for(customer)
+
+
+@router.post("/register/driver", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+def register_driver(body: DriverRegisterRequest, db: Session = Depends(get_db)):
+    """Public driver self-registration — creates the users row and the
+    drivers profile atomically. Trusted like staff provisioning: no OTP."""
+    if _user_by_email(db, body.email) or _customer_by_email(db, body.email):
+        raise api_error(
+            409, "CONFLICT", "An account with that email already exists."
+        )
+
+    try:
+        user = User(
+            role="driver",
+            email=body.email,
+            name=body.name,
+            phone=body.phone,
+            password_hash=hash_password(body.password),
+            is_active=True,
+        )
+        db.add(user)
+        db.flush()
+
+        driver = Driver(
+            user_id=user.id,
+            license_no=body.license_no,
+            status="active",
+        )
+        db.add(driver)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise api_error(409, "CONFLICT", "Account information already exists.")
+
+    db.refresh(user)
     return _tokens_for(user)
 
 
@@ -246,23 +299,23 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
                 "VALIDATION_ERROR",
                 "Both contact_no and pin are required for customer login.",
             )
-        user = db.query(User).filter(User.phone == body.contact_no).first()
-        if user is None:
+        customer = db.query(Customer).filter(Customer.phone == body.contact_no).first()
+        if customer is None:
             raise api_error(401, "INVALID_CREDENTIALS", _INVALID_CREDENTIALS)
-        if not user.pin_hash:
+        if not customer.pin_hash:
             raise api_error(
                 403,
                 "PIN_NOT_SET",
                 "Account exists, but a PIN has not been set. "
                 "Please complete registration.",
             )
-        if not verify_password(body.pin, user.pin_hash):
+        if not verify_password(body.pin, customer.pin_hash):
             raise api_error(401, "INVALID_CREDENTIALS", _INVALID_CREDENTIALS)
-        if not user.is_active:
+        if not customer.is_active:
             raise api_error(
                 401, "ACCOUNT_INACTIVE", "Account is inactive. Please contact support."
             )
-        return _tokens_for(user)
+        return _tokens_for(customer)
 
     raise api_error(
         422,
@@ -282,28 +335,35 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)):
         raise api_error(401, "INVALID_TOKEN_TYPE", "Expected a refresh token.")
 
     try:
-        user_id = int(payload["sub"])
+        principal_id = int(payload["sub"])
     except (KeyError, ValueError):
         raise api_error(401, "INVALID_TOKEN", "Invalid or expired token.")
 
-    user = db.query(User).filter(User.id == user_id).first()
-    if user is None or not user.is_active:
+    if payload.get("role") == "customer":
+        principal = db.query(Customer).filter(Customer.id == principal_id).first()
+    else:
+        principal = db.query(User).filter(User.id == principal_id).first()
+    if principal is None or not principal.is_active:
         raise api_error(401, "UNAUTHORIZED", "User not found or inactive.")
 
-    return AccessTokenResponse(access_token=create_access_token(user.id, user.role))
+    return AccessTokenResponse(
+        access_token=create_access_token(principal.id, principal.role)
+    )
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(
-    current_user: User = Depends(get_current_user),
+    current_user: Principal = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    db.add(
-        AuditLog(
-            user_id=current_user.id,
-            action="User logged out",
-            category="User Activity",
+    # audit_logs.user_id FKs users — only staff actions are logged.
+    if isinstance(current_user, User):
+        db.add(
+            AuditLog(
+                user_id=current_user.id,
+                action="User logged out",
+                category="User Activity",
+            )
         )
-    )
-    db.commit()
+        db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

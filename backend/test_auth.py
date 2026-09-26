@@ -43,6 +43,7 @@ sys.path.insert(0, ".")
 from app.core.security import decode_token, hash_password  # noqa: E402
 from app.db.session import SessionLocal  # noqa: E402
 from app.models.audit_log import AuditLog  # noqa: E402
+from app.models.customer import Customer  # noqa: E402
 from app.models.user import User  # noqa: E402
 
 TS = int(time.time())
@@ -60,7 +61,7 @@ def set_otp(email: str, code: str = KNOWN_OTP, expired=False, attempts=0,
     """Inject a known OTP / manipulate OTP state directly in the DB."""
     db = SessionLocal()
     try:
-        u = db.query(User).filter(User.email == email).first()
+        u = db.query(Customer).filter(Customer.email == email).first()
         u.otp_code_hash = hash_password(code)
         u.otp_expires_at = datetime.now(timezone.utc) + timedelta(
             minutes=-1 if expired else 10)
@@ -188,7 +189,21 @@ audit = db.query(AuditLog).filter(
     AuditLog.user_id == cust["user"]["id"],
     AuditLog.action == "User logged out").first()
 db.close()
-log("B logout wrote audit_logs row", audit is not None,
+log("B customer logout writes NO audit row (audit_logs FKs users)",
+    audit is None, "customers don't get audit rows")
+
+# staff logout still writes an audit row
+r = httpx.post(f"{AUTH}/logout",
+               headers={"Authorization": f"Bearer {tokens['dispatcher']}"})
+log("B staff logout -> 204", r.status_code == 204, f"status={r.status_code}")
+db = SessionLocal()
+dispatcher = db.query(User).filter(
+    User.email == "dispatcher@sambast.com").first()
+audit = db.query(AuditLog).filter(
+    AuditLog.user_id == dispatcher.id,
+    AuditLog.action == "User logged out").first()
+db.close()
+log("B staff logout wrote audit_logs row", audit is not None,
     f"category={audit.category if audit else 'MISSING'}")
 
 
@@ -372,13 +387,63 @@ log("D customer hits /admin/users -> 403", r.status_code == 403,
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# E — DRIVER SELF-REGISTRATION
+# ═══════════════════════════════════════════════════════════════════════
+print("\n" + "=" * 60)
+print("E — DRIVER SELF-REGISTRATION")
+print("=" * 60)
+
+SELF_DRIVER_EMAIL = f"self.driver.{TS}@gmail.com"
+
+r = httpx.post(f"{AUTH}/register/driver", json={
+    "email": SELF_DRIVER_EMAIL, "password": "driverpass1",
+    "name": "Self Driver", "license_no": f"SELF-{TS}"})
+log("E driver self-register -> 201 + tokens",
+    r.status_code == 201
+    and r.json().get("user", {}).get("role") == "driver"
+    and "access_token" in r.json(),
+    f"{r.status_code} {r.json()}")
+SELF_DRIVER_TOKEN = r.json().get("access_token", "")
+
+r = httpx.post(f"{AUTH}/register/driver", json={
+    "email": SELF_DRIVER_EMAIL, "password": "driverpass1", "name": "Dup"})
+log("E driver self-register dup email -> 409", r.status_code == 409,
+    f"{r.status_code}")
+
+r = httpx.post(f"{AUTH}/register/driver", json={
+    "email": "customer@sambast.com", "password": "driverpass1", "name": "X"})
+log("E driver register w/ customer email -> 409", r.status_code == 409,
+    f"{r.status_code}")
+
+r = httpx.post(f"{AUTH}/login",
+               json={"email": SELF_DRIVER_EMAIL, "password": "driverpass1"})
+log("E self-registered driver login -> 200", r.status_code == 200,
+    f"{r.status_code}")
+
+# profile row was created — visible to dispatchers in GET /drivers
+r = httpx.get(f"{API}/drivers", headers=DISP_H)
+found = any(d.get("license_no") == f"SELF-{TS}" for d in r.json().get("data", []))
+log("E self-registered driver appears in /drivers",
+    r.status_code == 200 and found, f"status={r.status_code}")
+
+# but driver tokens still can't reach dispatcher endpoints
+r = httpx.get(f"{API}/drivers",
+              headers={"Authorization": f"Bearer {SELF_DRIVER_TOKEN}"})
+log("E driver token -> GET /drivers 403", r.status_code == 403,
+    f"{r.status_code}")
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # CLEANUP
 # ═══════════════════════════════════════════════════════════════════════
 print("\n--- Cleanup ---")
 db = SessionLocal()
 from app.models.driver import Driver  # noqa: E402
-for email in [TEST_EMAIL, TEST_EMAIL_2, TEST_EMAIL_3,
-              NEW_DISP_EMAIL, NEW_DRIVER_EMAIL]:
+for email in [TEST_EMAIL, TEST_EMAIL_2, TEST_EMAIL_3]:
+    c = db.query(Customer).filter(Customer.email == email).first()
+    if c:
+        db.delete(c)
+for email in [NEW_DISP_EMAIL, NEW_DRIVER_EMAIL, SELF_DRIVER_EMAIL]:
     u = db.query(User).filter(User.email == email).first()
     if u:
         db.query(Driver).filter(Driver.user_id == u.id).delete()

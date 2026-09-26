@@ -12,7 +12,7 @@ class CustomerAddress(Base):
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     customer_id = Column(
-        BigInteger, ForeignKey("users.id", ondelete="CASCADE"),
+        BigInteger, ForeignKey("customers.id", ondelete="CASCADE"),
         nullable=False, index=True,
     )
     location_id = Column(

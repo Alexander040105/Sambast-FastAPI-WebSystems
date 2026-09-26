@@ -15,8 +15,14 @@ def _fix_url(url: str) -> str:
     return url
 
 
+# Prefer the direct endpoint: the Neon pooler (PgBouncer transaction mode)
+# can return extra results on COMMIT, which psycopg3 rejects with
+# "received 2 results from command 'COMMIT'". Pooling buys us nothing at
+# dev scale — Alembic already uses DATABASE_URL_DIRECT for the same reason.
+_app_url = settings.DATABASE_URL_DIRECT or settings.DATABASE_URL
+
 engine = create_engine(
-    _fix_url(settings.DATABASE_URL),
+    _fix_url(_app_url),
     pool_pre_ping=True,
     echo=False,
 )

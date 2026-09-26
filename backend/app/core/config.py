@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     # ── Geocoding ─────────────────────────────────────────────────────────
     NOMINATIM_USER_AGENT: str = "sambast-delivery/1.0"
 
+    # ── Delivery costing (v1: base + per-km) ──────────────────────────────
+    DELIVERY_BASE_FEE: float = 50.0
+    DELIVERY_PER_KM: float = 15.0
+    # Warehouse origin for distance calculation (Quezon City default)
+    WAREHOUSE_LAT: float = 14.6760
+    WAREHOUSE_LNG: float = 121.0437
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

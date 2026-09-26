@@ -108,6 +108,28 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+class DriverRegisterRequest(BaseModel):
+    """Public driver self-registration — POST /api/v1/auth/register/driver.
+    Creates the users row (role=driver) + drivers profile atomically."""
+    email: str
+    password: str = Field(min_length=8)
+    name: str = Field(min_length=1)
+    license_no: Optional[str] = None
+    phone: Optional[str] = None
+
+    _email_ok = field_validator("email")(_norm_email)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _strip_name(cls, v: str) -> str:
+        return (v or "").strip()
+
+    @field_validator("phone", mode="before")
+    @classmethod
+    def _strip_phone(cls, v):
+        return v.strip() if isinstance(v, str) else v
+
+
 STAFF_ROLES = ("admin", "dispatcher", "ops_manager", "driver")
 
 

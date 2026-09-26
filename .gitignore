@@ -28,3 +28,5 @@ backend/uploads/
 
 seed_data.py
 create_admin.py
+
+AGENTS.md
