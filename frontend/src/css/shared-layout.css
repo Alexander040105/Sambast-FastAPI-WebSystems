@@ -106,6 +106,7 @@
   padding: 0;
   width: 2.75rem;
 }
+.dispatcher-account-footer { display: none; }
 
 .dispatcher-layout .page-container {
   flex: 1 1 auto;
@@ -163,6 +164,16 @@
 }
 
 .dispatcher-brand-name { display: none; }
+
+.dispatcher-sidebar-caption {
+  color: var(--drivers-muted);
+  font-size: 8px;
+  font-weight: 550;
+  letter-spacing: 0.045em;
+  margin: -4px 0 9px;
+  padding: 0 3px;
+  text-transform: uppercase;
+}
 
 /* Approved light sidebar shell treatment for the implemented Fleet and Dispatch Queue screens. */
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) {
@@ -252,6 +263,12 @@
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-sidebar .dispatcher-logout { color: var(--drivers-secondary); justify-content: flex-start; margin-top: auto; padding: 0 8px; width: 100%; }
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-sidebar .dispatcher-logout .dispatcher-nav-icon { flex: 0 0 16px; height: 16px; margin-right: 8px; width: 16px; }
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-sidebar .dispatcher-logout .dispatcher-nav-text { display: inline; font-size: 12px; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-account-footer { border-top: 1px solid var(--drivers-border); display: flex; flex-direction: column; gap: 6px; margin-top: auto; min-width: 0; padding: 10px 2px 1px; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-account-row { align-items: center; display: flex; gap: 8px; min-width: 0; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-user-avatar { align-items: center; background: #e7e7ef; border-radius: 50%; color: var(--drivers-secondary); display: inline-flex; flex: 0 0 22px; font-size: 8px; font-weight: 650; height: 22px; justify-content: center; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-user-copy { display: grid; gap: 2px; min-width: 0; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-user-copy strong { color: var(--drivers-text); font-size: 9px; font-weight: 650; line-height: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-user-copy small { color: var(--drivers-muted); font-size: 8px; line-height: 10px; text-transform: capitalize; }
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-workspace { background: transparent; padding: 22px 24px 28px; }
 
 @media (max-width: 767px) {
@@ -269,6 +286,8 @@
   .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link { height: 34px; padding: 0 7px; width: auto; }
   .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link .dispatcher-nav-icon { margin-right: 4px; }
   .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-sidebar .dispatcher-logout { margin: 0 0 0 4px; width: auto; }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-account-footer { border-top: 0; flex: 0 0 auto; margin: 0; padding: 0; }
+  .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-account-row { display: none; }
   .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-workspace { padding: 16px 12px 22px; }
 }
 

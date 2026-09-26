@@ -13,7 +13,7 @@ const routes = [
   {
     element: <DispatcherLayout />,
     children: [
-      { path: '/dispatcher', element: null },
+      { path: '/dispatcher', element: <Navigate to="/dispatcher/fleet" replace /> },
       {
         path: '/dispatcher/fleet',
         element: <FleetPage />,
@@ -42,10 +42,12 @@ const routes = [
   {
     element: <OpsManagerLayout />,
     children: [
-      { path: '/ops', element: null },
-      { path: '/ops/drivers', element: null },
-      { path: '/ops/costs', element: null },
-      { path: '/ops/failures', element: null },
+      {
+        path: '/ops',
+        lazy: async () => ({
+          Component: (await import('../../pages/ops/OperationsOverview.jsx')).OperationsOverview,
+        }),
+      },
     ],
   },
   { path: '*', element: null },
