@@ -1,0 +1,228 @@
+/* Slightly larger workspace scale for Dispatcher and Operations Manager only. */
+.dispatcher-layout .dispatcher-workspace {
+  --dispatcher-size-meta: 14px;
+  --dispatcher-size-body: 15px;
+  --dispatcher-size-section: 20px;
+  --dispatcher-size-title: 30px;
+}
+
+.dispatcher-layout .dispatcher-workspace {
+  padding: 26px clamp(24px, 2.4vw, 36px) 32px;
+}
+
+.dispatcher-layout .dispatcher-workspace :is(input:not([type="checkbox"]), select, textarea) {
+  font-size: 15px;
+  min-height: 40px;
+}
+
+.dispatcher-layout .dispatcher-workspace label:not(.route-sr-only) {
+  font-size: 13px;
+}
+
+/* Fleet workspace */
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .page-title {
+  font-size: 23px;
+  line-height: 30px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .page-summary {
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-tabs {
+  gap: 22px;
+  margin-bottom: 14px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-tab {
+  font-size: 13px;
+  line-height: 19px;
+  padding-block: 9px 10px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .section-header {
+  padding: 10px 0 18px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-toolbar {
+  gap: 14px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-controls {
+  gap: 11px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-search {
+  flex-basis: 250px;
+  max-width: 320px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-filter {
+  flex-basis: 11rem;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-controls :is(.input, .select) {
+  font-size: 12px;
+  height: 33px;
+  min-height: 33px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .section-header .btn-primary {
+  font-size: 12px;
+  height: 34px;
+  min-height: 34px;
+  padding-inline: 13px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) {
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th {
+  font-size: 10px;
+  line-height: 15px;
+  padding-block: 10px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) td {
+  font-size: 13px;
+  height: 44px;
+  padding-block: 10px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .status {
+  font-size: 9px;
+  line-height: 14px;
+  min-height: 19px;
+  padding: 2px 6px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-table-footer {
+  font-size: 12px;
+  min-height: 54px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-pagination-actions .btn {
+  font-size: 12px;
+  height: 31px;
+  min-height: 31px;
+  padding-inline: 11px;
+}
+
+.dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .driver-edit-action {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* Dispatch Queue */
+.dispatcher-layout .dispatch-page-header h1 { font-size: 30px; }
+.dispatcher-layout .dispatch-intro { font-size: 15px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-pane-heading { min-height: 4.6rem; padding: 0.85rem 1rem; }
+.dispatcher-layout.dispatch-figma-view .dispatch-pane-heading h2 { font-size: 20px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-queue-subtitle { font-size: 13px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-search input { font-size: 13px; min-height: 34px; padding-inline: 12px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-refresh { height: 34px; min-height: 34px; width: 34px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-card { min-height: 82px; padding: 13px 15px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-number { font-size: 13px; line-height: 19px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-weight,
+.dispatcher-layout.dispatch-figma-view .dispatch-order-address { font-size: 12px; line-height: 17px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-window { font-size: 11px; line-height: 16px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-queue-footer { font-size: 12px; min-height: 3.5rem; }
+.dispatcher-layout.dispatch-figma-view .dispatch-queue-footer .dispatch-button { font-size: 12px; min-height: 31px; padding: 5px 10px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment-heading h2 { font-size: 20px; line-height: 26px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-summary,
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment { padding: 17px 18px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-summary-heading h3,
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment h3 { font-size: 15px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-record-id { font-size: 11px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-selected-order-number { font-size: 14px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-facts dt,
+.dispatcher-layout.dispatch-figma-view .dispatch-recommendation-facts dt,
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment label { font-size: 10px; line-height: 15px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-facts dd,
+.dispatcher-layout.dispatch-figma-view .dispatch-recommendation-facts dd { font-size: 12px; line-height: 18px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-subsection-heading h3 { font-size: 12px; line-height: 17px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-recommendation-prompt,
+.dispatcher-layout.dispatch-figma-view .dispatch-help { font-size: 12px; line-height: 17px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-assignment select { font-size: 12px; min-height: 36px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-button { font-size: 12px; min-height: 34px; padding: 7px 12px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-detail-empty h3 { font-size: 14px; }
+.dispatcher-layout.dispatch-figma-view .dispatch-detail-empty p,
+.dispatcher-layout.dispatch-figma-view .dispatch-empty,
+.dispatcher-layout.dispatch-figma-view .dispatch-state { font-size: 12px; line-height: 1.5; }
+
+/* Route detail */
+.dispatcher-layout .route-detail-page { max-width: none; }
+.dispatcher-layout .route-summary h1 { font-size: 23px; line-height: 30px; }
+.dispatcher-layout .route-eyebrow { font-size: 12px; line-height: 17px; }
+.dispatcher-layout .route-summary-fields dd { font-size: 13px; line-height: 1.45; }
+.dispatcher-layout .route-select-label { font-size: 11px; }
+.dispatcher-layout .route-selector { font-size: 12px; max-width: 240px; min-height: 36px; padding: 7px 28px 7px 10px; }
+.dispatcher-layout .route-sequence-heading h2 { font-size: 12px; line-height: 17px; }
+.dispatcher-layout .route-summary-fields dt,
+.dispatcher-layout .route-stop-count,
+.dispatcher-layout .route-reorder-guidance { font-size: 11px; line-height: 16px; }
+.dispatcher-layout .route-stop-row { gap: 12px; grid-template-columns: 44px minmax(0, 1fr) auto; min-height: 68px; padding: 8px 12px; }
+.dispatcher-layout .route-stop-details h3 { font-size: 13px; line-height: 18px; }
+.dispatcher-layout .route-stop-details p { font-size: 12px; line-height: 17px; }
+.dispatcher-layout .route-stop-window { font-size: 11px; line-height: 15px; }
+.dispatcher-layout :is(.route-status, .route-stop-status) { font-size: 10px; line-height: 15px; padding: 4px 8px; }
+.dispatcher-layout .route-button { font-size: 12px; min-height: 34px; padding: 7px 12px; }
+
+/* Operations Manager dashboard */
+.ops-shell .ops-workspace {
+  padding: clamp(26px, 2.4vw, 36px) clamp(26px, 3vw, 44px) 36px;
+}
+
+.ops-shell .ops-overview-page { max-width: 1680px; }
+.ops-shell .ops-page-header { margin-bottom: 20px; }
+.ops-shell .ops-page-header h1 { font-size: 26px; line-height: 32px; }
+.ops-shell .ops-page-header p { font-size: 13px; line-height: 19px; }
+.ops-shell .ops-page-meta { gap: 16px; }
+.ops-shell .ops-updated-time { font-size: 11px; }
+.ops-shell .ops-date-range { font-size: 12px; min-height: 34px; padding-inline: 11px; }
+.ops-shell .ops-date-range svg { height: 14px; width: 14px; }
+.ops-shell .ops-date-range select { font-size: 12px; line-height: 18px; }
+.ops-shell .ops-analytics-grid { gap: 18px; }
+.ops-shell .ops-panel { padding: 17px 18px 16px; }
+.ops-shell .ops-performance-panel { min-height: 190px; }
+.ops-shell .ops-lower-panel { min-height: 440px; }
+.ops-shell .ops-panel-heading h2 { font-size: 13px; line-height: 18px; }
+.ops-shell .ops-panel-heading p { font-size: 11px; line-height: 16px; }
+.ops-shell .ops-summary-chip { font-size: 10px; line-height: 15px; padding: 5px 9px; }
+.ops-shell .ops-summary-chip i,
+.ops-shell .ops-reason-name i { flex-basis: 6px; height: 6px; width: 6px; }
+.ops-shell .ops-performance-chart { height: 126px; }
+.ops-shell .ops-cost-chart { height: 194px; }
+.ops-shell .ops-chart-scale { font-size: 10px; }
+.ops-shell .ops-lower-panel .ops-panel-heading { min-height: 38px; }
+.ops-shell .ops-reason-list { margin-block: 6px 10px; }
+.ops-shell .ops-reason-list li { font-size: 11px; min-height: 30px; }
+.ops-shell .ops-reason-name { gap: 9px; }
+.ops-shell .ops-reason-value { font-size: 11px; }
+.ops-shell .ops-failure-chart-heading { font-size: 10px; }
+.ops-shell .ops-failure-chart-heading span + span { font-size: 10px; }
+.ops-shell .ops-failure-chart { flex-basis: 96px; height: 96px; }
+.ops-shell .ops-loading,
+.ops-shell .ops-load-error { font-size: 14px; padding-block: 30px; }
+.ops-shell .ops-load-error button { font-size: 12px; padding: 10px 14px; }
+
+@media (max-width: 900px) {
+  .ops-shell .ops-workspace { padding-inline: 22px; }
+}
+
+@media (max-width: 767px) {
+  .dispatcher-layout .dispatcher-workspace { padding: 18px 14px 24px; }
+  .dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .page-title { font-size: 22px; }
+  .dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .fleet-tab { font-size: 13px; }
+  .dispatcher-layout .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) { min-width: 720px; }
+  .dispatcher-layout .dispatch-workspace { grid-template-columns: minmax(0, 1fr); }
+  .dispatcher-layout.dispatch-figma-view .dispatch-order-card { min-height: 76px; padding: 12px; }
+  .dispatcher-layout .dispatch-search { flex-basis: 100%; }
+  .dispatcher-layout .route-stop-row { grid-template-columns: 40px minmax(0, 1fr); }
+  .dispatcher-layout .route-stop-status { grid-column: 2; justify-self: start; }
+  .ops-shell .ops-workspace { padding: 20px 14px 26px; }
+  .ops-shell .ops-page-header { align-items: flex-start; }
+}

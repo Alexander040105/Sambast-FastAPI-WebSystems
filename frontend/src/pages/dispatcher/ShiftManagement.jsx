@@ -68,6 +68,8 @@ function getStatusBadge(status) {
       return <span className="status status-active">Active</span>;
     case 'completed':
       return <span className="status status-completed">Completed</span>;
+    case 'cancelled':
+      return <span className="status status-inactive">Cancelled</span>;
     case 'scheduled':
     default:
       return <span className="status status-scheduled">Scheduled</span>;
