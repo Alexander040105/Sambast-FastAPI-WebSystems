@@ -83,6 +83,10 @@ def build_route(req: RouteCreateRequest, db: Session = Depends(get_db)):
     
     db.commit()
     db.refresh(route)
+    
+    from app.services.costing import calculate_route_cost
+    calculate_route_cost(db, route.id)
+    
     return {"id": route.id, "message": f"Route created with {len(deliveries)} stops."}
 
 @router.get("", response_model=List[RouteAvailableItem])
@@ -117,6 +121,8 @@ def optimize_route_api(id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Route not found")
     
     optimize_route(db, id)
+    from app.services.costing import calculate_route_cost
+    calculate_route_cost(db, id)
     return {"message": "Route optimized"}
 
 @router.patch("/{id}")
@@ -131,4 +137,6 @@ def reorder_route(id: int, req: RouteReorderRequest, db: Session = Depends(get_d
             stop.sequence_no = s.sequence_no
             
     db.commit()
+    from app.services.costing import calculate_route_cost
+    calculate_route_cost(db, id)
     return {"message": "Route stops reordered"}
