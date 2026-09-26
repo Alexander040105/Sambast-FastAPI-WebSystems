@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 from app.core.errors import register_error_handlers
-from app.routers import drivers, vehicles, shifts, locations, dispatch, auth
+from app.routers import drivers, vehicles, shifts, locations, dispatch, auth, admin
 
 
 def create_app() -> FastAPI:
@@ -35,6 +35,7 @@ def create_app() -> FastAPI:
 
     # ── API v1 routers ────────────────────────────────────────────────
     application.include_router(auth.router, prefix="/api/v1")
+    application.include_router(admin.router, prefix="/api/v1")
     application.include_router(drivers.router, prefix="/api/v1")
     application.include_router(vehicles.router, prefix="/api/v1")
     application.include_router(shifts.router, prefix="/api/v1")

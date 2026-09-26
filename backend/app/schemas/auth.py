@@ -108,6 +108,32 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+STAFF_ROLES = ("admin", "dispatcher", "ops_manager", "driver")
+
+
+class StaffUserCreate(BaseModel):
+    """Admin-only staff provisioning — POST /api/v1/admin/users."""
+    email: str
+    name: str = Field(min_length=1)
+    password: str = Field(min_length=8)
+    role: str
+
+    _email_ok = field_validator("email")(_norm_email)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _strip_name(cls, v: str) -> str:
+        return (v or "").strip()
+
+    @field_validator("role")
+    @classmethod
+    def _check_role(cls, v: str) -> str:
+        v = (v or "").strip().lower()
+        if v not in STAFF_ROLES:
+            raise ValueError(f"Role must be one of: {', '.join(STAFF_ROLES)}.")
+        return v
+
+
 # ── Responses ───────────────────────────────────────────────────────────────
 class UserOut(BaseModel):
     id: int
