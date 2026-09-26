@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getAvailableRoutes, getRouteDetail, saveStopOrder } from '../../mocks/temporaryRouteService.js';
+import { getAvailableRoutes, getRouteDetail, saveStopOrder } from '../../api/routes.js';
 import '../../css/route-detail.css';
 
 const STATUS_LABELS = {
