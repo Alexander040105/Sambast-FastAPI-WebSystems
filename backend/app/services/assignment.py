@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.models.order import Order
 from app.models.order_item import OrderItem
-from app.models.product import Product
+from app.models.products import Product
 from app.models.driver import Driver
 from app.models.driver_shift import DriverShift
 from app.models.vehicle import Vehicle

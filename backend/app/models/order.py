@@ -13,7 +13,7 @@ class Order(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     order_no = Column(String(30), unique=True, nullable=False, index=True)
     customer_id = Column(
-        BigInteger, ForeignKey("users.id", ondelete="CASCADE"),
+        BigInteger, ForeignKey("customers.id", ondelete="CASCADE"),
         nullable=False, index=True,
     )
     delivery_location_id = Column(

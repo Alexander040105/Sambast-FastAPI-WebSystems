@@ -13,10 +13,10 @@ from app.db.session import get_db
 from app.models.order import Order
 from app.models.location import Location
 from app.models.order_item import OrderItem
-from app.models.product import Product
+from app.models.products import Product
 from app.models.driver import Driver
 from app.models.delivery import Delivery
-from app.models.delivery_status_event import DeliveryStatusEvent
+from app.models.delivery_status import DeliveryStatus
 from app.models.user import User
 
 from app.schemas.dispatch import (
@@ -100,8 +100,8 @@ def manual_assign(
     db.commit()
     db.refresh(delivery)
     
-    # Create DeliveryStatusEvent
-    event = DeliveryStatusEvent(
+    # Create DeliveryStatus event row
+    event = DeliveryStatus(
         delivery_id=delivery.id,
         status="ASSIGNED",
         note="Manually assigned",

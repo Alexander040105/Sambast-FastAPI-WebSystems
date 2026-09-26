@@ -9,12 +9,13 @@ We first seed a dispatcher user directly in the DB, then obtain a JWT
 to authenticate all API calls.
 """
 
+import os
 import sys
 import requests
 import json
 from datetime import datetime, timedelta
 
-BASE = "http://127.0.0.1:8000"
+BASE = os.environ.get("BASE_URL", "http://127.0.0.1:8000")
 API = f"{BASE}/api/v1"
 PASS_EMOJI = "[OK]"
 FAIL_EMOJI = "[FAIL]"
@@ -154,11 +155,11 @@ from sqlalchemy import text
 db = SessionLocal()
 
 expected_tables = [
-    "users", "drivers", "vehicles", "driver_shifts", "audit_logs",
-    "categories", "products", "locations", "customer_addresses",
-    "orders", "order_items", "payments", "routes", "deliveries",
-    "delivery_stops", "delivery_status_events", "proof_of_delivery",
-    "notifications",
+    "users", "customers", "drivers", "vehicles", "driver_shifts",
+    "audit_logs", "categories", "products", "locations",
+    "customer_addresses", "orders", "order_items", "payments",
+    "routes", "deliveries", "delivery_stops", "delivery_statuses",
+    "proof_of_delivery", "notifications",
 ]
 
 result = db.execute(text(
