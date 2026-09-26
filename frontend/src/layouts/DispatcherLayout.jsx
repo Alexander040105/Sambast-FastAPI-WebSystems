@@ -25,7 +25,8 @@ export function DispatcherLayout() {
   const isVehiclesPage = location.pathname === '/dispatcher/fleet/vehicles';
   const isShiftsPage = location.pathname === '/dispatcher/fleet/shifts';
   const isDispatchQueuePage = location.pathname === '/dispatcher/queue';
-  const isApprovedFleetPage = isDriversPage || isVehiclesPage || isShiftsPage || isDispatchQueuePage;
+  const isRoutesPage = location.pathname.startsWith('/dispatcher/routes');
+  const isApprovedFleetPage = isDriversPage || isVehiclesPage || isShiftsPage || isDispatchQueuePage || isRoutesPage;
 
   const handleLogout = () => {
     auth.clearAuth();
@@ -40,7 +41,7 @@ export function DispatcherLayout() {
   ];
 
   return (
-    <div className={`dispatcher-app-shell dispatcher-layout${isDriversPage ? ' drivers-figma-view' : ''}${isVehiclesPage ? ' vehicles-figma-view' : ''}${isShiftsPage ? ' shifts-figma-view' : ''}${isDispatchQueuePage ? ' dispatch-figma-view' : ''}`}>
+    <div className={`dispatcher-app-shell dispatcher-layout${isDriversPage ? ' drivers-figma-view' : ''}${isVehiclesPage ? ' vehicles-figma-view' : ''}${isShiftsPage ? ' shifts-figma-view' : ''}${isDispatchQueuePage ? ' dispatch-figma-view' : ''}${isRoutesPage ? ' routes-figma-view' : ''}`}>
       <aside className="dispatcher-sidebar">
         <div className="dispatcher-brand-lockup">
           <span className="dispatcher-brand-mark" role="img" aria-label={isApprovedFleetPage ? 'DeliverEase' : 'Sambast'} title={isApprovedFleetPage ? 'DeliverEase' : 'Sambast'}>{isApprovedFleetPage ? 'D' : 'S'}</span>
