@@ -1,19 +1,46 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 
 function Register() {
-  const [email, setEmail] = useState('');
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState({
+    full_name: '',
+    contact_no: '',
+    email: '',
+  });
+
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  function handleChange(event) {
+    const { name, value } = event.target;
+
+    setForm((currentForm) => ({
+      ...currentForm,
+      [name]: value,
+    }));
+
+    setError('');
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
 
-    setMessage('');
     setError('');
 
-    if (!email.trim()) {
+    if (!form.full_name.trim()) {
+      setError('Please enter your full name.');
+      return;
+    }
+
+    if (!/^\d{11}$/.test(form.contact_no.trim())) {
+      setError('Contact number must be exactly 11 digits.');
+      return;
+    }
+
+    if (!form.email.trim()) {
       setError('Please enter your email address.');
       return;
     }
@@ -22,75 +49,141 @@ function Register() {
 
     try {
       await api.post('/auth/register', {
-        email: email.trim(),
+        full_name: form.full_name.trim(),
+        contact_no: form.contact_no.trim(),
+        email: form.email.trim().toLowerCase(),
       });
 
-      setMessage(
-        'Registration successful. Please check your email for the OTP.'
-      );
+      navigate('/verify-otp', {
+        state: {
+          email: form.email.trim().toLowerCase(),
+        },
+      });
     } catch (err) {
-      setError(err.message || 'Registration failed.');
+      setError(
+        err.message || 'Unable to register. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <section className="w-full max-w-md bg-white rounded-xl shadow-md p-6">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Create Customer Account
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-10">
+      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-indigo-600">
+            Sambast
           </h1>
 
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">
+            Create Your Account
+          </h2>
+
           <p className="mt-2 text-sm text-gray-600">
-            Enter your email address to create your account.
+            Register as a customer to start ordering.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {error && (
+          <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-700">
+              {error}
+            </p>
+          </div>
+        )}
+
+        <form
+          onSubmit={handleSubmit}
+          className="mt-6 space-y-5"
+        >
+          <div>
+            <label
+              htmlFor="full_name"
+              className="mb-2 block text-sm font-medium text-gray-700"
+            >
+              Full Name
+            </label>
+
+            <input
+              id="full_name"
+              name="full_name"
+              type="text"
+              value={form.full_name}
+              onChange={handleChange}
+              required
+              placeholder="Juan Dela Cruz"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="contact_no"
+              className="mb-2 block text-sm font-medium text-gray-700"
+            >
+              Contact Number
+            </label>
+
+            <input
+              id="contact_no"
+              name="contact_no"
+              type="tel"
+              inputMode="numeric"
+              maxLength="11"
+              value={form.contact_no}
+              onChange={handleChange}
+              required
+              placeholder="09123456789"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            />
+
+            <p className="mt-1 text-xs text-gray-500">
+              Enter exactly 11 digits.
+            </p>
+          </div>
+
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="mb-2 block text-sm font-medium text-gray-700"
             >
               Email Address
             </label>
 
             <input
               id="email"
+              name="email"
               type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              value={form.email}
+              onChange={handleChange}
+              required
               placeholder="you@example.com"
-              autoComplete="email"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-              disabled={isLoading}
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
             />
           </div>
-
-          {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          )}
-
-          {message && (
-            <div className="rounded-lg bg-green-50 border border-green-200 p-3">
-              <p className="text-sm text-green-700">{message}</p>
-            </div>
-          )}
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-lg bg-indigo-600 px-5 py-3 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isLoading ? 'Creating account...' : 'Create Account'}
+            {isLoading ? 'Registering...' : 'Register'}
           </button>
         </form>
-      </section>
-    </main>
+
+        <p className="mt-6 text-center text-sm text-gray-600">
+          Already have an account?{' '}
+          <button
+            type="button"
+            onClick={() => navigate('/login')}
+            className="font-medium text-indigo-600 hover:text-indigo-700"
+          >
+            Login
+          </button>
+        </p>
+      </div>
+    </div>
   );
 }
 

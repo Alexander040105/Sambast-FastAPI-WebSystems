@@ -1,22 +1,29 @@
 import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 
 function SetPin() {
-  const [email, setEmail] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [email, setEmail] = useState(
+    location.state?.email || ''
+  );
+
   const [pin, setPin] = useState('');
-  const [confirmPin, setConfirmPin] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
   async function handleSubmit(event) {
     event.preventDefault();
 
-    setMessage('');
     setError('');
 
-    if (!email.trim()) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
       setError('Please enter your email address.');
       return;
     }
@@ -26,8 +33,13 @@ function SetPin() {
       return;
     }
 
-    if (pin !== confirmPin) {
-      setError('PINs do not match.');
+    if (!/^\d{4}$/.test(pinConfirm)) {
+      setError('PIN confirmation must be exactly 4 digits.');
+      return;
+    }
+
+    if (pin !== pinConfirm) {
+      setError('PIN and PIN confirmation do not match.');
       return;
     }
 
@@ -35,126 +47,180 @@ function SetPin() {
 
     try {
       await api.post('/auth/pin/set', {
-        email: email.trim(),
+        email: normalizedEmail,
         pin,
+        pin_confirm: pinConfirm,
       });
 
-      setMessage('PIN created successfully. You can now log in.');
-      setPin('');
-      setConfirmPin('');
+      navigate('/login', {
+        state: {
+          email: normalizedEmail,
+          message: 'PIN set successfully. You can now log in.',
+        },
+      });
     } catch (err) {
-      setError(err.message || 'Unable to set PIN.');
+      setError(
+        err.message ||
+          'Unable to set your PIN. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }
   }
 
-  return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <section className="w-full max-w-md bg-white rounded-xl shadow-md p-6">
-        <div className="mb-6 text-center">
+  if (!email) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
+        <div className="w-full max-w-md rounded-xl bg-white p-8 text-center shadow-sm">
           <h1 className="text-2xl font-bold text-gray-900">
-            Set Your PIN
+            Registration Session Missing
           </h1>
+
+          <p className="mt-2 text-sm text-gray-600">
+            Please complete registration and OTP verification first.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => navigate('/register')}
+            className="mt-6 rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-700"
+          >
+            Back to Registration
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-10">
+      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-indigo-600">
+            Sambast
+          </h1>
+
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">
+            Set Your PIN
+          </h2>
 
           <p className="mt-2 text-sm text-gray-600">
             Create a 4-digit PIN for your customer account.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Email Address
-            </label>
+        <div className="mt-5">
+          <label
+            htmlFor="email"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
+            Email Address
+          </label>
 
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-              autoComplete="email"
-              disabled={isLoading}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-            />
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setError('');
+            }}
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+          />
+        </div>
+
+        {error && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-700">
+              {error}
+            </p>
           </div>
+        )}
 
+        <form
+          onSubmit={handleSubmit}
+          className="mt-5 space-y-5"
+        >
           <div>
             <label
               htmlFor="pin"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="mb-2 block text-sm font-medium text-gray-700"
             >
               4-Digit PIN
             </label>
 
             <input
               id="pin"
+              name="pin"
               type="password"
               inputMode="numeric"
-              maxLength={4}
+              maxLength="4"
               value={pin}
               onChange={(event) => {
-                const value = event.target.value.replace(/\D/g, '');
+                const value = event.target.value
+                  .replace(/\D/g, '')
+                  .slice(0, 4);
+
                 setPin(value);
+                setError('');
               }}
+              required
               placeholder="••••"
-              autoComplete="new-password"
-              disabled={isLoading}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-center text-xl tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
             />
           </div>
 
           <div>
             <label
-              htmlFor="confirmPin"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              htmlFor="pinConfirm"
+              className="mb-2 block text-sm font-medium text-gray-700"
             >
               Confirm PIN
             </label>
 
             <input
-              id="confirmPin"
+              id="pinConfirm"
+              name="pinConfirm"
               type="password"
               inputMode="numeric"
-              maxLength={4}
-              value={confirmPin}
+              maxLength="4"
+              value={pinConfirm}
               onChange={(event) => {
-                const value = event.target.value.replace(/\D/g, '');
-                setConfirmPin(value);
+                const value = event.target.value
+                  .replace(/\D/g, '')
+                  .slice(0, 4);
+
+                setPinConfirm(value);
+                setError('');
               }}
+              required
               placeholder="••••"
-              autoComplete="new-password"
-              disabled={isLoading}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-center text-xl tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
             />
           </div>
-
-          {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          )}
-
-          {message && (
-            <div className="rounded-lg bg-green-50 border border-green-200 p-3">
-              <p className="text-sm text-green-700">{message}</p>
-            </div>
-          )}
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-lg bg-indigo-600 px-5 py-3 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isLoading ? 'Saving PIN...' : 'Set PIN'}
+            {isLoading
+              ? 'Setting PIN...'
+              : 'Set PIN'}
           </button>
         </form>
-      </section>
-    </main>
+
+        <div className="mt-5 text-center">
+          <button
+            type="button"
+            onClick={() => navigate('/verify-otp')}
+            className="text-sm text-gray-600 hover:text-gray-900"
+          >
+            ← Back to OTP Verification
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
