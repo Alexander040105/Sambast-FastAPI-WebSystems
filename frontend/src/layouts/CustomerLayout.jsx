@@ -1,22 +1,24 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { useCart } from '../cart/CartContext';
 import { clearAuth, getUser } from '../auth/storage';
 
-function CustomerLayout() {
+export default function CustomerLayout() {
   const navigate = useNavigate();
+  const { totalItems } = useCart();
   const user = getUser();
 
   function handleLogout() {
     clearAuth();
-    navigate('/login', { replace: true });
+    navigate('/login');
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link
             to="/customer"
-            className="text-xl font-bold text-indigo-600"
+            className="text-xl font-bold"
           >
             Sambast
           </Link>
@@ -24,19 +26,42 @@ function CustomerLayout() {
           <nav className="flex items-center gap-4">
             <Link
               to="/customer"
-              className="text-sm font-medium text-gray-700 hover:text-indigo-600"
+              className="text-sm font-medium hover:text-blue-600"
             >
-              Dashboard
+              Store
             </Link>
 
-            <span className="text-sm text-gray-500">
-              {user?.email || 'Customer'}
-            </span>
+            <Link
+              to="/customer/orders"
+              className="text-sm font-medium hover:text-blue-600"
+            >
+              My Orders
+            </Link>
+
+            <Link
+              to="/customer/notifications"
+              className="text-sm font-medium hover:text-blue-600"
+            >
+              Notifications
+            </Link>
+
+            <Link
+              to="/customer/cart"
+              className="text-sm font-medium hover:text-blue-600"
+            >
+              Cart ({totalItems})
+            </Link>
+
+            {user?.email && (
+              <span className="hidden text-sm text-gray-500 md:inline">
+                {user.email}
+              </span>
+            )}
 
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+              className="rounded-lg border px-3 py-2 text-sm font-medium hover:bg-gray-100"
             >
               Logout
             </button>
@@ -50,5 +75,3 @@ function CustomerLayout() {
     </div>
   );
 }
-
-export default CustomerLayout;

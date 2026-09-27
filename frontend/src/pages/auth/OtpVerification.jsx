@@ -1,20 +1,36 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 
 function OtpVerification() {
-  const [email, setEmail] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [email, setEmail] = useState(
+    location.state?.email || ''
+  );
+
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (!email) {
+      navigate('/register', { replace: true });
+    }
+  }, [email, navigate]);
 
   async function handleSubmit(event) {
     event.preventDefault();
 
-    setMessage('');
     setError('');
+    setMessage('');
 
-    if (!email.trim()) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
       setError('Please enter your email address.');
       return;
     }
@@ -28,134 +44,189 @@ function OtpVerification() {
 
     try {
       await api.post('/auth/otp/verify', {
-        email: email.trim(),
+        email: normalizedEmail,
         otp,
       });
 
-      setMessage(
-        'OTP verified successfully. You can continue to set your PIN.'
-      );
+      navigate('/set-pin', {
+        state: {
+          email: normalizedEmail,
+        },
+      });
     } catch (err) {
-      setError(err.message || 'OTP verification failed.');
+      setError(
+        err.message ||
+          'Unable to verify OTP. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }
   }
 
   async function handleResend() {
-    setMessage('');
     setError('');
+    setMessage('');
 
-    if (!email.trim()) {
-      setError('Please enter your email address first.');
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      setError('Please enter your email address.');
       return;
     }
 
-    setIsLoading(true);
+    setIsResending(true);
 
     try {
-      await api.post('/auth/otp/resend', {
-        email: email.trim(),
+      const data = await api.post('/auth/otp/resend', {
+        email: normalizedEmail,
       });
 
-      setMessage('A new OTP has been sent to your email.');
+      setMessage(
+        data?.message ||
+          data?.data?.message ||
+          'A new OTP has been sent.'
+      );
     } catch (err) {
-      setError(err.message || 'Unable to resend OTP.');
+      setError(
+        err.message ||
+          'Unable to resend OTP. Please try again.'
+      );
     } finally {
-      setIsLoading(false);
+      setIsResending(false);
     }
   }
 
+  if (!email) {
+    return null;
+  }
+
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <section className="w-full max-w-md bg-white rounded-xl shadow-md p-6">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Verify Your Email
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-10">
+      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-indigo-600">
+            Sambast
           </h1>
 
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">
+            Verify Your Email
+          </h2>
+
           <p className="mt-2 text-sm text-gray-600">
-            Enter the 6-digit OTP sent to your email address.
+            Enter the 6-digit OTP sent to your email.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Email Address
-            </label>
+        <div className="mt-5">
+          <label
+            htmlFor="email"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
+            Email Address
+          </label>
 
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-              autoComplete="email"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-              disabled={isLoading}
-            />
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setError('');
+              setMessage('');
+            }}
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+          />
+        </div>
+
+        {error && (
+          <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-700">
+              {error}
+            </p>
           </div>
+        )}
 
+        {message && (
+          <div className="mt-5 rounded-lg border border-green-200 bg-green-50 p-4">
+            <p className="text-sm text-green-700">
+              {message}
+            </p>
+          </div>
+        )}
+
+        <form
+          onSubmit={handleSubmit}
+          className="mt-5 space-y-5"
+        >
           <div>
             <label
               htmlFor="otp"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="mb-2 block text-sm font-medium text-gray-700"
             >
-              6-Digit OTP
+              OTP
             </label>
 
             <input
               id="otp"
+              name="otp"
               type="text"
               inputMode="numeric"
-              maxLength={6}
+              maxLength="6"
               value={otp}
               onChange={(event) => {
-                const value = event.target.value.replace(/\D/g, '');
+                const value = event.target.value
+                  .replace(/\D/g, '')
+                  .slice(0, 6);
+
                 setOtp(value);
+                setError('');
+                setMessage('');
               }}
+              required
               placeholder="123456"
-              autoComplete="one-time-code"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-center text-xl tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-              disabled={isLoading}
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
             />
+
+            <p className="mt-1 text-xs text-gray-500">
+              Enter exactly 6 digits.
+            </p>
           </div>
-
-          {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          )}
-
-          {message && (
-            <div className="rounded-lg bg-green-50 border border-green-200 p-3">
-              <p className="text-sm text-green-700">{message}</p>
-            </div>
-          )}
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-lg bg-indigo-600 px-5 py-3 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isLoading ? 'Verifying...' : 'Verify OTP'}
+            {isLoading
+              ? 'Verifying...'
+              : 'Verify OTP'}
           </button>
+        </form>
 
+        <div className="mt-5 text-center">
           <button
             type="button"
             onClick={handleResend}
-            disabled={isLoading}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isResending}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Resend OTP
+            {isResending
+              ? 'Resending...'
+              : 'Resend OTP'}
           </button>
-        </form>
-      </section>
-    </main>
+        </div>
+
+        <div className="mt-5 text-center">
+          <button
+            type="button"
+            onClick={() => navigate('/register')}
+            className="text-sm text-gray-600 hover:text-gray-900"
+          >
+            ← Back to Registration
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
