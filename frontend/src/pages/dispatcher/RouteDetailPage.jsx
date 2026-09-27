@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getAvailableRoutes, getRouteDetail, saveStopOrder } from '../../api/routes.js';
+import { getAvailableRoutes, getRouteDetail, saveStopOrder, optimizeRoute } from '../../api/routes.js';
 import '../../css/route-detail.css';
 
 const STATUS_LABELS = {
@@ -58,6 +58,7 @@ export function RouteDetailPage() {
   const [orderedStopIds, setOrderedStopIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [saveError, setSaveError] = useState('');
   const [draggedStopId, setDraggedStopId] = useState(null);
@@ -153,6 +154,21 @@ export function RouteDetailPage() {
     setAnnouncement('Unsaved changes discarded.');
   }
 
+  async function handleOptimizeRoute() {
+    if (!routeId) return;
+    setOptimizing(true);
+    setSaveError('');
+    try {
+      await optimizeRoute(routeId);
+      await loadRoute();
+      setAnnouncement('Route optimized successfully.');
+    } catch (error) {
+      setSaveError(error.message || 'Failed to optimize route.');
+    } finally {
+      setOptimizing(false);
+    }
+  }
+
   function handleDragStart(event, stop) {
     if (stop.status !== 'pending') {
       event.preventDefault();
@@ -213,6 +229,14 @@ export function RouteDetailPage() {
                   <h2 id="route-sequence-title">Ordered Sequence</h2>
                   <span className="route-stop-count">{route.stops.length} stops</span>
                   {hasUnsavedOrder && <span className="route-unsaved-indicator">Unsaved changes</span>}
+                  <button
+                    className="route-button route-button-secondary"
+                    type="button"
+                    onClick={handleOptimizeRoute}
+                    disabled={optimizing || saving || route.stops.length < 2}
+                  >
+                    {optimizing ? 'Optimizing…' : 'Optimize Route'}
+                  </button>
                 </div>
 
                 <ol className="route-stop-list" aria-label="Ordered route stops" aria-busy={saving}>

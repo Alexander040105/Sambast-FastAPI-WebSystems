@@ -10,6 +10,7 @@ from app.models.order_item import OrderItem
 from app.models.product import Product
 from app.models.location import Location
 from app.models.driver import Driver
+from app.models.driver_shift import DriverShift
 from app.models.vehicle import Vehicle
 from app.models.user import User
 from app.models.proof_of_delivery import ProofOfDelivery
@@ -71,7 +72,11 @@ def get_stop_response(db: Session, stop: DeliveryStop) -> StopResponse:
     )
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def build_route(req: RouteCreateRequest, db: Session = Depends(get_db)):
+def build_route(
+    req: RouteCreateRequest,
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("dispatcher", "admin")),
+):
     # Find deliveries assigned to driver but not yet on a route
     deliveries = db.query(Delivery).filter(
         Delivery.driver_id == req.driver_id,
@@ -82,11 +87,38 @@ def build_route(req: RouteCreateRequest, db: Session = Depends(get_db)):
     if not deliveries:
         raise HTTPException(status_code=400, detail="No pending deliveries for this driver.")
 
+    # Auto-populate shift_id and vehicle_id from driver's active shift if omitted
+    shift_id = req.shift_id
+    vehicle_id = req.vehicle_id
+    if not shift_id or not vehicle_id:
+        now = datetime.now(timezone.utc)
+        active_shift = (
+            db.query(DriverShift)
+            .filter(
+                DriverShift.driver_id == req.driver_id,
+                DriverShift.starts_at <= now,
+                DriverShift.ends_at >= now,
+            )
+            .first()
+        )
+        if not active_shift:
+            active_shift = (
+                db.query(DriverShift)
+                .filter(DriverShift.driver_id == req.driver_id)
+                .order_by(DriverShift.id.desc())
+                .first()
+            )
+        if active_shift:
+            if not shift_id:
+                shift_id = active_shift.id
+            if not vehicle_id:
+                vehicle_id = active_shift.vehicle_id
+
     # Create the route
     route = Route(
         driver_id=req.driver_id,
-        vehicle_id=req.vehicle_id,
-        shift_id=req.shift_id,
+        vehicle_id=vehicle_id,
+        shift_id=shift_id,
         date=datetime.now(timezone.utc).date(),
         status="planned"
     )
@@ -119,12 +151,19 @@ def build_route(req: RouteCreateRequest, db: Session = Depends(get_db)):
     return {"id": route.id, "message": f"Route created with {len(deliveries)} stops."}
 
 @router.get("", response_model=List[RouteAvailableItem])
-def get_routes(db: Session = Depends(get_db)):
+def get_routes(
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("dispatcher", "admin", "ops_manager", "driver")),
+):
     routes = db.query(Route).all()
     return [{"id": str(r.id), "status": r.status} for r in routes]
 
-@router.get("/{id}")
-def get_route_detail(id: int, db: Session = Depends(get_db)):
+@router.get("/{id}", response_model=RouteDetailResponse)
+def get_route_detail(
+    id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("dispatcher", "admin", "ops_manager", "driver")),
+):
     route = db.query(Route).filter(Route.id == id).first()
     if not route:
         raise HTTPException(status_code=404, detail="Route not found")
@@ -151,7 +190,11 @@ def get_route_detail(id: int, db: Session = Depends(get_db)):
     }
 
 @router.post("/{id}/optimize")
-def optimize_route_api(id: int, db: Session = Depends(get_db)):
+def optimize_route_api(
+    id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("dispatcher", "admin")),
+):
     route = db.query(Route).filter(Route.id == id).first()
     if not route:
         raise HTTPException(status_code=404, detail="Route not found")
@@ -162,7 +205,12 @@ def optimize_route_api(id: int, db: Session = Depends(get_db)):
     return {"message": "Route optimized"}
 
 @router.patch("/{id}")
-def reorder_route(id: int, req: RouteReorderRequest, db: Session = Depends(get_db)):
+def reorder_route(
+    id: int,
+    req: RouteReorderRequest,
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("dispatcher", "admin")),
+):
     route = db.query(Route).filter(Route.id == id).first()
     if not route:
         raise HTTPException(status_code=404, detail="Route not found")

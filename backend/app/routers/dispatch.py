@@ -26,7 +26,7 @@ from app.schemas.dispatch import (
     AutoAssignRequest,
     AutoAssignResponse,
 )
-from app.schemas.fleet import LocationOut
+from app.schemas.fleet import LocationOut, Pagination
 from app.services.assignment import get_auto_assign_suggestion
 from app.services.sse import broadcaster
 
@@ -76,7 +76,15 @@ def get_dispatch_queue(
         for o in orders
     ]
 
-    return DispatchQueueResponse(data=out_list)
+    return DispatchQueueResponse(
+        data=out_list,
+        pagination=Pagination(
+            page=1,
+            page_size=len(out_list) or 50,
+            total_items=len(out_list),
+            total_pages=1,
+        ),
+    )
 
 
 @router.post("/orders/{order_id}/assign", status_code=status.HTTP_200_OK)
@@ -89,9 +97,32 @@ def manual_assign(
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-        
+
+    if order.status == "ASSIGNED":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Order {order_id} is already assigned to a driver",
+        )
     if order.status not in ["READY_FOR_DISPATCH", "PENDING"]:
-        raise HTTPException(status_code=400, detail=f"Order is not available for assignment (status: {order.status})")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Order is not available for assignment (status: {order.status})",
+        )
+
+    # Check for active existing delivery
+    active_delivery = (
+        db.query(Delivery)
+        .filter(
+            Delivery.order_id == order.id,
+            Delivery.status.in_(["PENDING", "EN_ROUTE", "ARRIVED"]),
+        )
+        .first()
+    )
+    if active_delivery:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Order {order_id} already has an active delivery (ID: {active_delivery.id})",
+        )
 
     driver = db.query(Driver).filter(Driver.id == body.driver_id).first()
     if not driver:

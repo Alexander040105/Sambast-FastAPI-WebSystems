@@ -24,23 +24,27 @@ export const startRoute = async (stopId) => mapManifest(await api.post(`/stops/$
 export const arriveAtStop = async (stopId) => mapManifest(await api.post(`/stops/${stopId}/arrive`));
 export const failStop = async (stopId, reason, notes) => mapManifest(await api.post(`/stops/${stopId}/fail`, { reason, notes }));
 
-export const completeStop = async (stopId, photoFile, recipientName) => {
+export const completeStop = async (stopId, photoFile, recipientName, deliveryId = null) => {
     // For POD, we need multipart/form-data
     const token = auth.getToken();
-    const formData = new FormData();
-    formData.append('photo', photoFile);
-    if (recipientName) formData.append('recipient_name', recipientName);
+    const targetPodId = deliveryId || stopId;
+    if (photoFile) {
+        const formData = new FormData();
+        formData.append('photo', photoFile);
+        if (recipientName) formData.append('recipient_name', recipientName);
 
-    const res = await fetch(`/api/v1/deliveries/${stopId}/pod`, {
-        method: 'POST',
-        headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: formData
-    });
+        const res = await fetch(`/api/v1/deliveries/${targetPodId}/pod`, {
+            method: 'POST',
+            headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: formData
+        });
 
-    if (!res.ok) {
-        throw new Error("Failed to upload POD");
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err?.error?.message || err?.detail || "Failed to upload POD");
+        }
     }
 
     // Now call complete

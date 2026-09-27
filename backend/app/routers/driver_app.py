@@ -142,6 +142,24 @@ def get_my_route(
     )
 
 
+from app.models.payment import Payment
+
+
+def check_stop_permission(db: Session, stop: DeliveryStop, user: User) -> None:
+    """Enforce horizontal authorization for driver stop actions."""
+    if user.role in ["dispatcher", "admin", "ops_manager"]:
+        return
+    driver = db.query(Driver).filter(Driver.user_id == user.id).first()
+    if not driver:
+        raise HTTPException(status_code=403, detail="Driver profile not found")
+    route = db.query(Route).filter(Route.id == stop.route_id).first()
+    if not route or route.driver_id != driver.id:
+        raise HTTPException(
+            status_code=403,
+            detail="You are not authorized to update stops on this route",
+        )
+
+
 @router.post("/stops/{id}/start")
 def start_stop(
     id: int,
@@ -151,6 +169,14 @@ def start_stop(
     stop = db.query(DeliveryStop).filter(DeliveryStop.id == id).first()
     if not stop:
         raise HTTPException(status_code=404, detail="Stop not found")
+
+    check_stop_permission(db, stop, current_user)
+
+    if stop.status and stop.status.upper() in ["DELIVERED", "FAILED"]:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot start a stop that is already {stop.status.upper()}",
+        )
 
     stop.status = "EN_ROUTE"
 
@@ -182,6 +208,14 @@ def arrive_stop(
     if not stop:
         raise HTTPException(status_code=404, detail="Stop not found")
 
+    check_stop_permission(db, stop, current_user)
+
+    if stop.status and stop.status.upper() in ["DELIVERED", "FAILED"]:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot arrive at a stop that is already {stop.status.upper()}",
+        )
+
     stop.status = "ARRIVED"
     stop.arrived_at = datetime.now(timezone.utc)
 
@@ -205,15 +239,38 @@ async def upload_pod(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Resolve delivery: id may be delivery_id or stop_id (frontend flexibility)
-    delivery = db.query(Delivery).filter(Delivery.id == id).first()
-    if not delivery:
-        stop = db.query(DeliveryStop).filter(DeliveryStop.id == id).first()
+    # Disambiguate delivery: check if caller is driver and id is on driver's active route
+    driver = db.query(Driver).filter(Driver.user_id == current_user.id).first()
+    delivery = None
+
+    if driver and current_user.role == "driver":
+        # First check if id is a DeliveryStop belonging to driver's route
+        stop = (
+            db.query(DeliveryStop)
+            .join(Route, DeliveryStop.route_id == Route.id)
+            .filter(DeliveryStop.id == id, Route.driver_id == driver.id)
+            .first()
+        )
         if stop:
             delivery = db.query(Delivery).filter(Delivery.id == stop.delivery_id).first()
+        else:
+            # Check if id is a Delivery belonging to driver
+            delivery = db.query(Delivery).filter(Delivery.id == id, Delivery.driver_id == driver.id).first()
+
+    if not delivery:
+        # Fallback for dispatchers/admins or direct lookup
+        delivery = db.query(Delivery).filter(Delivery.id == id).first()
+        if not delivery:
+            stop = db.query(DeliveryStop).filter(DeliveryStop.id == id).first()
+            if stop:
+                delivery = db.query(Delivery).filter(Delivery.id == stop.delivery_id).first()
 
     if not delivery:
         raise HTTPException(status_code=404, detail="Delivery or stop not found")
+
+    if current_user.role == "driver" and driver:
+        if delivery.driver_id != driver.id:
+            raise HTTPException(status_code=403, detail="You are not authorized to upload POD for this delivery")
 
     content_type = request.headers.get("content-type", "")
     web_path = "/uploads/default_pod.jpg"
@@ -274,6 +331,19 @@ def complete_stop(
     if not stop:
         raise HTTPException(status_code=404, detail="Stop not found")
 
+    check_stop_permission(db, stop, current_user)
+
+    if stop.status and stop.status.upper() == "DELIVERED":
+        raise HTTPException(
+            status_code=409,
+            detail="Stop is already completed (DELIVERED)",
+        )
+    if stop.status and stop.status.upper() == "FAILED":
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot complete a stop that has already FAILED",
+        )
+
     stop.status = "DELIVERED"
     stop.departed_at = datetime.now(timezone.utc)
 
@@ -292,8 +362,14 @@ def complete_stop(
                     current_qty = product.stock_quantity if product.stock_quantity is not None else 0
                     product.stock_quantity = max(0, current_qty - deduct_qty)
 
-        record_event(db, delivery.id, "DELIVERED", current_user.id)
+            # Reconcile COD payment to paid on delivery completion (MEGAPLAN §6 & §8)
+            payment = db.query(Payment).filter(Payment.order_id == order.id).first()
+            if payment and payment.status.lower() in ["pending", "unpaid"]:
+                payment.status = "paid"
+                payment.paid_at = datetime.now(timezone.utc)
+                payment.amount = order.total_price
 
+        record_event(db, delivery.id, "DELIVERED", current_user.id)
 
     db.commit()
 
@@ -314,24 +390,46 @@ def fail_stop(
     if not stop:
         raise HTTPException(status_code=404, detail="Stop not found")
 
+    check_stop_permission(db, stop, current_user)
+
+    if stop.status and stop.status.upper() in ["DELIVERED", "FAILED"]:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Stop has already been marked as {stop.status.upper()}",
+        )
+
     stop.status = "FAILED"
     stop.departed_at = datetime.now(timezone.utc)
 
     delivery = db.query(Delivery).filter(Delivery.id == stop.delivery_id).first()
     if delivery:
-        delivery.status = "FAILED"
         delivery.failure_reason = payload.reason
         order = db.query(Order).filter(Order.id == delivery.order_id).first()
-        if order:
-            order.status = "READY_FOR_DISPATCH"  # re-queue to dispatch
 
-        record_event(
-            db,
-            delivery.id,
-            "FAILED",
-            current_user.id,
-            note=f"Reason: {payload.reason}. Notes: {payload.notes or ''}",
-        )
+        # Terminal RETURNED check per MEGAPLAN §5.7 & §7.2
+        is_terminal = (delivery.attempt_no >= 3) or (payload.reason == "delivery_declined")
+        if is_terminal:
+            delivery.status = "RETURNED"
+            if order:
+                order.status = "RETURNED"
+            record_event(
+                db,
+                delivery.id,
+                "RETURNED",
+                current_user.id,
+                note=f"Terminal return after attempt #{delivery.attempt_no}. Reason: {payload.reason}. Notes: {payload.notes or ''}",
+            )
+        else:
+            delivery.status = "FAILED"
+            if order:
+                order.status = "READY_FOR_DISPATCH"  # re-queue to dispatch
+            record_event(
+                db,
+                delivery.id,
+                "FAILED",
+                current_user.id,
+                note=f"Reason: {payload.reason}. Notes: {payload.notes or ''}",
+            )
 
     db.commit()
 

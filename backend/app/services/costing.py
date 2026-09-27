@@ -61,8 +61,11 @@ def calculate_route_cost(db: Session, route_id: int) -> float:
                 loc = db.query(Location).filter(Location.id == stop.location_id).first()
                 if loc and loc.lat and loc.lng:
                     lat, lng = float(loc.lat), float(loc.lng)
-                    if prev_lat is not None and (prev_lat != 0.0 or prev_lng != 0.0):
-                        calc_dist += haversine(prev_lat, prev_lng, lat, lng)
+                    if prev_lat is not None:
+                        if (lat == 0.0 and lng == 0.0) or (prev_lat == 0.0 and prev_lng == 0.0):
+                            calc_dist += 2.0
+                        else:
+                            calc_dist += haversine(prev_lat, prev_lng, lat, lng)
                     prev_lat, prev_lng = lat, lng
         total_distance_km = calc_dist
         est_duration_min = (calc_dist / SPEED_KMH) * 60.0 + (len(stops) * 10.0)
@@ -89,7 +92,7 @@ def calculate_route_cost(db: Session, route_id: int) -> float:
 
                     # Reconcile Payment row to avoid COD discrepancies
                     payment = db.query(Payment).filter(Payment.order_id == order.id).first()
-                    if payment and payment.status.lower() in ["pending", "unpaid"]:
+                    if payment and (payment.status.lower() in ["pending", "unpaid"] or (payment.method and payment.method.upper() == "COD")):
                         payment.amount = order.total_price
 
 

@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel
-from app.schemas.fleet import LocationOut
+from app.schemas.fleet import LocationOut, Pagination
 
 
 class DispatchQueueOrderOut(BaseModel):
@@ -19,6 +19,7 @@ class DispatchQueueOrderOut(BaseModel):
 
 class DispatchQueueResponse(BaseModel):
     data: List[DispatchQueueOrderOut]
+    pagination: Optional[Pagination] = None
     
     
 class ManualAssignRequest(BaseModel):

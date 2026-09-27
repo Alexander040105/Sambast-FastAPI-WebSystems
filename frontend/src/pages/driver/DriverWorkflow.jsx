@@ -149,7 +149,7 @@ export function DriverWorkflow() {
               onPhotoChange={handlePhotoChange}
               onStart={() => beginRoute(selectedStop)}
               onArrive={() => runAction(() => arriveAtStop(selectedStop.id), selectedStop.id)}
-              onComplete={() => runAction(() => completeStop(selectedStop.id, podFile?.name, recipientName), selectedStop.id, () => { handlePhotoChange(null); setRecipientName(''); navigate('/driver/route'); })}
+              onComplete={() => runAction(() => completeStop(selectedStop.id, podFile, recipientName, selectedStop.delivery_id || selectedStop.deliveryId), selectedStop.id, () => { handlePhotoChange(null); setRecipientName(''); navigate('/driver/route'); })}
               onFail={() => runAction(() => failStop(selectedStop.id, failureReason, failureNotes), selectedStop.id, () => { setFailureReason(''); setFailureNotes(''); navigate('/driver/route'); })}
               onBack={(path) => navigate(path || '/driver')}
             /> : <div className="driver-state" role="status">This stop is not in today’s manifest. <Link to="/driver">Return to manifest</Link></div>
