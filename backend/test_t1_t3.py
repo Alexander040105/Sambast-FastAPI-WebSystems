@@ -10,6 +10,10 @@ to authenticate all API calls.
 """
 
 import sys
+if "pytest" in sys.modules:
+    import pytest
+    pytest.skip("Integration script intended to run standalone with 'python test_t1_t3.py' against live server", allow_module_level=True)
+
 import requests
 import json
 from datetime import datetime, timedelta

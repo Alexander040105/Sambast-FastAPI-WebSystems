@@ -2,8 +2,12 @@
 Application configuration — loaded from backend/.env via pydantic-settings.
 """
 
+import os
 from pydantic_settings import BaseSettings
 from pydantic import Field
+
+_backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_env_path = os.path.join(_backend_dir, ".env")
 
 
 class Settings(BaseSettings):
@@ -31,7 +35,7 @@ class Settings(BaseSettings):
     NOMINATIM_USER_AGENT: str = "sambast-delivery/1.0"
 
     model_config = {
-        "env_file": ".env",
+        "env_file": (_env_path, ".env"),
         "env_file_encoding": "utf-8",
         "extra": "ignore",
     }

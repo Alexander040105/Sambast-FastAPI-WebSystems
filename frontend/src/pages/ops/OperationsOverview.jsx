@@ -16,7 +16,7 @@ import {
   getDriverPerformance,
   getFailedDeliveries,
   getAnalyticsPeriods,
-} from '../../mocks/temporaryAnalyticsService.js';
+} from '../../api/analytics.js';
 
 const REASON_COLORS = ['#b42318', '#756fba', '#efb91a', '#24824e'];
 

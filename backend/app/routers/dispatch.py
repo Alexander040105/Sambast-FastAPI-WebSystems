@@ -38,33 +38,43 @@ def get_dispatch_queue(
     _user: User = Depends(require_role("dispatcher", "admin")),
 ):
     orders = db.query(Order).filter(Order.status == "READY_FOR_DISPATCH").all()
-    
-    out_list = []
-    for o in orders:
-        location = None
-        if o.delivery_location_id:
-            loc = db.query(Location).filter(Location.id == o.delivery_location_id).first()
-            if loc:
-                location = LocationOut.model_validate(loc)
-                
-        # Calculate total weight
-        items = db.query(OrderItem, Product).outerjoin(Product, OrderItem.product_id == Product.id)\
-                  .filter(OrderItem.order_id == o.id).all()
-        
-        total_weight = 0.0
-        for item, product in items:
-            kg_per_unit = float(product.weight_kg_per_unit) if product and product.weight_kg_per_unit else 0.0
-            total_weight += kg_per_unit * float(item.quantity) * float(item.unit_multiplier)
+    if not orders:
+        return DispatchQueueResponse(data=[])
 
-        out_list.append(DispatchQueueOrderOut(
+    # 1. Batch fetch locations
+    loc_ids = {o.delivery_location_id for o in orders if o.delivery_location_id}
+    loc_map = {}
+    if loc_ids:
+        locs = db.query(Location).filter(Location.id.in_(loc_ids)).all()
+        loc_map = {loc.id: LocationOut.model_validate(loc) for loc in locs}
+
+    # 2. Batch fetch order items & product weights
+    order_ids = [o.id for o in orders]
+    items = (
+        db.query(OrderItem, Product)
+        .outerjoin(Product, OrderItem.product_id == Product.id)
+        .filter(OrderItem.order_id.in_(order_ids))
+        .all()
+    )
+
+    weights = {}
+    for item, product in items:
+        kg_per_unit = float(product.weight_kg_per_unit) if product and product.weight_kg_per_unit else 0.0
+        w = kg_per_unit * float(item.quantity or 1.0) * float(item.unit_multiplier or 1.0)
+        weights[item.order_id] = weights.get(item.order_id, 0.0) + w
+
+    out_list = [
+        DispatchQueueOrderOut(
             id=o.id,
             order_no=o.order_no,
             delivery_window_start=o.delivery_window_start,
             delivery_window_end=o.delivery_window_end,
-            delivery_location=location,
-            total_weight_kg=total_weight
-        ))
-        
+            delivery_location=loc_map.get(o.delivery_location_id),
+            total_weight_kg=round(weights.get(o.id, 0.0), 2),
+        )
+        for o in orders
+    ]
+
     return DispatchQueueResponse(data=out_list)
 
 

@@ -23,6 +23,7 @@ class RouteResponse(BaseModel):
 
 class StopResponse(BaseModel):
     id: int
+    delivery_id: Optional[int] = None
     sequence: int
     destination: str
     address: str
