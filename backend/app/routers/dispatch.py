@@ -28,6 +28,7 @@ from app.schemas.dispatch import (
 )
 from app.schemas.fleet import LocationOut
 from app.services.assignment import get_auto_assign_suggestion
+from app.services.sse import broadcaster
 
 router = APIRouter(prefix="/dispatch", tags=["dispatch"])
 
@@ -99,11 +100,16 @@ def manual_assign(
     # Update Order
     order.status = "ASSIGNED"
     
+    # Calculate attempt_no if this order had previous delivery attempts
+    past_deliveries = db.query(Delivery).filter(Delivery.order_id == order.id).all()
+    attempt_no = len(past_deliveries) + 1 if past_deliveries else 1
+
     # Create Delivery
     delivery = Delivery(
         order_id=order.id,
         driver_id=driver.id,
         status="PENDING",
+        attempt_no=attempt_no,
         assigned_at=datetime.now(timezone.utc),
     )
     db.add(delivery)
@@ -114,13 +120,31 @@ def manual_assign(
     event = DeliveryStatusEvent(
         delivery_id=delivery.id,
         status="ASSIGNED",
-        note="Manually assigned",
+        note=f"Manually assigned to driver #{driver.id} (Attempt #{attempt_no})",
         actor_user_id=_user.id
     )
     db.add(event)
     db.commit()
+
+    # Emit real-time SSE event for tracking and fleet streams (MEGAPLAN §5.9, §7.2)
+    lat, lng = None, None
+    if order.delivery_location_id:
+        loc = db.query(Location).filter(Location.id == order.delivery_location_id).first()
+        if loc and loc.lat and loc.lng:
+            lat = float(loc.lat)
+            lng = float(loc.lng)
+
+    broadcaster.emit(
+        delivery_id=delivery.id,
+        order_no=order.order_no,
+        status="ASSIGNED",
+        lat=lat,
+        lng=lng,
+        note=f"Assigned to driver #{driver.id}",
+    )
     
     return {"status": "success", "delivery_id": delivery.id, "order_status": order.status}
+
 
 
 @router.post("/auto-assign", response_model=AutoAssignResponse)

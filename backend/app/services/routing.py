@@ -31,7 +31,14 @@ def route_cost(route: List[Tuple], start_time: datetime) -> float:
     
     for i in range(len(route)):
         if i > 0:
-            segment_dist = haversine(route[i-1][1], route[i-1][2], route[i][1], route[i][2])
+            lat1, lon1 = route[i-1][1], route[i-1][2]
+            lat2, lon2 = route[i][1], route[i][2]
+            # Guard against Null Island (0.0, 0.0) coordinates
+            if (lat1 == 0.0 and lon1 == 0.0) or (lat2 == 0.0 and lon2 == 0.0):
+                segment_dist = 2.0  # nominal urban hop of 2km instead of 11,000 km to Atlantic Ocean
+            else:
+                segment_dist = haversine(lat1, lon1, lat2, lon2)
+
             dist += segment_dist
             travel_time_hours = segment_dist / SPEED_KMH
             current_time += timedelta(hours=travel_time_hours)
@@ -40,6 +47,10 @@ def route_cost(route: List[Tuple], start_time: datetime) -> float:
         if order:
             window_start = order.delivery_window_start
             window_end = order.delivery_window_end
+            if window_start and window_start.tzinfo is None:
+                window_start = window_start.replace(tzinfo=timezone.utc)
+            if window_end and window_end.tzinfo is None:
+                window_end = window_end.replace(tzinfo=timezone.utc)
             
             # Driver arrives early, must wait until window_start
             if window_start and current_time < window_start:
@@ -80,8 +91,15 @@ def optimize_route(db: Session, route_id: int):
     # 2. Nearest Neighbor Initialization (Greedy by Time+Distance Cost)
     optimized = []
     
-    # Pick starting node: Earliest window start
-    stop_locs.sort(key=lambda x: (x[3].delivery_window_start if x[3] and x[3].delivery_window_start else datetime.max.replace(tzinfo=timezone.utc)))
+    # Pick starting node: Earliest window start (with timezone safety)
+    def _get_window_start(item):
+        order_obj = item[3]
+        if order_obj and order_obj.delivery_window_start:
+            ws = order_obj.delivery_window_start
+            return ws if ws.tzinfo else ws.replace(tzinfo=timezone.utc)
+        return datetime.max.replace(tzinfo=timezone.utc)
+
+    stop_locs.sort(key=_get_window_start)
     
     current = stop_locs.pop(0)
     optimized.append(current)
@@ -164,14 +182,21 @@ def recompute_route_metrics(db: Session, route_id: int):
             if loc and loc.lat and loc.lng:
                 lat, lng = float(loc.lat), float(loc.lng)
 
-        if prev_lat is not None and (lat != 0.0 or lng != 0.0) and (prev_lat != 0.0 or prev_lng != 0.0):
-            seg_dist = haversine(prev_lat, prev_lng, lat, lng)
+        if prev_lat is not None:
+            if (lat == 0.0 and lng == 0.0) or (prev_lat == 0.0 and prev_lng == 0.0):
+                seg_dist = 2.0
+            else:
+                seg_dist = haversine(prev_lat, prev_lng, lat, lng)
             total_dist += seg_dist
             travel_time_hours = seg_dist / SPEED_KMH
             current_time += timedelta(hours=travel_time_hours)
 
-        if order and order.delivery_window_start and current_time < order.delivery_window_start:
-            current_time = order.delivery_window_start
+        if order and order.delivery_window_start:
+            w_start = order.delivery_window_start
+            if w_start.tzinfo is None:
+                w_start = w_start.replace(tzinfo=timezone.utc)
+            if current_time < w_start:
+                current_time = w_start
 
         stop.planned_eta = current_time
         current_time += timedelta(minutes=10)

@@ -12,6 +12,8 @@ from app.models.route import Route
 from app.models.delivery import Delivery
 from app.models.delivery_stop import DeliveryStop
 from app.models.order import Order
+from app.models.order_item import OrderItem
+from app.models.product import Product
 from app.models.driver import Driver
 from app.models.driver_shift import DriverShift
 from app.models.proof_of_delivery import ProofOfDelivery
@@ -91,12 +93,22 @@ def get_my_route(
         Route.status.in_(["planned", "active"]),
     ).order_by(Route.id.desc()).first()
 
+    # Fallback to completed route for today so driver can view finished manifest
+    if not route:
+        today_date = datetime.now(timezone.utc).date()
+        route = db.query(Route).filter(
+            Route.driver_id == driver.id,
+            Route.status == "completed",
+            Route.date == today_date,
+        ).order_by(Route.id.desc()).first()
+
     stops = []
     route_started = False
 
     if route:
-        if route.status == "active":
+        if route.status in ["active", "completed"]:
             route_started = True
+
 
         stop_records = db.query(DeliveryStop).filter(
             DeliveryStop.route_id == route.id
@@ -271,7 +283,17 @@ def complete_stop(
         order = db.query(Order).filter(Order.id == delivery.order_id).first()
         if order:
             order.status = "COMPLETED"
+            # Deduct stock once, on transition to COMPLETED, using quantity × unit_multiplier (MEGAPLAN §8)
+            order_items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
+            for item in order_items:
+                product = db.query(Product).filter(Product.id == item.product_id).first()
+                if product:
+                    deduct_qty = int(float(item.quantity or 1.0) * float(item.unit_multiplier or 1.0))
+                    current_qty = product.stock_quantity if product.stock_quantity is not None else 0
+                    product.stock_quantity = max(0, current_qty - deduct_qty)
+
         record_event(db, delivery.id, "DELIVERED", current_user.id)
+
 
     db.commit()
 

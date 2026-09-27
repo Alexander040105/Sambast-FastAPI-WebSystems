@@ -4,7 +4,9 @@ app.main — FastAPI application factory.
 Boots the app, mounts CORS, and includes all routers under /api/v1.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
@@ -50,11 +52,49 @@ def create_app() -> FastAPI:
         name="uploads",
     )
 
+    # ── Error Envelope Handlers (MEGAPLAN §7.2) ────────────────────────
+    @application.exception_handler(HTTPException)
+    async def http_exception_handler(request: Request, exc: HTTPException):
+        code_str = {
+            400: "BAD_REQUEST",
+            401: "UNAUTHORIZED",
+            403: "FORBIDDEN",
+            404: "NOT_FOUND",
+            409: "CONFLICT",
+            422: "VALIDATION_ERROR",
+        }.get(exc.status_code, "ERROR")
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "detail": exc.detail,
+                "error": {
+                    "code": code_str,
+                    "message": exc.detail if isinstance(exc.detail, str) else "Request error",
+                    "details": exc.detail if not isinstance(exc.detail, str) else None,
+                },
+            },
+        )
+
+    @application.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": exc.errors(),
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Request validation failed",
+                    "details": exc.errors(),
+                },
+            },
+        )
+
     @application.get("/health")
     def health():
         return {"status": "ok"}
 
     return application
+
 
 
 app = create_app()

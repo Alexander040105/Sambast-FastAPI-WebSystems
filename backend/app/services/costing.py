@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.order import Order
+from app.models.payment import Payment
 from app.models.route import Route
 from app.models.vehicle import Vehicle
 from app.models.driver import Driver
@@ -85,6 +86,12 @@ def calculate_route_cost(db: Session, route_id: int) -> float:
                     subtotal = float(order.subtotal or 0.0)
                     discount = float(order.discount_total or 0.0)
                     order.total_price = round(subtotal - discount + per_delivery_cost, 2)
+
+                    # Reconcile Payment row to avoid COD discrepancies
+                    payment = db.query(Payment).filter(Payment.order_id == order.id).first()
+                    if payment and payment.status.lower() in ["pending", "unpaid"]:
+                        payment.amount = order.total_price
+
 
     db.commit()
     return total_cost

@@ -16,6 +16,7 @@ from app.models.vehicle import Vehicle
 from app.models.driver_shift import DriverShift
 from app.models.location import Location
 from app.models.order import Order
+from app.models.order_item import OrderItem
 from app.models.delivery import Delivery
 from app.models.delivery_stop import DeliveryStop
 from app.models.delivery_status_event import DeliveryStatusEvent
@@ -123,7 +124,7 @@ def seed():
                 driver_id=driver.id,
                 vehicle_id=vehicles[i % len(vehicles)].id,
                 starts_at=datetime.now(timezone.utc) - timedelta(hours=2),
-                ends_at=datetime.now(timezone.utc) + timedelta(hours=6),
+                ends_at=datetime.now(timezone.utc) + timedelta(hours=10),
                 status="active"
             )
             db.add(shift)
@@ -174,9 +175,13 @@ def seed():
             for i in range(count):
                 loc = random.choice(db_locations)
                 
-                # Setup time windows
-                start_window = now.replace(hour=8, minute=0, second=0, microsecond=0)
-                end_window = start_window + timedelta(hours=8)
+                # Setup dynamic time windows relative to now so demo auto-assign always works
+                if i % 2 == 0:
+                    start_window = now - timedelta(hours=1)
+                    end_window = now + timedelta(hours=6)
+                else:
+                    start_window = now + timedelta(hours=1)
+                    end_window = now + timedelta(hours=8)
                 
                 order = Order(
                     order_no=f"ORD-{uuid.uuid4().hex[:8].upper()}",

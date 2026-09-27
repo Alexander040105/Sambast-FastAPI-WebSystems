@@ -9,16 +9,22 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from datetime import datetime, timezone
 from app.core.deps import require_role, get_current_user
 from app.db.session import get_db
 from app.models.driver import Driver
 from app.models.user import User
+from app.models.route import Route
+from app.models.delivery_stop import DeliveryStop
+from app.models.driver_shift import DriverShift
 from app.schemas.fleet import (
     DriverCreate,
     DriverOut,
     DriverUpdate,
     Pagination,
 )
+from app.schemas.route import DriverManifestResponse
+from app.routers.routes import get_stop_response
 
 router = APIRouter(prefix="/drivers", tags=["drivers"])
 
@@ -129,3 +135,64 @@ def delete_driver(
     
     db.delete(driver)
     db.commit()
+
+
+@router.get("/{driver_id}/manifest", response_model=DriverManifestResponse)
+def get_driver_manifest(
+    driver_id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("dispatcher", "admin", "ops_manager")),
+):
+    """MEGAPLAN §7.3: Dispatcher / Manager view of a specific driver's route manifest."""
+    driver = db.query(Driver).filter(Driver.id == driver_id).first()
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+
+    route = db.query(Route).filter(
+        Route.driver_id == driver.id,
+        Route.status.in_(["planned", "active"]),
+    ).order_by(Route.id.desc()).first()
+
+    if not route:
+        today_date = datetime.now(timezone.utc).date()
+        route = db.query(Route).filter(
+            Route.driver_id == driver.id,
+            Route.status == "completed",
+            Route.date == today_date,
+        ).order_by(Route.id.desc()).first()
+
+    stops = []
+    route_started = False
+    if route:
+        if route.status in ["active", "completed"]:
+            route_started = True
+        stop_records = db.query(DeliveryStop).filter(
+            DeliveryStop.route_id == route.id
+        ).order_by(DeliveryStop.sequence_no).all()
+        stops = [get_stop_response(db, s) for s in stop_records]
+
+    now = datetime.now(timezone.utc)
+    shift = db.query(DriverShift).filter(
+        DriverShift.driver_id == driver.id,
+        DriverShift.starts_at <= now,
+        DriverShift.ends_at >= now,
+    ).first()
+    shift_label = (
+        f"Shift: {shift.starts_at.strftime('%H:%M')}–{shift.ends_at.strftime('%H:%M')}"
+        if shift
+        else "No Active Shift"
+    )
+
+    return DriverManifestResponse(
+        date_label=now.strftime("%A, %B %d"),
+        shift_label=shift_label,
+        route_started=route_started,
+        stops=stops,
+        failure_reasons=[
+            {"value": "recipient_unavailable", "label": "Recipient unavailable"},
+            {"value": "business_closed", "label": "Business closed"},
+            {"value": "address_not_found", "label": "Address not found"},
+            {"value": "delivery_declined", "label": "Delivery declined"},
+        ],
+    )
+
