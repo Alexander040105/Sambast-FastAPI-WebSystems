@@ -4,6 +4,8 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Tuple
 
 from app.db.session import get_db
+from app.core.deps import require_role
+from app.models.user import User
 from app.models.delivery import Delivery
 from app.models.delivery_stop import DeliveryStop
 from app.models.route import Route
@@ -59,7 +61,9 @@ def get_period_info(period_key: str) -> PeriodResponse:
 
 @router.get("/driver-performance", response_model=DriverPerformanceResponse)
 def get_driver_performance(
-    period_key: str = Query("this_week"), db: Session = Depends(get_db)
+    period_key: str = Query("this_week"),
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("ops_manager", "admin", "dispatcher")),
 ):
     start, end, daily_intervals = get_period_bounds(period_key)
 
@@ -175,7 +179,9 @@ def get_driver_performance(
 
 @router.get("/delivery-costs", response_model=DeliveryCostsResponse)
 def get_delivery_costs(
-    period_key: str = Query("this_week"), db: Session = Depends(get_db)
+    period_key: str = Query("this_week"),
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("ops_manager", "admin", "dispatcher")),
 ):
     start, end, daily_intervals = get_period_bounds(period_key)
 
@@ -233,7 +239,9 @@ def get_delivery_costs(
 
 @router.get("/failed-deliveries", response_model=FailedDeliveriesResponse)
 def get_failed_deliveries(
-    period_key: str = Query("this_week"), db: Session = Depends(get_db)
+    period_key: str = Query("this_week"),
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("ops_manager", "admin", "dispatcher")),
 ):
     start, end, daily_intervals = get_period_bounds(period_key)
 
