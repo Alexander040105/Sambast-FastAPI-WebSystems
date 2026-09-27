@@ -45,9 +45,10 @@ def get_auto_assign_suggestion(order_id: int, db: Session) -> dict:
     
     total_weight = 0.0
     for item, product in items:
-        # (products.weight_kg_per_unit x qty x unit_multiplier)
         kg_per_unit = float(product.weight_kg_per_unit) if product and product.weight_kg_per_unit else 0.0
-        total_weight += kg_per_unit * float(item.quantity) * float(item.unit_multiplier)
+        qty = float(item.quantity or 1.0)
+        multiplier = float(item.unit_multiplier or 1.0)
+        total_weight += kg_per_unit * qty * multiplier
 
     # 2. Filter Drivers (Active Shift now)
     now = datetime.now(timezone.utc)

@@ -67,16 +67,35 @@ def optimize_route(db: Session, route_id: int):
     stops = db.query(DeliveryStop).filter(DeliveryStop.route_id == route_id).all()
     if not stops:
         return []
-    if len(stops) < 2:
+
+    # Sort existing stops by sequence_no
+    stops = sorted(stops, key=lambda s: s.sequence_no or 0)
+
+    # Partition into fixed (already processed/in progress) vs pending stops
+    fixed_stops = []
+    pending_stops = []
+    for s in stops:
+        st = (s.status or "PENDING").upper()
+        if st in ["DELIVERED", "FAILED", "ARRIVED", "EN_ROUTE"]:
+            fixed_stops.append(s)
+        else:
+            pending_stops.append(s)
+
+    if len(pending_stops) < 2:
+        # Fewer than 2 pending stops to optimize: keep fixed stops order, append pending
+        all_stops = fixed_stops + pending_stops
+        for idx, s in enumerate(all_stops):
+            s.sequence_no = idx + 1
+        db.commit()
         recompute_route_metrics(db, route_id)
-        return stops
+        return all_stops
 
     route_obj = db.query(Route).filter(Route.id == route_id).first()
     start_time = datetime.now(timezone.utc)
 
-    # 1. Data Hydration
+    # 1. Data Hydration for pending stops
     stop_locs = []
-    for s in stops:
+    for s in pending_stops:
         lat, lng = 0.0, 0.0
         delivery = db.query(Delivery).filter(Delivery.id == s.delivery_id).first()
         order = db.query(Order).filter(Order.id == delivery.order_id).first() if delivery else None
@@ -140,13 +159,17 @@ def optimize_route(db: Session, route_id: int):
             if improvement:
                 break
 
-    # 4. Persistence
-    for idx, (stop, _, _, _) in enumerate(optimized):
+    # 4. Persistence (preserve fixed stops sequence at front)
+    for idx, stop in enumerate(fixed_stops):
         stop.sequence_no = idx + 1
+
+    offset = len(fixed_stops)
+    for idx, (stop, _, _, _) in enumerate(optimized):
+        stop.sequence_no = offset + idx + 1
 
     db.commit()
     recompute_route_metrics(db, route_id)
-    return [s for s, _, _, _ in optimized]
+    return fixed_stops + [s for s, _, _, _ in optimized]
 
 
 def recompute_route_metrics(db: Session, route_id: int):

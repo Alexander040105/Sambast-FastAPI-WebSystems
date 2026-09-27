@@ -89,6 +89,20 @@ def create_app() -> FastAPI:
             },
         )
 
+    @application.exception_handler(Exception)
+    async def generic_exception_handler(request: Request, exc: Exception):
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Internal server error",
+                "error": {
+                    "code": "INTERNAL_SERVER_ERROR",
+                    "message": "An unexpected error occurred",
+                    "details": str(exc) if os.getenv("ENVIRONMENT") == "development" else None,
+                },
+            },
+        )
+
     @application.get("/health")
     def health():
         return {"status": "ok"}
