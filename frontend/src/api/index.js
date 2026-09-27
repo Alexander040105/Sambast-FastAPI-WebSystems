@@ -3,3 +3,4 @@ export * from './drivers.js';
 export * from './dispatch.js';
 export * from './vehicles.js';
 export * from './shifts.js';
+export * from './analytics.js';

@@ -6,8 +6,13 @@ from app.models.route import Route
 from app.models.delivery import Delivery
 from app.models.delivery_stop import DeliveryStop
 from app.models.order import Order
+from app.models.order_item import OrderItem
+from app.models.product import Product
 from app.models.location import Location
 from app.models.driver import Driver
+from app.models.vehicle import Vehicle
+from app.models.user import User
+from app.models.proof_of_delivery import ProofOfDelivery
 from app.schemas.route import RouteCreateRequest, RouteReorderRequest, RouteDetailResponse, StopResponse, RouteAvailableItem
 from typing import List
 from datetime import datetime, timezone
@@ -20,23 +25,44 @@ def get_stop_response(db: Session, stop: DeliveryStop) -> StopResponse:
     order = db.query(Order).filter(Order.id == delivery.order_id).first() if delivery else None
     loc = db.query(Location).filter(Location.id == stop.location_id).first() if stop.location_id else None
     
-    address = f"{loc.line1} {loc.city}, {loc.province}" if loc else "Unknown address"
-    window = f"{order.delivery_window_start.strftime('%H:%M')} - {order.delivery_window_end.strftime('%H:%M')}" if order and order.delivery_window_start and order.delivery_window_end else "Not provided"
+    address = f"{loc.line1}, {loc.city}" if loc else "Unknown address"
+    if loc and loc.province:
+        address = f"{loc.line1}, {loc.city}, {loc.province}"
+    destination = loc.label or loc.city if loc else "Destination"
 
-    # Try to find a POD
-    # Assuming frontend expects these
-    pod = None # In a full impl, query ProofOfDelivery
+    window = "Not provided"
+    if order and order.delivery_window_start and order.delivery_window_end:
+        window = f"{order.delivery_window_start.strftime('%H:%M')} - {order.delivery_window_end.strftime('%H:%M')}"
+
+    # Query real ProofOfDelivery if present
+    pod = db.query(ProofOfDelivery).filter(ProofOfDelivery.delivery_id == delivery.id).order_by(ProofOfDelivery.id.desc()).first() if delivery else None
+
+    # Compute weight
+    weight_str = "1.0 kg"
+    if order:
+        items = db.query(OrderItem, Product).outerjoin(Product, OrderItem.product_id == Product.id).filter(OrderItem.order_id == order.id).all()
+        total_w = sum(float(p.weight_kg_per_unit or 0.0) * float(it.quantity or 1.0) * float(it.unit_multiplier or 1.0) for it, p in items if p)
+        if total_w > 0:
+            weight_str = f"{total_w:.1f} kg"
+
+    # Recipient
+    recipient = "Customer"
+    if order and order.customer_id:
+        cust = db.query(User).filter(User.id == order.customer_id).first()
+        if cust:
+            recipient = cust.name or cust.email.split("@")[0]
 
     return StopResponse(
         id=stop.id,
+        delivery_id=stop.delivery_id,
         sequence=stop.sequence_no,
-        destination="Destination",
+        destination=destination,
         address=address,
         delivery_window=window,
-        status=stop.status,
-        weight="10 kg",
+        status=stop.status.lower() if stop.status else "pending",
+        weight=weight_str,
         order_no=order.order_no if order else "UNKNOWN",
-        recipient="Recipient",
+        recipient=recipient,
         failure_reason=delivery.failure_reason if delivery else None,
         failure_notes=None,
         pod_photo_name=pod.file_url if pod else None,
@@ -83,10 +109,13 @@ def build_route(req: RouteCreateRequest, db: Session = Depends(get_db)):
     
     db.commit()
     db.refresh(route)
-    
+
+    from app.services.routing import recompute_route_metrics
+    recompute_route_metrics(db, route.id)
+
     from app.services.costing import calculate_route_cost
     calculate_route_cost(db, route.id)
-    
+
     return {"id": route.id, "message": f"Route created with {len(deliveries)} stops."}
 
 @router.get("", response_model=List[RouteAvailableItem])
@@ -101,16 +130,23 @@ def get_route_detail(id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Route not found")
     
     driver = db.query(Driver).filter(Driver.id == route.driver_id).first()
+    vehicle = db.query(Vehicle).filter(Vehicle.id == route.vehicle_id).first() if route.vehicle_id else None
     stops = db.query(DeliveryStop).filter(DeliveryStop.route_id == route.id).order_by(DeliveryStop.sequence_no).all()
     
     stop_responses = [get_stop_response(db, s) for s in stops]
     
+    driver_label = "Unknown"
+    if driver:
+        driver_label = driver.license_no if driver.license_no else f"Driver #{driver.id}"
+
+    vehicle_label = vehicle.plate_no if vehicle else (str(route.vehicle_id) if route.vehicle_id else "Unknown")
+    
     return {
         "id": str(route.id),
         "status": route.status,
-        "assigned_driver": driver.license_number if driver else "Unknown",
-        "vehicle": str(route.vehicle_id) if route.vehicle_id else "Unknown",
-        "estimated_remaining_min": 0,
+        "assigned_driver": driver_label,
+        "vehicle": vehicle_label,
+        "estimated_remaining_min": int(route.est_duration_min or 0),
         "stops": stop_responses
     }
 
@@ -137,6 +173,8 @@ def reorder_route(id: int, req: RouteReorderRequest, db: Session = Depends(get_d
             stop.sequence_no = s.sequence_no
             
     db.commit()
+    from app.services.routing import recompute_route_metrics
+    recompute_route_metrics(db, id)
     from app.services.costing import calculate_route_cost
     calculate_route_cost(db, id)
     return {"message": "Route stops reordered"}
