@@ -151,6 +151,30 @@ async function trace(page) {
   return page.evaluate(() => window.__fixture.requests.filter((item) => item.method !== 'GET').map(({ path, method, body }) => ({ path, method, body })));
 }
 
+const statusFrame = (deliveryId, status, ts) => `event: status\ndata: ${JSON.stringify({ delivery_id: deliveryId, order_no: `ORD-${deliveryId}`, status, lat: null, lng: null, ts })}\n\n`;
+
+async function sendStatus(page, events) {
+  await page.evaluate((text) => window.__fixture.send(text), events.map(([deliveryId, status, ts]) => statusFrame(deliveryId, status, ts)).join(''));
+}
+
+async function liveRows(page) {
+  return page.$$eval('.fleet-live-table tbody tr', (rows) => rows.map((row) => ({
+    order: row.querySelector('strong').textContent,
+    delivery: row.querySelector('.fleet-live-delivery-id').textContent,
+    status: row.querySelector('.fleet-live-status').textContent,
+  })));
+}
+
+async function waitRows(page, count) {
+  await page.waitForFunction((expected) => document.querySelectorAll('.fleet-live-table tbody tr').length === expected, {}, count);
+}
+
+const liveBadge = (page) => page.evaluate(() => document.querySelector('.fleet-live-connection')?.textContent.trim() ?? null);
+
+async function waitBadge(page, state) {
+  await page.waitForFunction((wanted) => document.querySelector('.fleet-live-connection')?.textContent.trim() === wanted, {}, state);
+}
+
 async function workflows(base) {
   const traces = {};
   const page = await pageAt(base, '/dispatcher/fleet/drivers');
@@ -268,6 +292,49 @@ await page.close();
   return traces;
 }
 
+async function fleetUpdates(base) {
+  const summary = {};
+  const page = await pageAt(base, '/dispatcher/fleet/drivers');
+  await waitBadge(page, 'Live');
+  summary.authorization = (await page.evaluate(() => window.__fixture.requests.find((item) => item.path === '/fleet/stream').authorization)).startsWith('Bearer ');
+  await waitText(page, 'No delivery updates received yet.');
+
+  await sendStatus(page, [[12, 'EN_ROUTE', '2026-09-28T10:30:00Z']]);
+  await waitRows(page, 1);
+  summary.first = (await liveRows(page))[0];
+
+  await sendStatus(page, [[12, 'DELIVERED', '2026-09-28T10:45:00Z'], [13, 'EN_ROUTE', '2026-09-28T11:00:00Z']]);
+  await waitRows(page, 2);
+  summary.afterTwo = await liveRows(page);
+
+  await sendStatus(page, [[12, 'FAILED', '2026-09-28T10:40:00Z'], [14, 'EN_ROUTE', '2026-09-28T11:01:00Z']]);
+  await waitRows(page, 3);
+  summary.afterStale = await liveRows(page);
+
+  await sendStatus(page, [[20, 'ASSIGNED', '2026-09-28T11:02:00Z'], [21, 'ASSIGNED', '2026-09-28T11:03:00Z'], [22, 'ASSIGNED', '2026-09-28T11:04:00Z']]);
+  await waitRows(page, 6);
+  summary.ordered = (await liveRows(page)).map((row) => row.order);
+
+  await sendStatus(page, Array.from({ length: 25 }, (_, index) => [30 + index, 'EN_ROUTE', `2026-09-28T12:${String(index).padStart(2, '0')}:00Z`]));
+  await waitRows(page, 20);
+  summary.capped = (await liveRows(page)).map((row) => row.order);
+
+  await page.evaluate(() => window.__fixture.disconnect());
+  await waitText(page, 'Updates during disconnection may be missing.');
+  summary.gap = ['Reconnecting', 'Offline'].includes(await liveBadge(page));
+  await page.waitForFunction(() => window.__fixture.opened === 2);
+  await waitBadge(page, 'Live');
+  summary.keptAfterReconnect = await page.$$eval('.fleet-live-table tbody tr', (rows) => rows.length);
+
+  const before = await page.evaluate(() => ({ closed: window.__fixture.closed, opened: window.__fixture.opened }));
+  await page.click('[aria-label="Dispatch Queue"]');
+  await page.waitForFunction((expected) => window.__fixture.closed === expected, {}, before.closed + 1);
+  const after = await page.evaluate(() => ({ closed: window.__fixture.closed, opened: window.__fixture.opened }));
+  summary.cleanup = { closed: after.closed - before.closed, reopened: after.opened - before.opened, badge: await liveBadge(page) };
+  await page.close();
+  return summary;
+}
+
 async function snapshot(page, selector) {
   return page.$eval(selector, (root) => [...root.querySelectorAll('*')].filter((element) => !element.closest('svg')).map((element) => {
     const style = getComputedStyle(element);
@@ -313,6 +380,28 @@ try {
   const actual = await workflows(current);
   assert.deepEqual(actual, expected, 'T3–T7 workflow request payloads changed');
   console.log('PASS T3–T7 CRUD, queue, driver POD/failure, route reorder, analytics workflow traces match HEAD');
+  const expectedUpdates = await fleetUpdates(baseline);
+  const actualUpdates = await fleetUpdates(current);
+  assert.deepEqual(actualUpdates, expectedUpdates, 'T8 fleet live updates changed');
+  assert.deepEqual(actualUpdates, {
+    authorization: true,
+    first: { order: 'ORD-12', delivery: 'Delivery #12', status: 'En route' },
+    afterTwo: [
+      { order: 'ORD-13', delivery: 'Delivery #13', status: 'En route' },
+      { order: 'ORD-12', delivery: 'Delivery #12', status: 'Delivered' },
+    ],
+    afterStale: [
+      { order: 'ORD-14', delivery: 'Delivery #14', status: 'En route' },
+      { order: 'ORD-13', delivery: 'Delivery #13', status: 'En route' },
+      { order: 'ORD-12', delivery: 'Delivery #12', status: 'Delivered' },
+    ],
+    ordered: ['ORD-22', 'ORD-21', 'ORD-20', 'ORD-14', 'ORD-13', 'ORD-12'],
+    capped: Array.from({ length: 20 }, (_, index) => `ORD-${54 - index}`),
+    gap: true,
+    keptAfterReconnect: 20,
+    cleanup: { closed: 1, reopened: 0, badge: null },
+  }, 'T8 fleet live update behaviour');
+  console.log('PASS T8 fleet stream: render, dedupe, order, 20-delivery cap, reconnect gap, unmount cleanup');
   assert.deepEqual(errors, [], 'Browser page errors');
   console.log('PASS no uncaught browser errors');
 } finally {
