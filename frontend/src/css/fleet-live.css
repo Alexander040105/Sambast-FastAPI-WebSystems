@@ -1,0 +1,107 @@
+.fleet-module .fleet-live-updates {
+  border-top: 1px solid var(--drivers-border);
+  color: var(--drivers-text);
+  margin-top: 20px;
+  padding-top: 12px;
+}
+
+.fleet-live-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fleet-live-heading h2 {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  margin: 0;
+}
+
+.fleet-live-connection,
+.fleet-live-status {
+  background: var(--drivers-header);
+  border-radius: 3px;
+  color: var(--drivers-secondary);
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 16px;
+  padding: 1px 6px;
+}
+
+.fleet-live-connection-live {
+  background: var(--drivers-accent-soft);
+  color: var(--drivers-text);
+}
+
+.fleet-live-description,
+.fleet-live-message,
+.fleet-live-empty {
+  color: var(--drivers-secondary);
+  font-size: 11px;
+  line-height: 17px;
+  margin: 6px 0 0;
+}
+
+.fleet-live-message {
+  color: var(--drivers-text);
+}
+
+.fleet-live-empty {
+  padding: 8px 0;
+}
+
+.fleet-live-table-wrap {
+  border: 1px solid var(--drivers-border);
+  border-radius: 6px;
+  margin-top: 10px;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.fleet-live-table {
+  background: var(--drivers-surface);
+  border-collapse: collapse;
+  font-size: 11px;
+  line-height: 16px;
+  min-width: 420px;
+  text-align: left;
+  width: 100%;
+}
+
+.fleet-live-table th,
+.fleet-live-table td {
+  border-bottom: 1px solid var(--drivers-border);
+  padding: 8px 11px;
+}
+
+.fleet-live-table th {
+  background: var(--drivers-header);
+  color: var(--drivers-secondary);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.fleet-live-table td:first-child {
+  overflow-wrap: anywhere;
+}
+
+.fleet-live-table th:last-child,
+.fleet-live-table td:last-child {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.fleet-live-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.fleet-live-delivery-id {
+  color: var(--drivers-muted);
+  display: block;
+  font-size: 10px;
+}

@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { DriverManagement } from './DriverManagement.jsx';
 import { VehicleManagement } from './VehicleManagement.jsx';
 import { ShiftManagement } from './ShiftManagement.jsx';
+import { FleetDeliveryUpdates } from './FleetDeliveryUpdates.jsx';
 
 const fleetTabs = [
   { path: '/dispatcher/fleet/drivers', label: 'Drivers' },
@@ -39,6 +40,7 @@ export function FleetPage() {
       </nav>
 
       <Outlet />
+      <FleetDeliveryUpdates />
     </div>
   );
 }
