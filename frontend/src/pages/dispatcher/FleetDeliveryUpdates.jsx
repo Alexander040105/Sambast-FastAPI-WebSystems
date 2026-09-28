@@ -21,9 +21,21 @@ const CONNECTION_LABELS = {
   offline: 'Offline',
 };
 
+const MAX_UPDATES = 20;
+
 const eventTime = new Intl.DateTimeFormat('en-PH', {
   month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit',
 });
+
+// Keep only the newest event per delivery, newest first, capped at MAX_UPDATES.
+function mergeUpdate(updates, event) {
+  const previous = updates.find((item) => item.delivery_id === event.delivery_id);
+  if (previous && Date.parse(previous.ts) > Date.parse(event.ts)) return updates;
+  if (previous?.ts === event.ts && previous.status === event.status && previous.order_no === event.order_no) return updates;
+  return [event, ...updates.filter((item) => item.delivery_id !== event.delivery_id)]
+    .sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts))
+    .slice(0, MAX_UPDATES);
+}
 
 export function FleetDeliveryUpdates() {
   const [connection, setConnection] = useState({ state: 'connecting' });
@@ -36,14 +48,7 @@ export function FleetDeliveryUpdates() {
       if (next.state === 'reconnecting' || next.state === 'offline') setHasConnectionGap(true);
     },
     onStatus: (event) => {
-      setUpdates((current) => {
-        const previous = current.find((item) => item.delivery_id === event.delivery_id);
-        if (previous && Date.parse(previous.ts) > Date.parse(event.ts)) return current;
-        if (previous?.ts === event.ts && previous.status === event.status && previous.order_no === event.order_no) return current;
-        return [event, ...current.filter((item) => item.delivery_id !== event.delivery_id)]
-          .sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts))
-          .slice(0, 20);
-      });
+      setUpdates((current) => mergeUpdate(current, event));
     },
   }), []);
 
@@ -56,7 +61,7 @@ export function FleetDeliveryUpdates() {
         </span>
       </div>
       <p className="fleet-live-description">
-        Latest events for up to 20 deliveries received while Fleet is open.
+        Latest events for up to {MAX_UPDATES} deliveries received while Fleet is open.
         {hasConnectionGap && ' Updates during disconnection may be missing.'}
       </p>
       {connection.message && <p className="fleet-live-message" role="status">{connection.message}</p>}

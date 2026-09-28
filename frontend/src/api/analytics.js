@@ -32,14 +32,12 @@ export async function getDriverPerformance(periodKey = 'this_week') {
       onTimePercent: res.summary.on_time_percent,
       deliveriesPerDay: res.summary.deliveries_per_day,
       failureRate: res.summary.failure_rate,
-      ...res.summary,
     },
     series: (res.series || []).map((s) => ({
       day: s.day,
       onTimePercent: s.on_time_percent,
       deliveries: s.deliveries,
       failureRate: s.failure_rate,
-      ...s,
     })),
     updatedAt: res.updated_at || new Date().toISOString(),
   };
@@ -51,12 +49,10 @@ export async function getDeliveryCosts(periodKey = 'this_week') {
     ...res,
     summary: {
       averageCostPerStop: res.summary.average_cost_per_stop,
-      ...res.summary,
     },
     series: (res.series || []).map((s) => ({
       day: s.day,
       costPerStop: s.cost_per_stop,
-      ...s,
     })),
     updatedAt: res.updated_at || new Date().toISOString(),
   };
@@ -70,7 +66,6 @@ export async function getFailedDeliveries(periodKey = 'this_week') {
       failedCount: res.summary.failed_count,
       failureRate: res.summary.failure_rate,
       changeFromPreviousWeek: res.summary.change_from_previous_week,
-      ...res.summary,
     },
     reasons: (res.reasons || []).map((r) => ({
       reason: r.reason,

@@ -4,11 +4,17 @@ export const getAvailableRoutes = () => api.get('/routes');
 export const getRouteDetail = async (routeId) => {
   const data = await api.get(`/routes/${routeId}`);
   return {
-    ...data,
+    id: data.id,
+    status: data.status,
+    vehicle: data.vehicle,
     assignedDriver: data.assigned_driver,
     estimatedRemainingMin: data.estimated_remaining_min,
     stops: data.stops.map(s => ({
-      ...s,
+      id: s.id,
+      sequence: s.sequence,
+      status: s.status,
+      destination: s.destination,
+      address: s.address,
       deliveryWindow: s.delivery_window,
       orderNo: s.order_no,
       failureReason: s.failure_reason,
