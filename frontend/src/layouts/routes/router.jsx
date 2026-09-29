@@ -27,6 +27,7 @@ import AdminOrders from '../../pages/admin/Orders';
 
 import ProtectedRoute from '../../components/ProtectedRoute';
 import AdminRoute from '../../components/AdminRoute';
+import RequireRole from '../../components/RequireRole';
 
 import CustomerLayout from '../../layouts/CustomerLayout';
 import AdminLayout from '../../layouts/AdminLayout';
@@ -128,22 +129,27 @@ const routes = [
   // Dispatcher routes (FE-B)
   // --------------------------------
   {
-    element: <DispatcherLayout />,
+    element: <RequireRole allow={['dispatcher', 'admin']} />,
     children: [
-      { path: '/dispatcher', element: <Navigate to="/dispatcher/fleet" replace /> },
       {
-        path: '/dispatcher/fleet',
-        element: <FleetPage />,
+        element: <DispatcherLayout />,
         children: [
-          { path: 'drivers', element: <FleetDriversPage /> },
-          { path: 'vehicles', element: <FleetVehiclesPage /> },
-          { path: 'shifts', element: <FleetShiftsPage /> },
-          { index: true, element: <Navigate to="drivers" replace /> },
+          { path: '/dispatcher', element: <Navigate to="/dispatcher/fleet" replace /> },
+          {
+            path: '/dispatcher/fleet',
+            element: <FleetPage />,
+            children: [
+              { path: 'drivers', element: <FleetDriversPage /> },
+              { path: 'vehicles', element: <FleetVehiclesPage /> },
+              { path: 'shifts', element: <FleetShiftsPage /> },
+              { index: true, element: <Navigate to="drivers" replace /> },
+            ],
+          },
+          { path: '/dispatcher/queue', element: <DispatchQueue /> },
+          { path: '/dispatcher/routes', element: <RouteDetailPage /> },
+          { path: '/dispatcher/routes/:routeId', element: <RouteDetailPage /> },
         ],
       },
-      { path: '/dispatcher/queue', element: <DispatchQueue /> },
-      { path: '/dispatcher/routes', element: <RouteDetailPage /> },
-      { path: '/dispatcher/routes/:routeId', element: <RouteDetailPage /> },
     ],
   },
 
@@ -151,13 +157,18 @@ const routes = [
   // Driver routes (FE-B)
   // --------------------------------
   {
-    element: <DriverLayout />,
+    element: <RequireRole allow={['driver', 'dispatcher', 'admin', 'ops_manager']} />,
     children: [
-      { path: '/driver', element: <DriverWorkflow /> },
-      { path: '/driver/route', element: <DriverWorkflow /> },
-      { path: '/driver/stops/:stopId', element: <DriverWorkflow /> },
-      { path: '/driver/stops/:stopId/complete', element: <DriverWorkflow /> },
-      { path: '/driver/stops/:stopId/fail', element: <DriverWorkflow /> },
+      {
+        element: <DriverLayout />,
+        children: [
+          { path: '/driver', element: <DriverWorkflow /> },
+          { path: '/driver/route', element: <DriverWorkflow /> },
+          { path: '/driver/stops/:stopId', element: <DriverWorkflow /> },
+          { path: '/driver/stops/:stopId/complete', element: <DriverWorkflow /> },
+          { path: '/driver/stops/:stopId/fail', element: <DriverWorkflow /> },
+        ],
+      },
     ],
   },
 
@@ -165,13 +176,18 @@ const routes = [
   // Ops manager routes (FE-B)
   // --------------------------------
   {
-    element: <OpsManagerLayout />,
+    element: <RequireRole allow={['ops_manager', 'admin']} />,
     children: [
       {
-        path: '/ops',
-        lazy: async () => ({
-          Component: (await import('../../pages/ops/OperationsOverview.jsx')).OperationsOverview,
-        }),
+        element: <OpsManagerLayout />,
+        children: [
+          {
+            path: '/ops',
+            lazy: async () => ({
+              Component: (await import('../../pages/ops/OperationsOverview.jsx')).OperationsOverview,
+            }),
+          },
+        ],
       },
     ],
   },

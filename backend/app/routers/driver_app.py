@@ -20,6 +20,7 @@ from app.models.proof_of_delivery import ProofOfDelivery
 from app.models.delivery_status import DeliveryStatus
 from app.schemas.route import DriverManifestResponse, StopFailRequest
 from app.routers.routes import get_stop_response
+from app.services.notifications import notify_order_status
 from app.services.sse import broadcaster
 
 router = APIRouter(tags=["Driver Workflow"])
@@ -187,6 +188,7 @@ def start_stop(
         order = db.query(Order).filter(Order.id == delivery.order_id).first()
         if order:
             order.status = "OUT_FOR_DELIVERY"
+            notify_order_status(db, order, "OUT_FOR_DELIVERY")
         record_event(db, delivery.id, "EN_ROUTE", current_user.id)
 
     # Mark route active
@@ -369,6 +371,8 @@ def complete_stop(
                 payment.paid_at = datetime.now(timezone.utc)
                 payment.amount = order.total_price
 
+            notify_order_status(db, order, "DELIVERED")
+
         record_event(db, delivery.id, "DELIVERED", current_user.id)
 
     db.commit()
@@ -412,6 +416,9 @@ def fail_stop(
             delivery.status = "RETURNED"
             if order:
                 order.status = "RETURNED"
+                notify_order_status(
+                    db, order, "RETURNED", note=payload.reason
+                )
             record_event(
                 db,
                 delivery.id,
@@ -423,6 +430,9 @@ def fail_stop(
             delivery.status = "FAILED"
             if order:
                 order.status = "READY_FOR_DISPATCH"  # re-queue to dispatch
+                notify_order_status(
+                    db, order, "FAILED", note=payload.reason
+                )
             record_event(
                 db,
                 delivery.id,

@@ -28,6 +28,7 @@ from app.schemas.dispatch import (
 )
 from app.schemas.fleet import LocationOut, Pagination
 from app.services.assignment import get_auto_assign_suggestion
+from app.services.notifications import notify_order_status
 from app.services.sse import broadcaster
 
 router = APIRouter(prefix="/dispatch", tags=["dispatch"])
@@ -173,7 +174,12 @@ def manual_assign(
         lng=lng,
         note=f"Assigned to driver #{driver.id}",
     )
-    
+
+    # Customer email + notification log (MEGAPLAN §5.10). Failure is
+    # captured on the notification row, never raised.
+    notify_order_status(db, order, "ASSIGNED", note=f"Assigned to driver #{driver.id}")
+    db.commit()
+
     return {"status": "success", "delivery_id": delivery.id, "order_status": order.status}
 
 
