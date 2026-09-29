@@ -324,7 +324,7 @@
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .table-container { background: var(--drivers-surface); border: 1px solid var(--drivers-border); border-radius: 6px; overflow-x: auto; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) { border-collapse: separate; border-spacing: 0; font-size: 11px; line-height: 16px; min-width: 650px; table-layout: fixed; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th,
-.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) td { border-bottom: 1px solid #e9eaf0; padding: 8px 11px; text-align: left; vertical-align: middle; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) td { border-bottom: 1px solid #e8e3d9; padding: 8px 11px; text-align: left; vertical-align: middle; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th { background: var(--drivers-header); color: var(--drivers-secondary); font-size: 9px; font-weight: 600; letter-spacing: 0.015em; line-height: 13px; text-transform: uppercase; white-space: nowrap; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th:first-child { border-top-left-radius: 5px; width: 21%; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) th:nth-child(2) { width: 15%; }
@@ -336,7 +336,7 @@
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) td:first-child { color: var(--drivers-text); font-weight: 600; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) td:nth-child(2) { color: var(--drivers-secondary); font-variant-numeric: tabular-nums; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) td:nth-child(3) { color: var(--drivers-secondary); }
-.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) tbody tr:hover { background: #fafafd; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) tbody tr:hover { background: #f9f8f6; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) :is(.drivers-table, .vehicles-table, .shifts-table) tbody tr:last-child td { border-bottom: 0; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .driver-primary-id { color: var(--drivers-text); font-size: 11px; font-weight: 600; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .driver-user-id { font-variant-numeric: tabular-nums; }
@@ -345,7 +345,7 @@
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .status { border: 0; border-radius: 3px; font-size: 8px; font-weight: 600; line-height: 12px; min-height: 16px; padding: 2px 5px; text-transform: uppercase; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .status::before { display: none; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .status-active { background: var(--drivers-success-soft); color: var(--drivers-success); }
-.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .status-off_duty { background: #e9eaee; color: #59606c; }
+.fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .status-off_duty { background: #e8e3d9; color: #5f5950; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .status-suspended { background: var(--drivers-danger-soft); color: var(--drivers-danger); }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .driver-edit-action { background: transparent; border: 0; color: var(--drivers-action); cursor: pointer; font: 500 10px/16px var(--font-sans); padding: 3px 5px; }
 .fleet-module:is(.drivers-figma-page, .vehicles-figma-page, .shifts-figma-page) .driver-edit-action:hover { text-decoration: underline; text-underline-offset: 2px; }
@@ -393,7 +393,7 @@
 .fleet-module.vehicles-figma-page .vehicles-table .numeric-column { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .fleet-module.vehicles-figma-page .vehicles-table .numeric-column { text-align: right; }
 .fleet-module.vehicles-figma-page .vehicles-table .vehicle-created-cell { color: var(--drivers-muted); white-space: nowrap; }
-.fleet-module.vehicles-figma-page .vehicles-table .status-inactive { background: #e9eaee; color: #59606c; }
+.fleet-module.vehicles-figma-page .vehicles-table .status-inactive { background: #e8e3d9; color: #5f5950; }
 
 @media (max-width: 767px) {
   .fleet-module.vehicles-figma-page .vehicles-table { min-width: 900px; }
@@ -417,7 +417,7 @@
 .fleet-module.shifts-figma-page .shifts-table .shift-time-cell { color: var(--drivers-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .fleet-module.shifts-figma-page .shifts-table .shift-created-cell { color: var(--drivers-muted); white-space: nowrap; }
 .fleet-module.shifts-figma-page .status-scheduled { background: var(--drivers-warning-soft); color: var(--drivers-warning); }
-.fleet-module.shifts-figma-page .status-completed { background: #e9eaee; color: #59606c; }
+.fleet-module.shifts-figma-page .status-completed { background: #e8e3d9; color: #5f5950; }
 .fleet-module.shifts-figma-page .warning-banner { background: var(--drivers-warning-soft); border: 1px solid #f0dda2; border-radius: 5px; color: var(--drivers-warning); font-size: 11px; margin: 0 0 10px; padding: 8px 10px; }
 
 @media (max-width: 767px) {

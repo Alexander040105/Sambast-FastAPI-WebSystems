@@ -145,7 +145,7 @@ function Storefront() {
                 setSearch(event.target.value)
               }
               placeholder="Search products..."
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
             />
           </div>
 
@@ -161,7 +161,7 @@ function Storefront() {
               id="category"
               value={category}
               onChange={handleCategoryChange}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
             >
               <option value="">
                 All Categories
@@ -181,7 +181,7 @@ function Storefront() {
           <div className="flex items-end">
             <button
               type="submit"
-              className="w-full rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-700 md:w-auto"
+              className="w-full rounded-lg bg-ruby-600 px-5 py-2.5 font-medium text-white hover:bg-ruby-700 md:w-auto"
             >
               Search
             </button>
@@ -259,7 +259,7 @@ function Storefront() {
                         Base Price
                       </p>
 
-                      <p className="text-xl font-bold text-indigo-600">
+                      <p className="text-xl font-bold text-ruby-600">
                         ₱{basePrice.toFixed(2)}
                       </p>
                     </div>
@@ -282,7 +282,7 @@ function Storefront() {
 
                     <Link
                       to={`/customer/products/${product.id}`}
-                      className="mt-5 block rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-indigo-700"
+                      className="mt-5 block rounded-lg bg-ruby-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-ruby-700"
                     >
                       View Product
                     </Link>

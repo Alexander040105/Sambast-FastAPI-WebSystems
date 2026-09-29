@@ -94,7 +94,7 @@ function Register() {
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-10">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-indigo-600">
+          <h1 className="text-3xl font-bold text-ruby-600">
             Sambast
           </h1>
 
@@ -136,7 +136,7 @@ function Register() {
               onChange={handleChange}
               required
               placeholder="Juan Dela Cruz"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
             />
           </div>
 
@@ -157,7 +157,7 @@ function Register() {
               onChange={handleChange}
               required
               placeholder="you@example.com"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
             />
           </div>
 
@@ -191,7 +191,7 @@ function Register() {
               }}
               required
               placeholder="09123456789"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
             />
 
             <p className="mt-1 text-xs text-gray-500">
@@ -217,7 +217,7 @@ function Register() {
               onChange={handleChange}
               required
               placeholder="At least 8 characters"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
             />
           </div>
 
@@ -239,14 +239,14 @@ function Register() {
               onChange={handleChange}
               required
               placeholder="Repeat your password"
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-lg bg-indigo-600 px-5 py-3 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg bg-ruby-600 px-5 py-3 font-medium text-white hover:bg-ruby-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading ? 'Registering...' : 'Register'}
           </button>
@@ -257,7 +257,7 @@ function Register() {
           <button
             type="button"
             onClick={() => navigate('/login')}
-            className="font-medium text-indigo-600 hover:text-indigo-700"
+            className="font-medium text-ruby-600 hover:text-ruby-700"
           >
             Login
           </button>

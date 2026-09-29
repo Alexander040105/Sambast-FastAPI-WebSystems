@@ -25,7 +25,7 @@ function Cart() {
 
           <Link
             to="/customer"
-            className="mt-6 inline-block rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-700"
+            className="mt-6 inline-block rounded-lg bg-ruby-600 px-5 py-2.5 font-medium text-white hover:bg-ruby-700"
           >
             Continue Shopping
           </Link>
@@ -98,7 +98,7 @@ function Cart() {
                     </p>
                   )}
 
-                  <p className="mt-2 font-medium text-indigo-600">
+                  <p className="mt-2 font-medium text-ruby-600">
                     ₱{price.toFixed(2)}
                   </p>
                 </div>
@@ -179,14 +179,14 @@ function Cart() {
 
         <Link
           to="/customer/checkout"
-          className="mt-5 block w-full rounded-lg bg-indigo-600 px-5 py-3 text-center font-medium text-white hover:bg-indigo-700"
+          className="mt-5 block w-full rounded-lg bg-ruby-600 px-5 py-3 text-center font-medium text-white hover:bg-ruby-700"
         >
           Proceed to Checkout
         </Link>
 
         <Link
           to="/customer"
-          className="mt-3 block text-center text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          className="mt-3 block text-center text-sm font-medium text-ruby-600 hover:text-ruby-700"
         >
           Continue Shopping
         </Link>

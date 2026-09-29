@@ -133,7 +133,7 @@ function OrderDetails({ orderNo, onClose }) {
   if (loading) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600" />
+        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-ruby-600" />
 
         <p className="text-sm font-medium text-slate-600">
           Loading order details...
@@ -182,12 +182,12 @@ function OrderDetails({ orderNo, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="mb-3 text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+            className="mb-3 text-sm font-semibold text-ruby-600 hover:text-ruby-700"
           >
             ← Back to Orders
           </button>
 
-          <p className="text-sm font-semibold text-indigo-600">
+          <p className="text-sm font-semibold text-ruby-600">
             Order Management
           </p>
 
@@ -209,7 +209,7 @@ function OrderDetails({ orderNo, onClose }) {
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ruby-50 text-lg">
               📋
             </div>
 
@@ -257,7 +257,7 @@ function OrderDetails({ orderNo, onClose }) {
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ruby-50 text-lg">
               🛒
             </div>
 
@@ -339,7 +339,7 @@ function OrderDetails({ orderNo, onClose }) {
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ruby-50 text-lg">
               🚚
             </div>
 
@@ -444,7 +444,7 @@ function OrderDetails({ orderNo, onClose }) {
                 Total
               </span>
 
-              <span className="text-2xl font-bold text-indigo-600">
+              <span className="text-2xl font-bold text-ruby-600">
                 ₱{formatMoney(order.total_price)}
               </span>
             </div>
@@ -594,7 +594,7 @@ export default function Orders() {
     <div className="space-y-6">
       {/* Page heading */}
       <div>
-        <p className="text-sm font-semibold text-indigo-600">
+        <p className="text-sm font-semibold text-ruby-600">
           Order Management
         </p>
 
@@ -628,7 +628,7 @@ export default function Orders() {
         <div className="border-b border-slate-100 px-6 py-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-lg">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ruby-50 text-lg">
                 🛒
               </div>
 
@@ -656,7 +656,7 @@ export default function Orders() {
                   setStatusFilter(event.target.value);
                   setPage(1);
                 }}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
               >
                 {ORDER_STATUSES.map((status) => (
                   <option
@@ -676,7 +676,7 @@ export default function Orders() {
         <div className="p-6">
           {loading ? (
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-12 text-center">
-              <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600" />
+              <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-ruby-600" />
 
               <p className="text-sm font-medium text-slate-600">
                 Loading orders...
@@ -752,7 +752,7 @@ export default function Orders() {
                             }
                             className="text-left"
                           >
-                            <p className="font-bold text-indigo-600 hover:text-indigo-700">
+                            <p className="font-bold text-ruby-600 hover:text-ruby-700">
                               {order.order_no}
                             </p>
 
@@ -796,7 +796,7 @@ export default function Orders() {
                                 order.order_no
                               )
                             }
-                            className="rounded-lg bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100"
+                            className="rounded-lg bg-ruby-50 px-3 py-2 text-xs font-bold text-ruby-700 transition hover:bg-ruby-100"
                           >
                             View Order
                           </button>

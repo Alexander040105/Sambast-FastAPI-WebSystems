@@ -132,7 +132,7 @@ function ProductForm({ product, categories, onSave, onCancel, saving }) {
               }
               required
               placeholder="Enter product name"
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
             />
           </div>
 
@@ -146,7 +146,7 @@ function ProductForm({ product, categories, onSave, onCancel, saving }) {
               onChange={(event) =>
                 updateField('category_id', event.target.value)
               }
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
             >
               <option value="">No category</option>
 
@@ -172,7 +172,7 @@ function ProductForm({ product, categories, onSave, onCancel, saving }) {
                 updateField('unit', event.target.value)
               }
               placeholder="e.g. kg"
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
             />
           </div>
 
@@ -188,7 +188,7 @@ function ProductForm({ product, categories, onSave, onCancel, saving }) {
               }
               rows={4}
               placeholder="Describe the product..."
-              className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+              className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
             />
           </div>
         </div>
@@ -225,7 +225,7 @@ function ProductForm({ product, categories, onSave, onCancel, saving }) {
                 }
                 required
                 placeholder="0.00"
-                className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-9 pr-4 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-9 pr-4 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
               />
             </div>
           </div>
@@ -244,7 +244,7 @@ function ProductForm({ product, categories, onSave, onCancel, saving }) {
                 updateField('stock_quantity', event.target.value)
               }
               placeholder="0"
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
             />
           </div>
 
@@ -265,7 +265,7 @@ function ProductForm({ product, categories, onSave, onCancel, saving }) {
                 )
               }
               placeholder="0.000"
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
             />
           </div>
         </div>
@@ -294,7 +294,7 @@ function ProductForm({ product, categories, onSave, onCancel, saving }) {
                 updateField('image_url', event.target.value)
               }
               placeholder="https://example.com/product.jpg"
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
             />
           </div>
 
@@ -309,7 +309,7 @@ function ProductForm({ product, categories, onSave, onCancel, saving }) {
                 updateField('purpose', event.target.value)
               }
               placeholder="Product purpose"
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
             />
           </div>
 
@@ -327,7 +327,7 @@ function ProductForm({ product, categories, onSave, onCancel, saving }) {
                 )
               }
               placeholder="Target species"
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
             />
           </div>
 
@@ -342,7 +342,7 @@ function ProductForm({ product, categories, onSave, onCancel, saving }) {
                 updateField('tags', event.target.value)
               }
               placeholder="tag1, tag2"
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
             />
           </div>
         </div>
@@ -358,7 +358,7 @@ function ProductForm({ product, categories, onSave, onCancel, saving }) {
                   event.target.checked
                 )
               }
-              className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              className="mt-1 h-4 w-4 rounded border-slate-300 text-ruby-600 focus:ring-ruby-500"
             />
 
             <span>
@@ -386,7 +386,7 @@ function ProductForm({ product, categories, onSave, onCancel, saving }) {
         <button
           type="submit"
           disabled={saving}
-          className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl bg-ruby-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-ruby-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving
             ? 'Saving...'
@@ -476,7 +476,7 @@ function CategoryManager({ categories, onRefresh }) {
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 px-6 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-lg">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ruby-50 text-lg">
             🗂️
           </div>
 
@@ -507,13 +507,13 @@ function CategoryManager({ categories, onRefresh }) {
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="New category name"
-            className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+            className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
           />
 
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
+            className="rounded-xl bg-ruby-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-ruby-700 disabled:opacity-50"
           >
             {saving ? 'Adding...' : '+ Add Category'}
           </button>
@@ -543,7 +543,7 @@ function CategoryManager({ categories, onRefresh }) {
                       onChange={(event) =>
                         setEditingName(event.target.value)
                       }
-                      className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                      className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
                     />
 
                     <div className="flex gap-2">
@@ -551,7 +551,7 @@ function CategoryManager({ categories, onRefresh }) {
                         type="button"
                         onClick={() => saveCategory(category.id)}
                         disabled={saving}
-                        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                        className="rounded-lg bg-ruby-600 px-4 py-2 text-sm font-semibold text-white hover:bg-ruby-700 disabled:opacity-50"
                       >
                         Save
                       </button>
@@ -571,7 +571,7 @@ function CategoryManager({ categories, onRefresh }) {
                 ) : (
                   <>
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-sm font-bold text-indigo-600 shadow-sm">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-sm font-bold text-ruby-600 shadow-sm">
                         {category.name.charAt(0).toUpperCase()}
                       </div>
 
@@ -753,7 +753,7 @@ export default function Catalog() {
       {/* Page heading */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-indigo-600">
+          <p className="text-sm font-semibold text-ruby-600">
             Product Management
           </p>
 
@@ -772,7 +772,7 @@ export default function Catalog() {
             setEditingProduct(null);
             setShowProductForm(true);
           }}
-          className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+          className="inline-flex items-center justify-center rounded-xl bg-ruby-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-ruby-700"
         >
           + Add Product
         </button>
@@ -804,7 +804,7 @@ export default function Catalog() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-lg">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ruby-50 text-lg">
                   📦
                 </div>
 
@@ -873,7 +873,7 @@ export default function Catalog() {
                     setSearch(event.target.value)
                   }
                   placeholder="Search by product name..."
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
                 />
               </div>
 
@@ -888,7 +888,7 @@ export default function Catalog() {
                     setCategoryId(event.target.value);
                     setPage(1);
                   }}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
                 >
                   <option value="">
                     All categories
@@ -916,7 +916,7 @@ export default function Catalog() {
                     setSortBy(event.target.value);
                     setPage(1);
                   }}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-ruby-500 focus:ring-4 focus:ring-ruby-100"
                 >
                   <option value="created_at">
                     Created Date
@@ -952,7 +952,7 @@ export default function Catalog() {
                     );
                     setPage(1);
                   }}
-                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-4 w-4 rounded border-slate-300 text-ruby-600 focus:ring-ruby-500"
                 />
 
                 Include archived products
@@ -969,7 +969,7 @@ export default function Catalog() {
                     setSortOrder(event.target.value);
                     setPage(1);
                   }}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-ruby-500"
                 >
                   <option value="desc">
                     Descending
@@ -986,7 +986,7 @@ export default function Catalog() {
           <div className="mt-6">
             {loading ? (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-12 text-center">
-                <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600" />
+                <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-ruby-600" />
 
                 <p className="text-sm font-medium text-slate-600">
                   Loading products...
@@ -1046,7 +1046,7 @@ export default function Catalog() {
                         >
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 font-bold text-indigo-600">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ruby-50 font-bold text-ruby-600">
                                 {product.name
                                   ?.charAt(0)
                                   .toUpperCase() || 'P'}

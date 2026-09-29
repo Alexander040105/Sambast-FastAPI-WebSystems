@@ -6,9 +6,9 @@
 }
 
 .dispatcher-layout {
-  --color-primary: #c65d3b;
-  --color-primary-hover: #ae4e30;
-  --color-primary-dark: #a9472a;
+  --color-primary: #a6171c;
+  --color-primary-hover: #8f161b;
+  --color-primary-dark: #7b1f24;
   --color-primary-light: #f7e9e2;
   --color-sambast-paper: #f5f2ec;
   --color-sambast-surface: #fffdf9;
@@ -177,18 +177,18 @@
 
 /* Approved light sidebar shell treatment for the implemented Fleet and Dispatch Queue screens. */
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) {
-  --drivers-canvas: #f7f7fb;
-  --drivers-sidebar: #f4f4f8;
+  --drivers-canvas: #f9f8f6;
+  --drivers-sidebar: #f1ede6;
   --drivers-surface: #ffffff;
-  --drivers-header: #f1f1f6;
-  --drivers-border: #e2e4ed;
-  --drivers-border-strong: #d6d8e2;
-  --drivers-text: #262831;
-  --drivers-secondary: #666a79;
-  --drivers-muted: #858998;
+  --drivers-header: #f1ede6;
+  --drivers-border: #e8e3d9;
+  --drivers-border-strong: #d6d0c5;
+  --drivers-text: #1a323e;
+  --drivers-secondary: #5f5950;
+  --drivers-muted: #8c8378;
   --drivers-accent: #efb91a;
   --drivers-accent-soft: #fff4d2;
-  --drivers-action: #635bc5;
+  --drivers-action: #a6171c;
   --drivers-success: #168044;
   --drivers-success-soft: #def5e5;
   --drivers-warning: #98600b;
@@ -257,7 +257,7 @@
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link[aria-label="Dashboard"] { display: none; }
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link .dispatcher-nav-icon { flex: 0 0 16px; height: 16px; margin-right: 8px; width: 16px; }
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-text { display: inline; font-size: 12px; font-weight: 450; }
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link:hover { background: #ececf2; color: var(--drivers-text); }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link:hover { background: #e8e3d9; color: var(--drivers-text); }
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link.active { background: var(--drivers-accent-soft); color: var(--drivers-text); font-weight: 600; }
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-nav-link.active::before { background: var(--drivers-accent); height: 18px; left: 0; width: 2px; }
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-sidebar .dispatcher-logout { color: var(--drivers-secondary); justify-content: flex-start; margin-top: auto; padding: 0 8px; width: 100%; }
@@ -265,7 +265,7 @@
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-sidebar .dispatcher-logout .dispatcher-nav-text { display: inline; font-size: 12px; }
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-account-footer { border-top: 1px solid var(--drivers-border); display: flex; flex-direction: column; gap: 6px; margin-top: auto; min-width: 0; padding: 10px 2px 1px; }
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-account-row { align-items: center; display: flex; gap: 8px; min-width: 0; }
-.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-user-avatar { align-items: center; background: #e7e7ef; border-radius: 50%; color: var(--drivers-secondary); display: inline-flex; flex: 0 0 22px; font-size: 8px; font-weight: 650; height: 22px; justify-content: center; }
+.dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-user-avatar { align-items: center; background: #e8e3d9; border-radius: 50%; color: var(--drivers-secondary); display: inline-flex; flex: 0 0 22px; font-size: 8px; font-weight: 650; height: 22px; justify-content: center; }
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-user-copy { display: grid; gap: 2px; min-width: 0; }
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-user-copy strong { color: var(--drivers-text); font-size: 9px; font-weight: 650; line-height: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dispatcher-layout:is(.drivers-figma-view, .vehicles-figma-view, .shifts-figma-view, .dispatch-figma-view, .routes-figma-view) .dispatcher-user-copy small { color: var(--drivers-muted); font-size: 8px; line-height: 10px; text-transform: capitalize; }

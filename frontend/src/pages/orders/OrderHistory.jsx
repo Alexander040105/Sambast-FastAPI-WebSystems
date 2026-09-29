@@ -131,7 +131,7 @@ function OrderHistory() {
 
           <Link
             to="/customer"
-            className="mt-6 inline-block rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-700"
+            className="mt-6 inline-block rounded-lg bg-ruby-600 px-5 py-2.5 font-medium text-white hover:bg-ruby-700"
           >
             Start Shopping
           </Link>
@@ -161,7 +161,7 @@ function OrderHistory() {
                   </div>
 
                   <div className="flex flex-col items-start gap-2 md:items-end">
-                    <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
+                    <span className="rounded-full bg-ruby-100 px-3 py-1 text-xs font-semibold text-ruby-700">
                       {order.status || 'UNKNOWN'}
                     </span>
 
@@ -208,7 +208,7 @@ function OrderHistory() {
                     to={`/customer/orders/${encodeURIComponent(
                       order.order_no
                     )}`}
-                    className="block rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-indigo-700"
+                    className="block rounded-lg bg-ruby-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-ruby-700"
                   >
                     View Order
                   </Link>

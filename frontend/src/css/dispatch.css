@@ -518,7 +518,7 @@
   transition: background-color 120ms ease, border-color 120ms ease;
   width: 100%;
 }
-.dispatcher-layout.dispatch-figma-view .dispatch-order-card:hover { background: #f8f8fb; }
+.dispatcher-layout.dispatch-figma-view .dispatch-order-card:hover { background: #f9f8f6; }
 .dispatcher-layout.dispatch-figma-view .dispatch-order-card.is-selected { background: var(--drivers-accent-soft); border-left-color: var(--drivers-accent); }
 .dispatcher-layout.dispatch-figma-view .dispatch-order-card:focus-visible { outline: 2px solid var(--drivers-accent); outline-offset: -2px; }
 .dispatcher-layout.dispatch-figma-view .dispatch-order-card-top { align-items: baseline; display: flex; gap: 8px; justify-content: space-between; }
@@ -568,8 +568,8 @@
 .dispatcher-layout.dispatch-figma-view .dispatch-order-facts dd,
 .dispatcher-layout.dispatch-figma-view .dispatch-recommendation-facts dd { color: var(--drivers-text); font-size: 10px; font-weight: 550; line-height: 15px; margin-top: 2px; }
 .dispatcher-layout.dispatch-figma-view .dispatch-recommendation {
-  background: #f0effa;
-  border: 1px solid #dfdef0;
+  background: #f1ede6;
+  border: 1px solid #e8e3d9;
   border-radius: 6px;
   padding: 0 13px 10px;
 }

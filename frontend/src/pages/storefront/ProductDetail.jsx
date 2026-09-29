@@ -94,7 +94,7 @@ function ProductDetail() {
 
           <Link
             to="/customer"
-            className="mt-5 inline-block rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+            className="mt-5 inline-block rounded-lg bg-ruby-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-ruby-700"
           >
             Back to Store
           </Link>
@@ -112,7 +112,7 @@ function ProductDetail() {
 
         <Link
           to="/customer"
-          className="mt-5 inline-block text-indigo-600 hover:text-indigo-700"
+          className="mt-5 inline-block text-ruby-600 hover:text-ruby-700"
         >
           Back to Store
         </Link>
@@ -127,7 +127,7 @@ function ProductDetail() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       <Link
         to="/customer"
-        className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+        className="text-sm font-medium text-ruby-600 hover:text-ruby-700"
       >
         ← Back to Store
       </Link>
@@ -163,7 +163,7 @@ function ProductDetail() {
               Base Price
             </p>
 
-            <p className="text-3xl font-bold text-indigo-600">
+            <p className="text-3xl font-bold text-ruby-600">
               ₱{basePrice.toFixed(2)}
             </p>
           </div>
@@ -188,7 +188,7 @@ function ProductDetail() {
 
                   setSelectedUnit(unit || null);
                 }}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
               >
                 {unitOptions.map((unit) => (
                   <option
@@ -241,7 +241,7 @@ function ProductDetail() {
                 onChange={(event) =>
                   handleQuantityChange(event.target.value)
                 }
-                className="w-20 rounded-lg border border-gray-300 px-3 py-2.5 text-center outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                className="w-20 rounded-lg border border-gray-300 px-3 py-2.5 text-center outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
               />
 
               <button
@@ -267,7 +267,7 @@ function ProductDetail() {
           <button
             type="button"
             onClick={handleAddToCart}
-            className="mt-6 w-full rounded-lg bg-indigo-600 px-5 py-3 font-medium text-white hover:bg-indigo-700"
+            className="mt-6 w-full rounded-lg bg-ruby-600 px-5 py-3 font-medium text-white hover:bg-ruby-700"
           >
             Add to Cart
           </button>

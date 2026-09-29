@@ -1,15 +1,15 @@
 .ops-shell {
-  --ops-bg: #f7f7fb;
+  --ops-bg: #f9f8f6;
   --ops-surface: #ffffff;
-  --ops-text: #25262b;
-  --ops-text-secondary: #626674;
-  --ops-muted: #858998;
-  --ops-border: #e1e3eb;
+  --ops-text: #1a323e;
+  --ops-text-secondary: #5f5950;
+  --ops-muted: #8c8378;
+  --ops-border: #e8e3d9;
   --ops-yellow: #efb91a;
   --ops-yellow-soft: #fff4d2;
-  --ops-periwinkle: #7771ba;
+  --ops-periwinkle: #a6171c;
   --ops-danger: #b42318;
-  --ops-chart-hover: #f3f3f8;
+  --ops-chart-hover: #f1ede6;
   background: var(--ops-bg);
   color: var(--ops-text);
   display: flex;
@@ -21,7 +21,7 @@
 
 .ops-sidebar-footer { border-top: 1px solid var(--drivers-border); display: flex; flex-direction: column; gap: 6px; margin-top: auto; min-width: 0; padding: 10px 2px 1px; }
 .ops-account-row { align-items: center; display: flex; gap: 8px; min-width: 0; }
-.ops-user-avatar { align-items: center; background: #e7e7ef; border-radius: 50%; color: var(--ops-text-secondary); display: inline-flex; flex: 0 0 22px; font-size: 8px; font-weight: 650; height: 22px; justify-content: center; }
+.ops-user-avatar { align-items: center; background: #e8e3d9; border-radius: 50%; color: var(--ops-text-secondary); display: inline-flex; flex: 0 0 22px; font-size: 8px; font-weight: 650; height: 22px; justify-content: center; }
 .ops-user-copy { display: grid; gap: 2px; min-width: 0; }
 .ops-user-copy strong { color: var(--ops-text); font-size: 9px; font-weight: 650; line-height: 12px; }
 .ops-user-copy small { color: var(--ops-muted); font-size: 8px; line-height: 10px; text-transform: capitalize; }
@@ -52,7 +52,7 @@
 .ops-panel-heading p { color: var(--ops-muted); font-size: 8px; line-height: 12px; margin: 1px 0 0; }
 .ops-performance-heading { align-items: flex-start; }
 .ops-summary-chips { align-items: center; display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 5px; justify-content: flex-end; }
-.ops-summary-chip { align-items: center; background: #f2f2f7; border-radius: 4px; color: var(--ops-text); display: inline-flex; font-size: 8px; font-weight: 650; gap: 5px; line-height: 12px; padding: 4px 7px; text-transform: uppercase; white-space: nowrap; }
+.ops-summary-chip { align-items: center; background: #f1ede6; border-radius: 4px; color: var(--ops-text); display: inline-flex; font-size: 8px; font-weight: 650; gap: 5px; line-height: 12px; padding: 4px 7px; text-transform: uppercase; white-space: nowrap; }
 .ops-summary-chip i, .ops-reason-name i { background: var(--chip-color); border-radius: 50%; flex: 0 0 5px; height: 5px; width: 5px; }
 .ops-chart { min-width: 0; width: 100%; }
 .ops-performance-chart { height: 102px; margin-top: 2px; }

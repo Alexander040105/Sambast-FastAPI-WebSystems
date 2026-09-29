@@ -33,7 +33,7 @@ export default function AdminLayout() {
         <aside className="hidden w-72 flex-col border-r border-slate-200 bg-white lg:flex">
           <div className="border-b border-slate-200 px-6 py-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-xl text-white shadow-sm">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-ruby-600 text-xl text-white shadow-sm">
                 S
               </div>
 
@@ -63,14 +63,14 @@ export default function AdminLayout() {
                     to={link.path}
                     className={`group flex items-center gap-3 rounded-xl px-3 py-3 transition ${
                       active
-                        ? 'bg-indigo-50 text-indigo-700'
+                        ? 'bg-ruby-50 text-ruby-700'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
                     <span
                       className={`flex h-10 w-10 items-center justify-center rounded-lg text-lg ${
                         active
-                          ? 'bg-indigo-600 text-white'
+                          ? 'bg-ruby-600 text-white'
                           : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
                       }`}
                     >
@@ -123,7 +123,7 @@ export default function AdminLayout() {
           <header className="border-b border-slate-200 bg-white">
             <div className="flex items-center justify-between px-5 py-4 sm:px-8">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600">
+                <p className="text-xs font-semibold uppercase tracking-wider text-ruby-600">
                   Delivery Management
                 </p>
 
@@ -144,7 +144,7 @@ export default function AdminLayout() {
                   </p>
                 </div>
 
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ruby-100 font-bold text-ruby-700">
                   {(user?.name || 'A').charAt(0).toUpperCase()}
                 </div>
               </div>
@@ -162,7 +162,7 @@ export default function AdminLayout() {
                       to={link.path}
                       className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold ${
                         active
-                          ? 'bg-indigo-600 text-white'
+                          ? 'bg-ruby-600 text-white'
                           : 'bg-slate-100 text-slate-600'
                       }`}
                     >

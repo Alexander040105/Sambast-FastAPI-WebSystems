@@ -104,7 +104,7 @@ function OtpVerification() {
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-10">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-indigo-600">
+          <h1 className="text-3xl font-bold text-ruby-600">
             Sambast
           </h1>
 
@@ -134,7 +134,7 @@ function OtpVerification() {
               setError('');
               setMessage('');
             }}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
           />
         </div>
 
@@ -184,7 +184,7 @@ function OtpVerification() {
               }}
               required
               placeholder="123456"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl tracking-widest outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
             />
 
             <p className="mt-1 text-xs text-gray-500">
@@ -195,7 +195,7 @@ function OtpVerification() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-lg bg-indigo-600 px-5 py-3 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg bg-ruby-600 px-5 py-3 font-medium text-white hover:bg-ruby-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading
               ? 'Verifying...'
@@ -208,7 +208,7 @@ function OtpVerification() {
             type="button"
             onClick={handleResend}
             disabled={isResending}
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="text-sm font-medium text-ruby-600 hover:text-ruby-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isResending
               ? 'Resending...'

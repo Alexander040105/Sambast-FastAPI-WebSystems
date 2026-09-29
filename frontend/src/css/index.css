@@ -66,37 +66,300 @@
 }
 
 @theme {
-  /* Sambast accent: warm burnt-terracotta — distinctive earthy logistics identity, not blue/teal.
-     Reserved for active navigation, primary actions, focus, and key highlights. */
-  --color-primary: #d9583b;
-  --color-primary-hover: #a93e2a;
-  --color-primary-light: #fbedE8;
-  --color-primary-dark: #a93e2a;
+  /* Legacy palette — ported from static/css/ (the Flask app's design
+     system). Ruby is the action color, ink-slate carries type and
+     chrome, cream/bone carry surfaces. */
 
-  --color-success: #287a4b;
-  --color-success-light: #edf4ef;
-  --color-warning: #b66a00;
-  --color-warning-light: #f8f1e5;
-  --color-danger: #b9382f;
-  --color-danger-light: #f8ecea;
+  --color-primary: #a6171c;
+  --color-primary-hover: #8f161b;
+  --color-primary-light: #fbefed;
+  --color-primary-dark: #7b1f24;
 
-  --color-sambast-paper: #f7f6f2;
+  --color-success: #4caf50;
+  --color-success-light: #eff7ef;
+  --color-warning: #9c740d;
+  --color-warning-light: #fdf8ec;
+  --color-danger: #d62828;
+  --color-danger-light: #fdecec;
+
+  --color-sambast-paper: #f9f8f6;
   --color-sambast-surface: #ffffff;
-  --color-sambast-line: #dddad2;
-  --color-sambast-ink: #252522;
-  --color-sambast-muted: #6f6d66;
-  --color-sambast-hover: #f1f0ed;
+  --color-sambast-line: #d6d0c5;
+  --color-sambast-ink: #1a323e;
+  --color-sambast-muted: #314047;
+  --color-sambast-hover: #f1ede6;
 
-  --color-gray-50: #fafafa;
-  --color-gray-100: #f5f5f5;
-  --color-gray-200: #e5e5e5;
-  --color-gray-300: #d4d4d4;
-  --color-gray-400: #a3a3a3;
-  --color-gray-500: #737373;
-  --color-gray-600: #525252;
-  --color-gray-700: #404040;
-  --color-gray-800: #262626;
-  --color-gray-900: #171717;
+  /* Ruby ramp — primary actions, brand, links. Anchor 600 = #A6171C. */
+  --color-ruby-50: #fbefed;
+  --color-ruby-100: #f6ddda;
+  --color-ruby-200: #ebb4af;
+  --color-ruby-300: #dd8480;
+  --color-ruby-400: #c94f4e;
+  --color-ruby-500: #b02e2e;
+  --color-ruby-600: #a6171c;
+  --color-ruby-700: #8f161b;
+  --color-ruby-800: #7b1f24;
+  --color-ruby-900: #5c191d;
+  --color-ruby-950: #3b0f12;
+
+  /* Warm neutral ramp — bone highlights into ink darks. */
+  --color-gray-50: #f9f8f6;
+  --color-gray-100: #f1ede6;
+  --color-gray-200: #e8e3d9;
+  --color-gray-300: #d6d0c5;
+  --color-gray-400: #b3aa9c;
+  --color-gray-500: #8c8378;
+  --color-gray-600: #5f5950;
+  --color-gray-700: #314047;
+  --color-gray-800: #24333b;
+  --color-gray-900: #1a323e;
+  --color-gray-950: #0f1e26;
+
+  --color-slate-50: #f9f8f6;
+  --color-slate-100: #f1ede6;
+  --color-slate-200: #e8e3d9;
+  --color-slate-300: #d6d0c5;
+  --color-slate-400: #b3aa9c;
+  --color-slate-500: #8c8378;
+  --color-slate-600: #5f5950;
+  --color-slate-700: #314047;
+  --color-slate-800: #24333b;
+  --color-slate-900: #1a323e;
+  --color-slate-950: #0f1e26;
+
+  /* Danger — legacy error reds, brighter than the brand ruby. */
+  --color-red-50: #fdecec;
+  --color-red-100: #fadcda;
+  --color-red-200: #f4b7b4;
+  --color-red-300: #ec8884;
+  --color-red-400: #e05550;
+  --color-red-500: #dc3545;
+  --color-red-600: #d62828;
+  --color-red-700: #b42318;
+  --color-red-800: #991b14;
+  --color-red-900: #7b1610;
+  --color-red-950: #420b08;
+
+  /* Success — legacy greens. */
+  --color-green-50: #eff7ef;
+  --color-green-100: #def5e5;
+  --color-green-200: #bee6cb;
+  --color-green-300: #8fd3a0;
+  --color-green-400: #66bb6a;
+  --color-green-500: #4caf50;
+  --color-green-600: #3f8f44;
+  --color-green-700: #2e7034;
+  --color-green-800: #235a28;
+  --color-green-900: #1a4720;
+  --color-green-950: #0c2810;
+
+  --color-emerald-50: #eff7ef;
+  --color-emerald-100: #def5e5;
+  --color-emerald-200: #bee6cb;
+  --color-emerald-300: #8fd3a0;
+  --color-emerald-400: #66bb6a;
+  --color-emerald-500: #4caf50;
+  --color-emerald-600: #3f8f44;
+  --color-emerald-700: #2e7034;
+  --color-emerald-800: #235a28;
+  --color-emerald-900: #1a4720;
+  --color-emerald-950: #0c2810;
+
+  /* Sunny amber — secondary accent, warnings. Anchor 400 = #F1C045. */
+  --color-amber-50: #fdf8ec;
+  --color-amber-100: #fff4d2;
+  --color-amber-200: #f6dfa6;
+  --color-amber-300: #f2ce6f;
+  --color-amber-400: #f1c045;
+  --color-amber-500: #e4ac12;
+  --color-amber-600: #c7950f;
+  --color-amber-700: #9c740d;
+  --color-amber-800: #73520b;
+  --color-amber-900: #523b08;
+  --color-amber-950: #2e2004;
+
+  --color-yellow-50: #fdf8ec;
+  --color-yellow-100: #fff4d2;
+  --color-yellow-200: #f6dfa6;
+  --color-yellow-300: #f2ce6f;
+  --color-yellow-400: #f1c045;
+  --color-yellow-500: #e4ac12;
+  --color-yellow-600: #c7950f;
+  --color-yellow-700: #9c740d;
+  --color-yellow-800: #73520b;
+  --color-yellow-900: #523b08;
+  --color-yellow-950: #2e2004;
+
+  --color-orange-50: #fdf8ec;
+  --color-orange-100: #fff4d2;
+  --color-orange-200: #f6dfa6;
+  --color-orange-300: #f2ce6f;
+  --color-orange-400: #f1c045;
+  --color-orange-500: #e4ac12;
+  --color-orange-600: #c7950f;
+  --color-orange-700: #9c740d;
+  --color-orange-800: #73520b;
+  --color-orange-900: #523b08;
+  --color-orange-950: #2e2004;
+
+  /* Ink-slate ramp — informational accents, badges, links. */
+  --color-blue-50: #f2f6f7;
+  --color-blue-100: #e3ebee;
+  --color-blue-200: #c6d4da;
+  --color-blue-300: #9fb6bf;
+  --color-blue-400: #6e8a96;
+  --color-blue-500: #4a6572;
+  --color-blue-600: #3a5562;
+  --color-blue-700: #314047;
+  --color-blue-800: #24333b;
+  --color-blue-900: #1a323e;
+  --color-blue-950: #0e1c24;
+
+  --color-sky-50: #f2f6f7;
+  --color-sky-100: #e3ebee;
+  --color-sky-200: #c6d4da;
+  --color-sky-300: #9fb6bf;
+  --color-sky-400: #6e8a96;
+  --color-sky-500: #4a6572;
+  --color-sky-600: #3a5562;
+  --color-sky-700: #314047;
+  --color-sky-800: #24333b;
+  --color-sky-900: #1a323e;
+  --color-sky-950: #0e1c24;
+
+  --color-cyan-50: #f2f6f7;
+  --color-cyan-100: #e3ebee;
+  --color-cyan-200: #c6d4da;
+  --color-cyan-300: #9fb6bf;
+  --color-cyan-400: #6e8a96;
+  --color-cyan-500: #4a6572;
+  --color-cyan-600: #3a5562;
+  --color-cyan-700: #314047;
+  --color-cyan-800: #24333b;
+  --color-cyan-900: #1a323e;
+  --color-cyan-950: #0e1c24;
+
+  --color-violet-50: #f2f6f7;
+  --color-violet-100: #e3ebee;
+  --color-violet-200: #c6d4da;
+  --color-violet-300: #9fb6bf;
+  --color-violet-400: #6e8a96;
+  --color-violet-500: #4a6572;
+  --color-violet-600: #3a5562;
+  --color-violet-700: #314047;
+  --color-violet-800: #24333b;
+  --color-violet-900: #1a323e;
+  --color-violet-950: #0e1c24;
+
+  --color-purple-50: #f2f6f7;
+  --color-purple-100: #e3ebee;
+  --color-purple-200: #c6d4da;
+  --color-purple-300: #9fb6bf;
+  --color-purple-400: #6e8a96;
+  --color-purple-500: #4a6572;
+  --color-purple-600: #3a5562;
+  --color-purple-700: #314047;
+  --color-purple-800: #24333b;
+  --color-purple-900: #1a323e;
+  --color-purple-950: #0e1c24;
+
+  /* Rose/pink/fuchsia collapse onto the brand ramp. */
+  --color-rose-50: #fbefed;
+  --color-rose-100: #f6ddda;
+  --color-rose-200: #ebb4af;
+  --color-rose-300: #dd8480;
+  --color-rose-400: #c94f4e;
+  --color-rose-500: #b02e2e;
+  --color-rose-600: #a6171c;
+  --color-rose-700: #8f161b;
+  --color-rose-800: #7b1f24;
+  --color-rose-900: #5c191d;
+  --color-rose-950: #3b0f12;
+
+  --color-pink-50: #fbefed;
+  --color-pink-100: #f6ddda;
+  --color-pink-200: #ebb4af;
+  --color-pink-300: #dd8480;
+  --color-pink-400: #c94f4e;
+  --color-pink-500: #b02e2e;
+  --color-pink-600: #a6171c;
+  --color-pink-700: #8f161b;
+  --color-pink-800: #7b1f24;
+  --color-pink-900: #5c191d;
+  --color-pink-950: #3b0f12;
+
+  --color-fuchsia-50: #fbefed;
+  --color-fuchsia-100: #f6ddda;
+  --color-fuchsia-200: #ebb4af;
+  --color-fuchsia-300: #dd8480;
+  --color-fuchsia-400: #c94f4e;
+  --color-fuchsia-500: #b02e2e;
+  --color-fuchsia-600: #a6171c;
+  --color-fuchsia-700: #8f161b;
+  --color-fuchsia-800: #7b1f24;
+  --color-fuchsia-900: #5c191d;
+  --color-fuchsia-950: #3b0f12;
+
+  /* Remaining neutrals pinned to the warm ramp as well. */
+  --color-zinc-50: #f9f8f6;
+  --color-zinc-100: #f1ede6;
+  --color-zinc-200: #e8e3d9;
+  --color-zinc-300: #d6d0c5;
+  --color-zinc-400: #b3aa9c;
+  --color-zinc-500: #8c8378;
+  --color-zinc-600: #5f5950;
+  --color-zinc-700: #314047;
+  --color-zinc-800: #24333b;
+  --color-zinc-900: #1a323e;
+  --color-zinc-950: #0f1e26;
+
+  --color-neutral-50: #f9f8f6;
+  --color-neutral-100: #f1ede6;
+  --color-neutral-200: #e8e3d9;
+  --color-neutral-300: #d6d0c5;
+  --color-neutral-400: #b3aa9c;
+  --color-neutral-500: #8c8378;
+  --color-neutral-600: #5f5950;
+  --color-neutral-700: #314047;
+  --color-neutral-800: #24333b;
+  --color-neutral-900: #1a323e;
+  --color-neutral-950: #0f1e26;
+
+  --color-stone-50: #f9f8f6;
+  --color-stone-100: #f1ede6;
+  --color-stone-200: #e8e3d9;
+  --color-stone-300: #d6d0c5;
+  --color-stone-400: #b3aa9c;
+  --color-stone-500: #8c8378;
+  --color-stone-600: #5f5950;
+  --color-stone-700: #314047;
+  --color-stone-800: #24333b;
+  --color-stone-900: #1a323e;
+  --color-stone-950: #0f1e26;
+
+  --color-teal-50: #eff7ef;
+  --color-teal-100: #def5e5;
+  --color-teal-200: #bee6cb;
+  --color-teal-300: #8fd3a0;
+  --color-teal-400: #66bb6a;
+  --color-teal-500: #4caf50;
+  --color-teal-600: #3f8f44;
+  --color-teal-700: #2e7034;
+  --color-teal-800: #235a28;
+  --color-teal-900: #1a4720;
+  --color-teal-950: #0c2810;
+
+  --color-lime-50: #eff7ef;
+  --color-lime-100: #def5e5;
+  --color-lime-200: #bee6cb;
+  --color-lime-300: #8fd3a0;
+  --color-lime-400: #66bb6a;
+  --color-lime-500: #4caf50;
+  --color-lime-600: #3f8f44;
+  --color-lime-700: #2e7034;
+  --color-lime-800: #235a28;
+  --color-lime-900: #1a4720;
+  --color-lime-950: #0c2810;
 
   --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;

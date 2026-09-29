@@ -83,7 +83,7 @@ function SetPin() {
           <button
             type="button"
             onClick={() => navigate('/register')}
-            className="mt-6 rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-700"
+            className="mt-6 rounded-lg bg-ruby-600 px-5 py-2.5 font-medium text-white hover:bg-ruby-700"
           >
             Back to Registration
           </button>
@@ -96,7 +96,7 @@ function SetPin() {
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-10">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-indigo-600">
+          <h1 className="text-3xl font-bold text-ruby-600">
             Sambast
           </h1>
 
@@ -125,7 +125,7 @@ function SetPin() {
               setEmail(event.target.value);
               setError('');
             }}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
           />
         </div>
 
@@ -166,7 +166,7 @@ function SetPin() {
               }}
               required
               placeholder="••••"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl tracking-widest outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
             />
           </div>
 
@@ -195,14 +195,14 @@ function SetPin() {
               }}
               required
               placeholder="••••"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl tracking-widest outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-lg bg-indigo-600 px-5 py-3 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg bg-ruby-600 px-5 py-3 font-medium text-white hover:bg-ruby-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading
               ? 'Setting PIN...'
