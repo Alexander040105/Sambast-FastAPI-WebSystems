@@ -41,7 +41,7 @@ POST /api/v1/auth/login
 ## Self-registration flows (make new accounts at runtime)
 
 - **New customer:** `POST /auth/register` → `POST /auth/otp/verify`
-  (code sent via SMTP email — check `AUTH_GUIDE.md`) →
+  (code sent via SMTP email) →
   `POST /auth/pin/set` → then PIN login above.
 - **New driver:** `POST /auth/register/driver` with
   `{email, password, name, license_no, ...}` — returns tokens

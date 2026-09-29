@@ -1,5 +1,8 @@
 # Database
 database.db
+*.db
+*.sqlite
+*.sqlite3
 
 # Python cache files
 __pycache__/
@@ -28,5 +31,9 @@ backend/uploads/
 
 seed_data.py
 create_admin.py
+
+# Editor/IDE config
+.vscode/
+.idea/
 
 AGENTS.md
