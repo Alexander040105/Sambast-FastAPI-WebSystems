@@ -54,9 +54,17 @@ function Login() {
         });
       }
 
-      navigate('/customer', {
-        replace: true,
-      });
+      const userRole = authData?.user?.role;
+
+      if (userRole === 'admin') {
+        navigate('/admin/catalog', {
+          replace: true,
+        });
+      } else {
+        navigate('/customer', {
+          replace: true,
+        });
+      }
     } catch (err) {
       setError(
         err.message ||
@@ -171,9 +179,7 @@ function Login() {
             disabled={isLoading}
             className="w-full rounded-lg bg-indigo-600 px-5 py-3 font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isLoading
-              ? 'Logging in...'
-              : 'Login'}
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
