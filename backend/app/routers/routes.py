@@ -14,6 +14,7 @@ from app.models.driver_shift import DriverShift
 from app.models.vehicle import Vehicle
 from app.models.user import User
 from app.models.proof_of_delivery import ProofOfDelivery
+from app.models.customer import Customer
 from app.schemas.route import RouteCreateRequest, RouteReorderRequest, RouteDetailResponse, StopResponse, RouteAvailableItem
 from typing import List
 from datetime import datetime, timezone
@@ -21,55 +22,91 @@ from app.services.routing import optimize_route
 
 router = APIRouter(prefix="/routes", tags=["Routes"])
 
-def get_stop_response(db: Session, stop: DeliveryStop) -> StopResponse:
-    delivery = db.query(Delivery).filter(Delivery.id == stop.delivery_id).first()
-    order = db.query(Order).filter(Order.id == delivery.order_id).first() if delivery else None
-    loc = db.query(Location).filter(Location.id == stop.location_id).first() if stop.location_id else None
-    
-    address = f"{loc.line1}, {loc.city}" if loc else "Unknown address"
-    if loc and loc.province:
-        address = f"{loc.line1}, {loc.city}, {loc.province}"
-    destination = loc.label or loc.city if loc else "Destination"
+def build_stop_responses(db: Session, stops: List[DeliveryStop]) -> List[StopResponse]:
+    # Batch the per-stop lookups up front — one query per table instead of
+    # five queries per stop (N+1 made route detail take ~20s on Neon).
+    deliveries = db.query(Delivery).filter(
+        Delivery.id.in_([s.delivery_id for s in stops])
+    ).all() if stops else []
+    deliveries_by_id = {d.id: d for d in deliveries}
 
-    window = "Not provided"
-    if order and order.delivery_window_start and order.delivery_window_end:
-        window = f"{order.delivery_window_start.strftime('%H:%M')} - {order.delivery_window_end.strftime('%H:%M')}"
+    order_ids = [d.order_id for d in deliveries if d.order_id]
+    orders = db.query(Order).filter(Order.id.in_(order_ids)).all() if order_ids else []
+    orders_by_id = {o.id: o for o in orders}
 
-    # Query real ProofOfDelivery if present
-    pod = db.query(ProofOfDelivery).filter(ProofOfDelivery.delivery_id == delivery.id).order_by(ProofOfDelivery.id.desc()).first() if delivery else None
+    loc_ids = [s.location_id for s in stops if s.location_id]
+    locations = db.query(Location).filter(Location.id.in_(loc_ids)).all() if loc_ids else []
+    locations_by_id = {l.id: l for l in locations}
 
-    # Compute weight
-    weight_str = "1.0 kg"
-    if order:
-        items = db.query(OrderItem, Product).outerjoin(Product, OrderItem.product_id == Product.id).filter(OrderItem.order_id == order.id).all()
-        total_w = sum(float(p.weight_kg_per_unit or 0.0) * float(it.quantity or 1.0) * float(it.unit_multiplier or 1.0) for it, p in items if p)
-        if total_w > 0:
-            weight_str = f"{total_w:.1f} kg"
+    delivery_ids = [d.id for d in deliveries]
+    pods = db.query(ProofOfDelivery).filter(
+        ProofOfDelivery.delivery_id.in_(delivery_ids)
+    ).order_by(ProofOfDelivery.id).all() if delivery_ids else []
+    pod_by_delivery = {}
+    for pod in pods:
+        pod_by_delivery[pod.delivery_id] = pod  # keep the latest
 
-    # Recipient
-    recipient = "Customer"
-    if order and order.customer_id:
-        cust = db.query(User).filter(User.id == order.customer_id).first()
-        if cust:
-            recipient = cust.name or cust.email.split("@")[0]
+    item_rows = db.query(OrderItem, Product).outerjoin(
+        Product, OrderItem.product_id == Product.id
+    ).filter(OrderItem.order_id.in_(order_ids)).all() if order_ids else []
+    items_by_order = {}
+    for it, p in item_rows:
+        items_by_order.setdefault(it.order_id, []).append((it, p))
 
-    return StopResponse(
-        id=stop.id,
-        delivery_id=stop.delivery_id,
-        sequence=stop.sequence_no,
-        destination=destination,
-        address=address,
-        delivery_window=window,
-        status=stop.status.lower() if stop.status else "pending",
-        weight=weight_str,
-        order_no=order.order_no if order else "UNKNOWN",
-        recipient=recipient,
-        failure_reason=delivery.failure_reason if delivery else None,
-        failure_notes=None,
-        pod_photo_name=pod.file_url if pod else None,
-        recipient_name=pod.recipient_name if pod else None,
-        delivered_at=stop.departed_at.strftime("%H:%M") if stop.departed_at else None
-    )
+    customer_ids = [o.customer_id for o in orders if o.customer_id]
+    customers = db.query(Customer).filter(Customer.id.in_(customer_ids)).all() if customer_ids else []
+    customers_by_id = {c.id: c for c in customers}
+
+    stop_responses = []
+    for stop in stops:
+        delivery = deliveries_by_id.get(stop.delivery_id)
+        order = orders_by_id.get(delivery.order_id) if delivery else None
+        loc = locations_by_id.get(stop.location_id) if stop.location_id else None
+
+        address = f"{loc.line1}, {loc.city}" if loc else "Unknown address"
+        if loc and loc.province:
+            address = f"{loc.line1}, {loc.city}, {loc.province}"
+        destination = loc.label or loc.city if loc else "Destination"
+
+        window = "Not provided"
+        if order and order.delivery_window_start and order.delivery_window_end:
+            window = f"{order.delivery_window_start.strftime('%H:%M')} - {order.delivery_window_end.strftime('%H:%M')}"
+
+        pod = pod_by_delivery.get(delivery.id) if delivery else None
+
+        weight_str = "1.0 kg"
+        if order:
+            total_w = 0.0
+            for it, p in items_by_order.get(order.id, []):
+                if p:
+                    total_w += float(p.weight_kg_per_unit or 0.0) * float(it.quantity or 1.0) * float(it.unit_multiplier or 1.0)
+            if total_w > 0:
+                weight_str = f"{total_w:.1f} kg"
+
+        recipient = "Customer"
+        if order and order.customer_id:
+            cust = customers_by_id.get(order.customer_id)
+            if cust:
+                recipient = cust.name or cust.email.split("@")[0]
+
+        stop_responses.append(StopResponse(
+            id=stop.id,
+            delivery_id=stop.delivery_id,
+            sequence=stop.sequence_no,
+            destination=destination,
+            address=address,
+            delivery_window=window,
+            status=stop.status.lower() if stop.status else "pending",
+            weight=weight_str,
+            order_no=order.order_no if order else "UNKNOWN",
+            recipient=recipient,
+            failure_reason=delivery.failure_reason if delivery else None,
+            failure_notes=None,
+            pod_photo_name=pod.file_url if pod else None,
+            recipient_name=pod.recipient_name if pod else None,
+            delivered_at=stop.departed_at.strftime("%H:%M") if stop.departed_at else None
+        ))
+    return stop_responses
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def build_route(
@@ -172,7 +209,7 @@ def get_route_detail(
     vehicle = db.query(Vehicle).filter(Vehicle.id == route.vehicle_id).first() if route.vehicle_id else None
     stops = db.query(DeliveryStop).filter(DeliveryStop.route_id == route.id).order_by(DeliveryStop.sequence_no).all()
     
-    stop_responses = [get_stop_response(db, s) for s in stops]
+    stop_responses = build_stop_responses(db, stops)
     
     driver_label = "Unknown"
     if driver:

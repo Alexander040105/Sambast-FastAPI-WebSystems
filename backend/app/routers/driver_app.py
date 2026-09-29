@@ -19,7 +19,7 @@ from app.models.driver_shift import DriverShift
 from app.models.proof_of_delivery import ProofOfDelivery
 from app.models.delivery_status import DeliveryStatus
 from app.schemas.route import DriverManifestResponse, StopFailRequest
-from app.routers.routes import get_stop_response
+from app.routers.routes import build_stop_responses
 from app.services.notifications import notify_order_status
 from app.services.sse import broadcaster
 
@@ -114,7 +114,7 @@ def get_my_route(
         stop_records = db.query(DeliveryStop).filter(
             DeliveryStop.route_id == route.id
         ).order_by(DeliveryStop.sequence_no).all()
-        stops = [get_stop_response(db, s) for s in stop_records]
+        stops = build_stop_responses(db, stop_records)
 
     # Resolve active shift label
     now = datetime.now(timezone.utc)

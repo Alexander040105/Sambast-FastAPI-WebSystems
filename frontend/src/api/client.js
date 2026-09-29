@@ -79,9 +79,10 @@ async function request(endpoint, options = {}) {
     throw new ApiError(error.message || 'Unable to connect to the server', 'NETWORK_ERROR', 0);
   }
 
-  if (response.status === 401) {
+  if (response.status === 401 && getAuthToken()) {
+    // Stale/expired session — drop it. A 401 with no token is just a
+    // failed login; fall through so the server's message reaches the form.
     clearAuth();
-    throw new ApiError('Unauthorized', 'UNAUTHORIZED', 401);
   }
 
   const contentType = response.headers.get('content-type');

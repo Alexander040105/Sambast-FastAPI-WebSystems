@@ -29,7 +29,7 @@ from app.schemas.fleet import (
     Pagination,
 )
 from app.schemas.route import DriverManifestResponse
-from app.routers.routes import get_stop_response
+from app.routers.routes import build_stop_responses
 
 router = APIRouter(prefix="/drivers", tags=["drivers"])
 
@@ -197,7 +197,7 @@ def get_driver_manifest(
         stop_records = db.query(DeliveryStop).filter(
             DeliveryStop.route_id == route.id
         ).order_by(DeliveryStop.sequence_no).all()
-        stops = [get_stop_response(db, s) for s in stop_records]
+        stops = build_stop_responses(db, stop_records)
 
     now = datetime.now(timezone.utc)
     shift = db.query(DriverShift).filter(

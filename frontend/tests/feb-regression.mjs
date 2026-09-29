@@ -44,6 +44,7 @@ function installFixtures() {
   const realFetch = window.fetch.bind(window);
   const token = `test.${btoa(JSON.stringify({ role: 'admin' }))}.test`;
   localStorage.setItem('access_token', token);
+  localStorage.setItem('user', JSON.stringify({ id: 1, role: 'admin', name: 'Test Admin', email: 'admin@test.local' }));
   const day = '2026-09-28T00:00:00Z';
   const drivers = Array.from({ length: 23 }, (_, index) => ({ id: index + 1, user_id: index + 101, license_no: `LICENSE-${index + 1}`, status: index === 1 ? 'off_duty' : 'active', created_at: day }));
   const vehicles = [{ id: 1, plate_no: 'ABC-1234', type: 'van', max_weight_kg: 1500, max_volume_m3: 12, is_active: true, created_at: day }];

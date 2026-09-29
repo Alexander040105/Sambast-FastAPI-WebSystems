@@ -70,8 +70,10 @@ check("customer POST /categories -> 403", r.status_code == 403, f"{r.status_code
 # ── Products: search/filter/sort ────────────────────────────────
 r = requests.get(f"{API}/products", headers=H(customer))
 check("GET /products -> 200", r.status_code == 200, f"{r.status_code}")
-first_product = r.json()["data"][0]
+products_data = r.json()["data"]
+first_product = products_data[0]
 prod_id = first_product["id"]
+cat_product = next((p for p in products_data if p["category_id"]), None)
 
 r = requests.get(f"{API}/products?search=feed", headers=H(customer))
 check("GET /products?search=feed", r.status_code == 200, f"hits={r.json()['pagination']['total_items']}")
@@ -80,7 +82,7 @@ r = requests.get(f"{API}/products?sort_by=price&sort_order=asc", headers=H(custo
 prices = [float(p["base_price"]) for p in r.json()["data"]]
 check("GET /products sort price asc", r.status_code == 200 and prices == sorted(prices), f"{r.status_code}")
 
-r = requests.get(f"{API}/products?category_id={first_product['category_id']}", headers=H(customer))
+r = requests.get(f"{API}/products?category_id={cat_product['category_id']}", headers=H(customer))
 check("GET /products?category_id", r.status_code == 200, f"hits={r.json()['pagination']['total_items']}")
 
 r = requests.get(f"{API}/products/{prod_id}", headers=H(customer))
