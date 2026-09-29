@@ -37,6 +37,7 @@ function setRefreshToken(token) {
 function clearAuth() {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
+  localStorage.removeItem('user');
 }
 
 function getAuthRole() {
@@ -56,6 +57,7 @@ async function request(endpoint, options = {}) {
   const token = getAuthToken();
 
   const headers = {
+    Accept: 'application/json',
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
@@ -115,17 +117,17 @@ export const api = {
     return request(url, { method: 'GET' });
   },
 
-  post: (endpoint, body) =>
-    request(endpoint, { method: 'POST', body }),
+  post: (endpoint, body, options = {}) =>
+    request(endpoint, { method: 'POST', body, ...options }),
 
-  patch: (endpoint, body) =>
-    request(endpoint, { method: 'PATCH', body }),
+  patch: (endpoint, body, options = {}) =>
+    request(endpoint, { method: 'PATCH', body, ...options }),
 
-  put: (endpoint, body) =>
-    request(endpoint, { method: 'PUT', body }),
+  put: (endpoint, body, options = {}) =>
+    request(endpoint, { method: 'PUT', body, ...options }),
 
-  delete: (endpoint) =>
-    request(endpoint, { method: 'DELETE' }),
+  delete: (endpoint, options = {}) =>
+    request(endpoint, { method: 'DELETE', ...options }),
 };
 
 export const auth = {
@@ -137,4 +139,9 @@ export const auth = {
   clearAuth,
 };
 
-export { ApiError };
+// FE-A naming aliases — same localStorage keys as auth/storage.js
+export const getAccessToken = getAuthToken;
+export const saveAccessToken = setAuthToken;
+export const saveRefreshToken = setRefreshToken;
+
+export { clearAuth, ApiError };
