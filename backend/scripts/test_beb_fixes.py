@@ -109,7 +109,7 @@ def test_5_global_error_format():
         data = resp.json()
         assert "error" in data
         assert data["error"]["code"] == "NOT_FOUND"
-        assert "detail" in data
+        assert data["error"]["message"]
         print("[PASS] Fix 5: Global error response format verified.")
     finally:
         db.close()
