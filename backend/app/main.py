@@ -11,7 +11,27 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from app.routers import drivers, vehicles, shifts, locations, dispatch, routes, driver_app, analytics, fleet
+from app.core.errors import register_error_handlers
+from app.routers import (
+    admin,
+    analytics,
+    auth,
+    categories,
+    customer_addresses,
+    dispatch,
+    driver_app,
+    drivers,
+    fleet,
+    locations,
+    notifications,
+    orders,
+    payments,
+    products,
+    routes,
+    shifts,
+    tracking,
+    vehicles,
+)
 
 
 def create_app() -> FastAPI:
@@ -31,7 +51,12 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # ── Error envelope (§7) ───────────────────────────────────────────
+    register_error_handlers(application)
+
     # ── API v1 routers ────────────────────────────────────────────────
+    application.include_router(auth.router, prefix="/api/v1")
+    application.include_router(admin.router, prefix="/api/v1")
     application.include_router(drivers.router, prefix="/api/v1")
     application.include_router(vehicles.router, prefix="/api/v1")
     application.include_router(shifts.router, prefix="/api/v1")
@@ -39,6 +64,13 @@ def create_app() -> FastAPI:
     application.include_router(dispatch.router, prefix="/api/v1")
     application.include_router(routes.router, prefix="/api/v1")
     application.include_router(driver_app.router, prefix="/api/v1")
+    application.include_router(products.router, prefix="/api/v1")
+    application.include_router(categories.router, prefix="/api/v1")
+    application.include_router(orders.router, prefix="/api/v1")
+    application.include_router(customer_addresses.router, prefix="/api/v1")
+    application.include_router(payments.router, prefix="/api/v1")
+    application.include_router(tracking.router, prefix="/api/v1")
+    application.include_router(notifications.router, prefix="/api/v1")
     application.include_router(analytics.router, prefix="/api/v1")
     application.include_router(fleet.router, prefix="/api/v1")
     application.include_router(fleet.router)  # Also supports /fleet/stream direct

@@ -7,7 +7,7 @@ from app.models.delivery import Delivery
 from app.models.delivery_stop import DeliveryStop
 from app.models.order import Order
 from app.models.order_item import OrderItem
-from app.models.product import Product
+from app.models.products import Product
 from app.models.location import Location
 from app.models.driver import Driver
 from app.models.driver_shift import DriverShift

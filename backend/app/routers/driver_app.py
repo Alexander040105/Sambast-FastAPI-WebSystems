@@ -13,11 +13,11 @@ from app.models.delivery import Delivery
 from app.models.delivery_stop import DeliveryStop
 from app.models.order import Order
 from app.models.order_item import OrderItem
-from app.models.product import Product
+from app.models.products import Product
 from app.models.driver import Driver
 from app.models.driver_shift import DriverShift
 from app.models.proof_of_delivery import ProofOfDelivery
-from app.models.delivery_status_event import DeliveryStatusEvent
+from app.models.delivery_status import DeliveryStatus
 from app.schemas.route import DriverManifestResponse, StopFailRequest
 from app.routers.routes import get_stop_response
 from app.services.sse import broadcaster
@@ -34,7 +34,7 @@ def record_event(
     lat: Optional[float] = None,
     lng: Optional[float] = None,
 ):
-    event = DeliveryStatusEvent(
+    event = DeliveryStatus(
         delivery_id=delivery_id,
         status=status_str,
         note=note,

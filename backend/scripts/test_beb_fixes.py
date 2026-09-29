@@ -15,7 +15,8 @@ from app.models.driver import Driver
 from app.models.vehicle import Vehicle
 from app.models.order import Order
 from app.models.order_item import OrderItem
-from app.models.product import Product
+from app.models.products import Product
+from app.models.customer import Customer
 from app.models.delivery import Delivery
 from app.models.delivery_stop import DeliveryStop
 from app.models.payment import Payment
@@ -77,7 +78,7 @@ def test_4_analytics_security_guards():
     """Verify unauthorized roles cannot access ops analytics."""
     db = SessionLocal()
     try:
-        customer = db.query(User).filter(User.role == "customer").first()
+        customer = db.query(Customer).first()
         token = create_access_token(sub=customer.id, role="customer")
         headers = {"Authorization": f"Bearer {token}"}
 
@@ -127,7 +128,7 @@ def test_6_stock_deduction_and_cod_reconciliation():
         db.add(product)
         db.flush()
 
-        customer = db.query(User).filter(User.role == "customer").first()
+        customer = db.query(Customer).first()
         driver = db.query(Driver).first()
         route = db.query(Route).filter(Route.driver_id == driver.id).first()
 
@@ -243,7 +244,7 @@ def test_7_stop_completion_idempotency_and_double_deduction_protection():
         db.add(product)
         db.flush()
 
-        customer = db.query(User).filter(User.role == "customer").first()
+        customer = db.query(Customer).first()
         driver = db.query(Driver).first()
         route = db.query(Route).filter(Route.driver_id == driver.id).first()
 
@@ -374,11 +375,11 @@ def test_8_route_optimization_preserves_fixed_stops():
 
 def test_9_dispatch_assign_conflict():
     """Verify manual assignment returns 409 Conflict if order is already assigned."""
-    from app.models.delivery_status_event import DeliveryStatusEvent
+    from app.models.delivery_status import DeliveryStatus
     db = SessionLocal()
     try:
         import uuid
-        customer = db.query(User).filter(User.role == "customer").first()
+        customer = db.query(Customer).first()
         dispatcher = db.query(User).filter(User.role == "dispatcher").first()
         driver = db.query(Driver).first()
 
@@ -417,7 +418,7 @@ def test_9_dispatch_assign_conflict():
         # Cleanup
         delivs = db.query(Delivery).filter(Delivery.order_id == order.id).all()
         for d in delivs:
-            events = db.query(DeliveryStatusEvent).filter(DeliveryStatusEvent.delivery_id == d.id).all()
+            events = db.query(DeliveryStatus).filter(DeliveryStatus.delivery_id == d.id).all()
             for e in events: db.delete(e)
             db.delete(d)
         db.delete(order)

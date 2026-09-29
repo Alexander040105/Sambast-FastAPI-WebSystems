@@ -1,13 +1,36 @@
+"""
+services/costing.py — delivery cost calculation.
+
+Two layers coexist here:
+
+- ``delivery_fee_for_location`` (BE-A, used by checkout/orders):
+  fee = DELIVERY_BASE_FEE + DELIVERY_PER_KM x distance_km, where distance is
+  haversine warehouse -> delivery location via
+  ``services.assignment.calculate_distance``. When the delivery address
+  couldn't be geocoded (lat/lng missing) we fall back to just the base fee —
+  never block checkout over a missing pin.
+
+- ``calculate_route_cost`` (BE-B, used by routes router + demo seed):
+  costing v2 = distance * vehicle rate + driver time -> ``routes.cost``,
+  allocated to deliveries and reconciled against ``orders.delivery_fee``.
+"""
+
+from decimal import Decimal, ROUND_HALF_UP
+
 from sqlalchemy.orm import Session
+
+from app.core.config import settings
 from app.models.order import Order
 from app.models.payment import Payment
 from app.models.route import Route
 from app.models.vehicle import Vehicle
-from app.models.driver import Driver
 from app.models.delivery import Delivery
 from app.models.delivery_stop import DeliveryStop
 from app.models.location import Location
+from app.services.assignment import calculate_distance
 from app.services.routing import haversine, SPEED_KMH
+
+CENT = Decimal("0.01")
 
 VEHICLE_TYPE_RATES = {
     "motorcycle": 1.0,
@@ -17,6 +40,24 @@ VEHICLE_TYPE_RATES = {
 }
 DEFAULT_VEHICLE_RATE = 1.5
 DEFAULT_DRIVER_RATE = 20.0
+
+
+def delivery_fee_for_location(dest_lat, dest_lng) -> Decimal:
+    distance_km = calculate_distance(
+        settings.WAREHOUSE_LAT,
+        settings.WAREHOUSE_LNG,
+        float(dest_lat) if dest_lat is not None else None,
+        float(dest_lng) if dest_lng is not None else None,
+    )
+
+    # calculate_distance returns inf when a coordinate is missing
+    if distance_km == float("inf"):
+        distance_km = 0.0
+
+    fee = Decimal(str(settings.DELIVERY_BASE_FEE)) + (
+        Decimal(str(settings.DELIVERY_PER_KM)) * Decimal(str(distance_km))
+    )
+    return fee.quantize(CENT, rounding=ROUND_HALF_UP)
 
 
 def calculate_order_delivery_fee(db: Session, order_id: int, distance_km: float = 10.0) -> float:
