@@ -17,8 +17,14 @@ import OrderDetail from '../pages/orders/OrderDetail';
 import OrderTracking from '../pages/tracking/OrderTracking';
 import Notifications from '../pages/notifications/Notifications';
 
+import Catalog from '../pages/admin/Catalog';
+import AdminOrders from '../pages/admin/Orders';
+
 import ProtectedRoute from '../components/ProtectedRoute';
+import AdminRoute from '../components/AdminRoute';
+
 import CustomerLayout from '../layouts/CustomerLayout';
+import AdminLayout from '../layouts/AdminLayout';
 
 export const router = createBrowserRouter([
   {
@@ -42,6 +48,9 @@ export const router = createBrowserRouter([
     element: <Login />,
   },
 
+  // --------------------------------
+  // Customer routes
+  // --------------------------------
   {
     element: <ProtectedRoute />,
     children: [
@@ -79,6 +88,28 @@ export const router = createBrowserRouter([
           {
             path: '/customer/notifications',
             element: <Notifications />,
+          },
+        ],
+      },
+    ],
+  },
+
+  // --------------------------------
+  // Admin routes
+  // --------------------------------
+  {
+    element: <AdminRoute />,
+    children: [
+      {
+        element: <AdminLayout />,
+        children: [
+          {
+            path: '/admin/catalog',
+            element: <Catalog />,
+          },
+          {
+            path: '/admin/orders',
+            element: <AdminOrders />,
           },
         ],
       },
