@@ -1,7 +1,9 @@
 """
-/api/v1/auth — registration OTP → PIN flow (customers), driver
+/api/v1/auth — customer registration + login (email + password), driver
 self-registration, staff login, token refresh, logout. Stateless port of
-the legacy Flask session flow; all OTP state lives on the customers table.
+the legacy Flask session flow. The OTP/PIN endpoints and the
+contact_no + PIN login branch are retained but dormant — the UI uses
+email + password for customers and staff alike.
 Errors use the §7 envelope.
 """
 
@@ -34,14 +36,12 @@ from app.schemas.auth import (
     PinSetRequest,
     RefreshRequest,
     RegisterRequest,
-    RegisterResponse,
     TokenResponse,
     UserOut,
 )
 from app.services.otp import (
     OTP_RESEND_COOLDOWN_SECONDS,
     issue_otp,
-    mask_email,
     verify_otp,
 )
 
@@ -81,11 +81,12 @@ def _tokens_for(principal: Principal) -> TokenResponse:
 
 
 def _is_registered(customer: Customer) -> bool:
-    """A customer row counts as registered once a PIN is set."""
-    return bool(customer.pin_hash)
+    """A customer row counts as registered once a password is set.
+    Legacy PIN-only rows can be reclaimed by re-registering."""
+    return bool(customer.password_hash)
 
 
-@router.post("/register", response_model=RegisterResponse)
+@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def register(body: RegisterRequest, db: Session = Depends(get_db)):
     existing_contact = (
         db.query(Customer).filter(Customer.phone == body.contact_no).first()
@@ -123,38 +124,29 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
     try:
         if target:
-            # Pending registration — reset the row and start over.
+            # Legacy PIN-only row — reclaim it with a password.
             target.name = body.full_name
             target.phone = body.contact_no
             target.email = body.email
+            target.password_hash = hash_password(body.password)
             customer = target
         else:
             customer = Customer(
                 name=body.full_name,
                 phone=body.contact_no,
                 email=body.email,
+                password_hash=hash_password(body.password),
                 is_active=True,
             )
             db.add(customer)
             db.flush()
-
-        issue_otp(db, customer, is_resend=False)
         db.commit()
     except IntegrityError:
         db.rollback()
         raise api_error(409, "CONFLICT", "Account information already exists.")
-    except RuntimeError as exc:
-        db.rollback()
-        raise api_error(503, "EMAIL_SEND_FAILED", str(exc))
-    except Exception:
-        db.rollback()
-        raise api_error(500, "INTERNAL_ERROR", "Failed to create account. Please try again.")
 
-    return RegisterResponse(
-        user_id=customer.id,
-        email_masked=mask_email(customer.email),
-        resend_available_in=OTP_RESEND_COOLDOWN_SECONDS,
-    )
+    db.refresh(customer)
+    return _tokens_for(customer)
 
 
 @router.post("/otp/verify")
@@ -277,20 +269,32 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
             raise api_error(
                 422,
                 "VALIDATION_ERROR",
-                "Both email and password are required for staff login.",
+                "Both email and password are required.",
             )
         user = _user_by_email(db, body.email)
+        if user is not None:
+            if (
+                not user.password_hash
+                or not verify_password(body.password, user.password_hash)
+            ):
+                raise api_error(401, "INVALID_CREDENTIALS", _INVALID_CREDENTIALS)
+            if not user.is_active:
+                raise api_error(
+                    401, "ACCOUNT_INACTIVE", "Account is inactive. Please contact support."
+                )
+            return _tokens_for(user)
+        customer = _customer_by_email(db, body.email)
         if (
-            user is None
-            or not user.password_hash
-            or not verify_password(body.password, user.password_hash)
+            customer is None
+            or not customer.password_hash
+            or not verify_password(body.password, customer.password_hash)
         ):
             raise api_error(401, "INVALID_CREDENTIALS", _INVALID_CREDENTIALS)
-        if not user.is_active:
+        if not customer.is_active:
             raise api_error(
                 401, "ACCOUNT_INACTIVE", "Account is inactive. Please contact support."
             )
-        return _tokens_for(user)
+        return _tokens_for(customer)
 
     if body.contact_no is not None or body.pin is not None:
         if not body.contact_no or not body.pin:

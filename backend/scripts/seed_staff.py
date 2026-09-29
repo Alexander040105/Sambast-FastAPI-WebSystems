@@ -13,8 +13,8 @@ Staff (users table — password login):  password = testpass123
   - ops@sambast.com        (ops_manager)
   - driver1@sambast.com    (driver — users row + drivers profile)
 
-Customer (customers table — PIN login):  contact_no = 09123456789, pin = 1234
-  - customer@sambast.com
+Customer (customers table — email + password login):
+  - customer@sambast.com / testpass123   (legacy: 09123456789 / PIN 1234)
 """
 
 import os
@@ -76,20 +76,22 @@ def upsert_customer(db) -> Customer:
     email = os.environ.get("SEED_CUSTOMER_EMAIL", "customer@sambast.com")
     customer = db.query(Customer).filter(Customer.email == email).first()
     if customer:
+        customer.password_hash = hash_password(STAFF_PASSWORD)
         customer.pin_hash = hash_password(CUSTOMER_PIN)
         customer.phone = CUSTOMER_PHONE
-        print(f"  updated  {email} (customer PIN reset)")
+        print(f"  updated  {email} (customer credentials reset)")
         return customer
     customer = Customer(
         email=email,
         name="Test Customer",
         phone=CUSTOMER_PHONE,
+        password_hash=hash_password(STAFF_PASSWORD),
         pin_hash=hash_password(CUSTOMER_PIN),
         otp_verified=True,
         is_active=True,
     )
     db.add(customer)
-    print(f"  created  {email} (customer, pin={CUSTOMER_PIN})")
+    print(f"  created  {email} (customer, password={STAFF_PASSWORD})")
     return customer
 
 
@@ -109,7 +111,8 @@ def main() -> None:
     print(f"  staff    password={STAFF_PASSWORD}")
     for email, role, _ in STAFF:
         print(f"           {email} ({role})")
-    print(f"  customer phone={CUSTOMER_PHONE} pin={CUSTOMER_PIN}")
+    print(f"  customer customer@sambast.com password={STAFF_PASSWORD}"
+          f" (legacy: {CUSTOMER_PHONE} / pin={CUSTOMER_PIN})")
 
 
 if __name__ == "__main__":

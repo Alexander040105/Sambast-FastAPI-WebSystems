@@ -61,7 +61,8 @@ DEMO_CUSTOMERS = [
     ("adobofree@gmail.com", "Adobo Free", "09170000004"),
 ]
 
-DEMO_PIN = "1234"  # demo PIN for every seeded customer
+DEMO_PIN = "1234"  # demo PIN for every seeded customer (legacy login path)
+DEMO_PASSWORD = "testpass123"  # demo password for every seeded customer
 
 
 def _hash_pin(pin: str) -> str:
@@ -147,12 +148,15 @@ def seed_customers(db):
                 email=email,
                 phone=phone,
                 name=name,
+                password_hash=_hash_pin(DEMO_PASSWORD),
                 pin_hash=_hash_pin(DEMO_PIN),
                 otp_verified=True,
                 is_active=True,
             )
             db.add(customer)
             db.flush()
+        elif not customer.password_hash:
+            customer.password_hash = _hash_pin(DEMO_PASSWORD)
         customers.append(customer)
     db.commit()
     return customers
@@ -260,9 +264,10 @@ def main():
               f"({len(products)} new)")
         print(f"Orders: {db.query(Order).count()} total "
               f"(ORD-DEMO-* are the seeded ones)")
-        print("\nCustomer logins (contact_no / PIN):")
+        print("\nCustomer logins (email / password):")
         for email, name, phone in DEMO_CUSTOMERS:
-            print(f"  {name:<14} {phone} / {DEMO_PIN}")
+            print(f"  {name:<14} {email} / {DEMO_PASSWORD}")
+        print("  (legacy contact_no + PIN 1234 login still works via API)")
         print("\nStaff logins stay the same: admin@sambast.com etc. / testpass123")
     finally:
         db.close()

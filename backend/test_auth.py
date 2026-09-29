@@ -1,9 +1,10 @@
 """
 Validation script for BE-A T3 — /api/v1/auth.
 
-Covers: staff logins for all seeded roles, the full customer
-register -> OTP verify -> PIN set -> token flow, refresh, logout
-(+ audit row), and the negative/guardrail cases.
+Covers: staff logins for all seeded roles, the customer
+register -> tokens -> email+password login flow, refresh, logout
+(+ audit row), the dormant OTP/PIN legacy path, and the
+negative/guardrail cases.
 
 Prereqs: run `python scripts/seed_staff.py`, server live at BASE_URL
 (default http://127.0.0.1:8000 — override via env var).
@@ -53,11 +54,31 @@ TEST_EMAIL_2 = f"test.auth2.{TS}@sambast.com"
 TEST_PHONE_2 = f"08{TS % 1_000_000_000:09d}"
 TEST_EMAIL_3 = f"test.auth3.{TS}@sambast.com"
 TEST_PHONE_3 = f"07{TS % 1_000_000_000:09d}"
+TEST_EMAIL_4 = f"test.auth4.{TS}@sambast.com"
+TEST_PHONE_4 = f"06{TS % 1_000_000_000:09d}"
 KNOWN_OTP = "654321"
 
 
+def create_customer(email: str, phone: str, name: str, pin: str = None,
+                    password: str = None, otp_verified: bool = False):
+    """Insert a customer row directly — used to stage legacy/pending
+    rows that exercise the dormant OTP/PIN surface."""
+    db = SessionLocal()
+    try:
+        c = Customer(
+            email=email, phone=phone, name=name,
+            pin_hash=hash_password(pin) if pin else None,
+            password_hash=hash_password(password) if password else None,
+            otp_verified=otp_verified, is_active=True,
+        )
+        db.add(c)
+        db.commit()
+    finally:
+        db.close()
+
+
 def set_otp(email: str, code: str = KNOWN_OTP, expired=False, attempts=0,
-            resend_count=None, stale_last_sent=False):
+            resend_count=None, stale_last_sent=False, fresh_last_sent=False):
     """Inject a known OTP / manipulate OTP state directly in the DB."""
     db = SessionLocal()
     try:
@@ -70,6 +91,8 @@ def set_otp(email: str, code: str = KNOWN_OTP, expired=False, attempts=0,
             u.otp_resend_count = resend_count
         if stale_last_sent:
             u.otp_last_sent_at = datetime.now(timezone.utc) - timedelta(minutes=5)
+        if fresh_last_sent:
+            u.otp_last_sent_at = datetime.now(timezone.utc)
         db.commit()
     finally:
         db.close()
@@ -113,9 +136,15 @@ for role, expected in [("dispatcher", 200), ("admin", 200),
     log(f"A /drivers as {role} -> {expected}", r.status_code == expected,
         f"status={r.status_code}")
 
-# Seeded customer PIN login -> customer JWT is rejected by /drivers
+# Seeded customer logins — primary (email+password) and dormant PIN path
+r = httpx.post(f"{AUTH}/login",
+               json={"email": "customer@sambast.com", "password": "testpass123"})
+log("A customer email+password login", r.status_code == 200,
+    f"status={r.status_code}")
+
 r = httpx.post(f"{AUTH}/login", json={"contact_no": "09123456789", "pin": "1234"})
-log("A customer PIN login", r.status_code == 200, f"status={r.status_code}")
+log("A customer PIN login (dormant path)", r.status_code == 200,
+    f"status={r.status_code}")
 if r.status_code == 200:
     tokens["customer"] = r.json()["access_token"]
     r2 = httpx.get(f"{API}/drivers",
@@ -128,65 +157,58 @@ if r.status_code == 200:
 # B — FULL CUSTOMER FLOW
 # ═══════════════════════════════════════════════════════════════════════
 print("\n" + "=" * 60)
-print("B — CUSTOMER REGISTER -> OTP -> PIN -> TOKENS")
+print("B — CUSTOMER REGISTER -> TOKENS -> EMAIL LOGIN")
 print("=" * 60)
 
 r = httpx.post(f"{AUTH}/register", json={
-    "full_name": "Auth Test", "contact_no": TEST_PHONE, "email": TEST_EMAIL},
+    "full_name": "Auth Test", "contact_no": TEST_PHONE,
+    "email": TEST_EMAIL, "password": "customerpass1"},
     timeout=30)
-body = r.json()
-log("B register -> 200", r.status_code == 200, f"status={r.status_code}")
-log("B register shape",
-    body.get("user_id") is not None
-    and body.get("email_masked", "").startswith("te")
-    and body.get("resend_available_in") == 60,
-    f"body={body}")
-
-# Inject a known OTP (test can't read the real inbox)
-set_otp(TEST_EMAIL)
-
-r = httpx.post(f"{AUTH}/otp/verify", json={"email": TEST_EMAIL, "otp": "000000"})
-log("B wrong OTP -> 400 OTP_INVALID",
-    r.status_code == 400 and err_code(r) == "OTP_INVALID",
-    f"{r.status_code} {r.json()}")
-
-r = httpx.post(f"{AUTH}/otp/verify", json={"email": TEST_EMAIL, "otp": KNOWN_OTP})
-log("B correct OTP -> verified", r.status_code == 200 and r.json().get("verified") is True,
-    f"{r.status_code} {r.json()}")
-
-r = httpx.post(f"{AUTH}/pin/set", json={
-    "email": TEST_EMAIL, "pin": "4321", "pin_confirm": "1234"})
-log("B pin mismatch -> 422", r.status_code == 422 and err_code(r) == "VALIDATION_ERROR",
-    f"{r.status_code}")
-
-r = httpx.post(f"{AUTH}/pin/set", json={
-    "email": TEST_EMAIL, "pin": "4321", "pin_confirm": "4321"})
-log("B pin/set -> tokens", r.status_code == 200
+log("B register -> 201 + tokens",
+    r.status_code == 201
     and "access_token" in r.json() and "refresh_token" in r.json()
     and r.json().get("user", {}).get("role") == "customer",
     f"status={r.status_code}")
-cust = r.json()
+cust = r.json() if r.status_code == 201 else {}
 
-r = httpx.post(f"{AUTH}/refresh", json={"refresh_token": cust["refresh_token"]})
+r = httpx.post(f"{AUTH}/login",
+               json={"email": TEST_EMAIL, "password": "customerpass1"})
+log("B login email+password -> 200",
+    r.status_code == 200
+    and r.json().get("user", {}).get("role") == "customer",
+    f"status={r.status_code}")
+
+r = httpx.post(f"{AUTH}/login",
+               json={"email": TEST_EMAIL, "password": "wrong-pass"})
+log("B login wrong password -> 401",
+    r.status_code == 401 and err_code(r) == "INVALID_CREDENTIALS",
+    f"{r.status_code}")
+
+# Dormant path — this account has no PIN, so PIN login must fail cleanly
+r = httpx.post(f"{AUTH}/login", json={"contact_no": TEST_PHONE, "pin": "1234"})
+log("B dormant PIN login w/o PIN set -> 403 PIN_NOT_SET",
+    r.status_code == 403 and err_code(r) == "PIN_NOT_SET",
+    f"{r.status_code}")
+
+r = httpx.post(f"{AUTH}/refresh",
+               json={"refresh_token": cust.get("refresh_token", "")})
 log("B refresh -> new access token",
     r.status_code == 200 and r.json().get("token_type") == "bearer"
     and decode_token(r.json()["access_token"]).get("type") == "access",
     f"status={r.status_code}")
 
-r = httpx.post(f"{AUTH}/refresh", json={"refresh_token": cust["access_token"]})
+r = httpx.post(f"{AUTH}/refresh",
+               json={"refresh_token": cust.get("access_token", "")})
 log("B refresh w/ access token -> 401",
     r.status_code == 401 and err_code(r) == "INVALID_TOKEN_TYPE",
     f"{r.status_code} {r.json()}")
 
-r = httpx.post(f"{AUTH}/login", json={"contact_no": TEST_PHONE, "pin": "4321"})
-log("B login with new PIN -> 200", r.status_code == 200, f"status={r.status_code}")
-
 r = httpx.post(f"{AUTH}/logout",
-               headers={"Authorization": f"Bearer {cust['access_token']}"})
+               headers={"Authorization": f"Bearer {cust.get('access_token', '')}"})
 log("B logout -> 204", r.status_code == 204, f"status={r.status_code}")
 db = SessionLocal()
 audit = db.query(AuditLog).filter(
-    AuditLog.user_id == cust["user"]["id"],
+    AuditLog.user_id == cust.get("user", {}).get("id"),
     AuditLog.action == "User logged out").first()
 db.close()
 log("B customer logout writes NO audit row (audit_logs FKs users)",
@@ -216,83 +238,118 @@ print("=" * 60)
 
 # Validation
 r = httpx.post(f"{AUTH}/register", json={
-    "full_name": "Bad", "contact_no": "12345", "email": TEST_EMAIL_2})
+    "full_name": "Bad", "contact_no": "12345", "email": TEST_EMAIL_2,
+    "password": "secret12345"})
 log("C register bad contact_no -> 422",
     r.status_code == 422 and err_code(r) == "VALIDATION_ERROR", f"{r.status_code}")
 
 r = httpx.post(f"{AUTH}/register", json={
-    "full_name": "Bad", "contact_no": TEST_PHONE_2, "email": "not-an-email"})
+    "full_name": "Bad", "contact_no": TEST_PHONE_2, "email": "not-an-email",
+    "password": "secret12345"})
 log("C register bad email -> 422",
     r.status_code == 422 and err_code(r) == "VALIDATION_ERROR", f"{r.status_code}")
 
-# 409 — already-registered customer (seeded customer has pin_hash)
+r = httpx.post(f"{AUTH}/register", json={
+    "full_name": "Bad", "contact_no": TEST_PHONE_2,
+    "email": TEST_EMAIL_2, "password": "short"})
+log("C register short password -> 422",
+    r.status_code == 422 and err_code(r) == "VALIDATION_ERROR", f"{r.status_code}")
+
+r = httpx.post(f"{AUTH}/register", json={
+    "full_name": "Bad", "contact_no": TEST_PHONE_2, "email": TEST_EMAIL_2})
+log("C register missing password -> 422",
+    r.status_code == 422 and err_code(r) == "VALIDATION_ERROR", f"{r.status_code}")
+
+# 409 — already-registered customer (seeded customer has password_hash)
 r = httpx.post(f"{AUTH}/register", json={
     "full_name": "Dup", "contact_no": "09123456789",
-    "email": "customer@sambast.com"})
+    "email": "customer@sambast.com", "password": "secret12345"})
 log("C register existing customer -> 409", r.status_code == 409, f"{r.status_code}")
 
-# 409 — contact and email bound to DIFFERENT accounts
+# 409 — contact and email bound to DIFFERENT customer accounts
 r = httpx.post(f"{AUTH}/register", json={
-    "full_name": "Dup", "contact_no": "09123456789",
-    "email": "admin@sambast.com"})
+    "full_name": "Dup", "contact_no": "09170000001",
+    "email": "jose.rizal.demo@gmail.com", "password": "secret12345"})
 log("C register contact+email on diff accounts -> 409",
     r.status_code == 409, f"{r.status_code}")
 
 # 409 — staff email can't be hijacked by registration
 r = httpx.post(f"{AUTH}/register", json={
     "full_name": "Dup", "contact_no": TEST_PHONE_2,
-    "email": "admin@sambast.com"})
+    "email": "admin@sambast.com", "password": "secret12345"})
 log("C register staff email -> 409", r.status_code == 409, f"{r.status_code}")
 
-# Re-register pending row (user 2) — resets and re-issues
+# Re-register a legacy PIN-only row — sets a password, PIN keeps working
+create_customer(TEST_EMAIL_2, TEST_PHONE_2, "Legacy User",
+                pin="1234", otp_verified=True)
 r = httpx.post(f"{AUTH}/register", json={
-    "full_name": "Pending Two", "contact_no": TEST_PHONE_2,
-    "email": TEST_EMAIL_2}, timeout=30)
-log("C register pending user -> 200", r.status_code == 200, f"{r.status_code}")
-
-# Expired OTP
-set_otp(TEST_EMAIL_2, expired=True)
-r = httpx.post(f"{AUTH}/otp/verify", json={"email": TEST_EMAIL_2, "otp": KNOWN_OTP})
-log("C expired OTP -> 400 OTP_EXPIRED",
-    r.status_code == 400 and err_code(r) == "OTP_EXPIRED", f"{r.status_code}")
-
-# Attempt lockout — 4 prior failures, wrong 5th locks it
-set_otp(TEST_EMAIL_2, attempts=4)
-r = httpx.post(f"{AUTH}/otp/verify", json={"email": TEST_EMAIL_2, "otp": "000000"})
-log("C 5th wrong OTP -> locked",
-    r.status_code == 400 and "Too many invalid attempts" in r.json().get("error", {}).get("message", ""),
-    f"{r.status_code} {r.json()}")
-r = httpx.post(f"{AUTH}/otp/verify", json={"email": TEST_EMAIL_2, "otp": KNOWN_OTP})
-log("C correct OTP after lockout still rejected",
-    r.status_code == 400 and err_code(r) == "OTP_MAX_ATTEMPTS", f"{r.status_code}")
-
-# Resend cooldown — registered <60s ago
-r = httpx.post(f"{AUTH}/otp/resend", json={"email": TEST_EMAIL_2})
-log("C resend within 60s -> 429",
-    r.status_code == 429 and err_code(r) == "RESEND_COOLDOWN"
-    and r.json().get("error", {}).get("details", {}).get("retry_after") is not None,
+    "full_name": "Legacy User", "contact_no": TEST_PHONE_2,
+    "email": TEST_EMAIL_2, "password": "newpassword1"}, timeout=30)
+log("C reclaim legacy PIN row -> 201", r.status_code == 201,
     f"{r.status_code} {r.json()}")
 
-# Resend limit — 3 used, cooldown expired
-set_otp(TEST_EMAIL_2, resend_count=3, stale_last_sent=True)
-r = httpx.post(f"{AUTH}/otp/resend", json={"email": TEST_EMAIL_2})
-log("C 4th resend -> 429 RESEND_LIMIT",
-    r.status_code == 429 and err_code(r) == "RESEND_LIMIT", f"{r.status_code}")
+r = httpx.post(f"{AUTH}/login",
+               json={"email": TEST_EMAIL_2, "password": "newpassword1"})
+log("C reclaimed row: email+password login -> 200", r.status_code == 200,
+    f"{r.status_code}")
 
-# pin/set without OTP verification
-r = httpx.post(f"{AUTH}/register", json={
-    "full_name": "Pending Three", "contact_no": TEST_PHONE_3,
-    "email": TEST_EMAIL_3}, timeout=30)
-log("C register user3 -> 200", r.status_code == 200, f"{r.status_code}")
+r = httpx.post(f"{AUTH}/login", json={"contact_no": TEST_PHONE_2, "pin": "1234"})
+log("C reclaimed row: dormant PIN login -> 200", r.status_code == 200,
+    f"{r.status_code}")
+
+# ── Dormant OTP/PIN surface still works end-to-end ──────────────────
+# Stage a legacy pending row (no password, no PIN, unverified)
+create_customer(TEST_EMAIL_3, TEST_PHONE_3, "Pending Three")
+
 r = httpx.post(f"{AUTH}/pin/set", json={
     "email": TEST_EMAIL_3, "pin": "1234", "pin_confirm": "1234"})
 log("C pin/set unverified -> 403",
     r.status_code == 403 and err_code(r) == "OTP_NOT_VERIFIED", f"{r.status_code}")
 
-# PIN login before PIN set -> PIN_NOT_SET
 r = httpx.post(f"{AUTH}/login", json={"contact_no": TEST_PHONE_3, "pin": "1234"})
 log("C login w/o PIN -> 403 PIN_NOT_SET",
     r.status_code == 403 and err_code(r) == "PIN_NOT_SET", f"{r.status_code}")
+
+set_otp(TEST_EMAIL_3, expired=True)
+r = httpx.post(f"{AUTH}/otp/verify", json={"email": TEST_EMAIL_3, "otp": KNOWN_OTP})
+log("C expired OTP -> 400 OTP_EXPIRED",
+    r.status_code == 400 and err_code(r) == "OTP_EXPIRED", f"{r.status_code}")
+
+set_otp(TEST_EMAIL_3)
+r = httpx.post(f"{AUTH}/otp/verify", json={"email": TEST_EMAIL_3, "otp": "000000"})
+log("C wrong OTP -> 400 OTP_INVALID",
+    r.status_code == 400 and err_code(r) == "OTP_INVALID",
+    f"{r.status_code} {r.json()}")
+
+r = httpx.post(f"{AUTH}/otp/verify", json={"email": TEST_EMAIL_3, "otp": KNOWN_OTP})
+log("C correct OTP -> verified",
+    r.status_code == 200 and r.json().get("verified") is True,
+    f"{r.status_code} {r.json()}")
+
+r = httpx.post(f"{AUTH}/pin/set", json={
+    "email": TEST_EMAIL_3, "pin": "1234", "pin_confirm": "1234"})
+log("C pin/set after verify -> 200 + tokens",
+    r.status_code == 200 and "access_token" in r.json(), f"{r.status_code}")
+
+r = httpx.post(f"{AUTH}/login", json={"contact_no": TEST_PHONE_3, "pin": "1234"})
+log("C dormant PIN login -> 200", r.status_code == 200, f"{r.status_code}")
+
+# Resend guardrails — checks short-circuit before any email is sent
+create_customer(TEST_EMAIL_4, TEST_PHONE_4, "Resend Four")
+set_otp(TEST_EMAIL_4, fresh_last_sent=True)
+r = httpx.post(f"{AUTH}/otp/resend", json={"email": TEST_EMAIL_4})
+log("C resend within 60s -> 429",
+    r.status_code == 429 and err_code(r) == "RESEND_COOLDOWN",
+    f"{r.status_code} {r.json()}")
+
+set_otp(TEST_EMAIL_4, resend_count=3, stale_last_sent=True)
+r = httpx.post(f"{AUTH}/otp/resend", json={"email": TEST_EMAIL_4})
+log("C 4th resend -> 429 RESEND_LIMIT",
+    r.status_code == 429 and err_code(r) == "RESEND_LIMIT", f"{r.status_code}")
+
+r = httpx.post(f"{AUTH}/otp/verify", json={"email": f"nobody.{TS}@sambast.com", "otp": KNOWN_OTP})
+log("C otp/verify unknown email -> 400 OTP_NOT_FOUND",
+    r.status_code == 400 and err_code(r) == "OTP_NOT_FOUND", f"{r.status_code}")
 
 # Login failures
 r = httpx.post(f"{AUTH}/login", json={
@@ -302,6 +359,11 @@ log("C staff wrong password -> 401",
 
 r = httpx.post(f"{AUTH}/login", json={"contact_no": "09999999999", "pin": "0000"})
 log("C unknown contact -> 401",
+    r.status_code == 401 and err_code(r) == "INVALID_CREDENTIALS", f"{r.status_code}")
+
+r = httpx.post(f"{AUTH}/login",
+               json={"email": f"ghost.{TS}@sambast.com", "password": "whatever1"})
+log("C unknown email -> 401",
     r.status_code == 401 and err_code(r) == "INVALID_CREDENTIALS", f"{r.status_code}")
 
 r = httpx.post(f"{AUTH}/login", json={"email": "admin@sambast.com"})
@@ -439,7 +501,7 @@ log("E driver token -> GET /drivers 403", r.status_code == 403,
 print("\n--- Cleanup ---")
 db = SessionLocal()
 from app.models.driver import Driver  # noqa: E402
-for email in [TEST_EMAIL, TEST_EMAIL_2, TEST_EMAIL_3]:
+for email in [TEST_EMAIL, TEST_EMAIL_2, TEST_EMAIL_3, TEST_EMAIL_4]:
     c = db.query(Customer).filter(Customer.email == email).first()
     if c:
         db.delete(c)

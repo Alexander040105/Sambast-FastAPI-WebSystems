@@ -1,7 +1,11 @@
-"""customers — self-registered customer accounts (OTP → PIN auth).
+"""customers — self-registered customer accounts (email + password auth).
 
 Split out of `users` per the instructor's schema: Customer is its own
 entity. `users` is now staff-only (admin|dispatcher|ops_manager|driver).
+
+PIN/OTP columns are retained for the legacy contact_no + PIN login path
+and the dormant /auth/otp/*, /auth/pin/set endpoints — the UI no longer
+uses them.
 """
 
 from sqlalchemy import (
@@ -19,7 +23,8 @@ class Customer(Base):
     phone = Column(String(30), unique=True, nullable=True, index=True)
     name = Column(String(255), nullable=True)
 
-    # Customer auth — OTP → PIN flow
+    # Customer auth — email + password (primary); PIN/OTP columns dormant
+    password_hash = Column(Text, nullable=True)
     pin_hash = Column(Text, nullable=True)
     otp_code_hash = Column(Text, nullable=True)
     otp_expires_at = Column(DateTime(timezone=True), nullable=True)

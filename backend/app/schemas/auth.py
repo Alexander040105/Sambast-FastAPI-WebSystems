@@ -24,6 +24,7 @@ class RegisterRequest(BaseModel):
     full_name: str = Field(min_length=1)
     contact_no: str
     email: str
+    password: str = Field(min_length=8)
 
     @field_validator("full_name", mode="before")
     @classmethod
@@ -164,12 +165,6 @@ class UserOut(BaseModel):
     email: str
 
     model_config = {"from_attributes": True}
-
-
-class RegisterResponse(BaseModel):
-    user_id: int
-    email_masked: str
-    resend_available_in: int
 
 
 class TokenResponse(BaseModel):

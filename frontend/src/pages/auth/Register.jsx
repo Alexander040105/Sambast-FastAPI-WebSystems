@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../../api/client';
+import { api, saveAccessToken } from '../../api/client';
+import { saveAuth } from '../../auth/storage';
+import { homeForRole } from '../../auth/roles';
 
 function Register() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
     full_name: '',
-    contact_no: '',
     email: '',
+    contact_no: '',
+    password: '',
+    password_confirm: '',
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -35,30 +39,48 @@ function Register() {
       return;
     }
 
+    if (!form.email.trim()) {
+      setError('Please enter your email address.');
+      return;
+    }
+
     if (!/^\d{11}$/.test(form.contact_no.trim())) {
       setError('Contact number must be exactly 11 digits.');
       return;
     }
 
-    if (!form.email.trim()) {
-      setError('Please enter your email address.');
+    if (form.password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+
+    if (form.password !== form.password_confirm) {
+      setError('Passwords do not match. Please try again.');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      await api.post('/auth/register', {
+      const data = await api.post('/auth/register', {
         full_name: form.full_name.trim(),
         contact_no: form.contact_no.trim(),
         email: form.email.trim().toLowerCase(),
+        password: form.password,
       });
 
-      navigate('/verify-otp', {
-        state: {
-          email: form.email.trim().toLowerCase(),
-        },
-      });
+      const authData = data?.data || data;
+
+      if (authData?.access_token) {
+        saveAccessToken(authData.access_token);
+        saveAuth({
+          access_token: authData.access_token,
+          refresh_token: authData.refresh_token,
+          user: authData.user,
+        });
+      }
+
+      navigate(homeForRole(authData?.user?.role), { replace: true });
     } catch (err) {
       setError(
         err.message || 'Unable to register. Please try again.'
@@ -109,10 +131,32 @@ function Register() {
               id="full_name"
               name="full_name"
               type="text"
+              autoComplete="name"
               value={form.full_name}
               onChange={handleChange}
               required
               placeholder="Juan Dela Cruz"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-2 block text-sm font-medium text-gray-700"
+            >
+              Email Address
+            </label>
+
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={handleChange}
+              required
+              placeholder="you@example.com"
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
             />
           </div>
@@ -131,34 +175,70 @@ function Register() {
               type="tel"
               inputMode="numeric"
               maxLength="11"
+              autoComplete="tel"
               value={form.contact_no}
-              onChange={handleChange}
+              onChange={(event) => {
+                const value = event.target.value
+                  .replace(/\D/g, '')
+                  .slice(0, 11);
+
+                setForm((currentForm) => ({
+                  ...currentForm,
+                  contact_no: value,
+                }));
+
+                setError('');
+              }}
               required
               placeholder="09123456789"
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
             />
 
             <p className="mt-1 text-xs text-gray-500">
-              Enter exactly 11 digits.
+              11 digits — riders use this to reach you about deliveries.
             </p>
           </div>
 
           <div>
             <label
-              htmlFor="email"
+              htmlFor="password"
               className="mb-2 block text-sm font-medium text-gray-700"
             >
-              Email Address
+              Password
             </label>
 
             <input
-              id="email"
-              name="email"
-              type="email"
-              value={form.email}
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              minLength="8"
+              value={form.password}
               onChange={handleChange}
               required
-              placeholder="you@example.com"
+              placeholder="At least 8 characters"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password_confirm"
+              className="mb-2 block text-sm font-medium text-gray-700"
+            >
+              Confirm Password
+            </label>
+
+            <input
+              id="password_confirm"
+              name="password_confirm"
+              type="password"
+              autoComplete="new-password"
+              minLength="8"
+              value={form.password_confirm}
+              onChange={handleChange}
+              required
+              placeholder="Repeat your password"
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
             />
           </div>

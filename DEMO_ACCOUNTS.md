@@ -2,11 +2,10 @@
 
 All accounts seeded by `backend/scripts/seed_staff.py` and
 `backend/scripts/seed_demo.py`. Login endpoint is
-`POST /api/v1/auth/login` — the request shape differs per account type.
+`POST /api/v1/auth/login` — everyone signs in with **email + password**
+(the same form serves customers and staff).
 
 ## Staff accounts — `users` table
-
-Login with **email + password**:
 
 ```json
 POST /api/v1/auth/login
@@ -23,29 +22,38 @@ POST /api/v1/auth/login
 
 ## Customer accounts — `customers` table
 
-Login with **contact number + PIN**:
+```json
+POST /api/v1/auth/login
+{ "email": "<email>", "password": "testpass123" }
+```
+
+| Customer | Email | Password | Contact No. | Source |
+|---|---|---|---|---|
+| Test Customer | `customer@sambast.com` | `testpass123` | `09123456789` | `seed_staff.py` |
+| Maria Santos | `maria.santos.demo@gmail.com` | `testpass123` | `09170000001` | `seed_demo.py` |
+| Jose Rizal | `jose.rizal.demo@gmail.com` | `testpass123` | `09170000002` | `seed_demo.py` |
+| Ana Reyes | `ana.reyes.demo@gmail.com` | `testpass123` | `09170000003` | `seed_demo.py` |
+| Adobo Free | `adobofree@gmail.com` (real inbox) | `testpass123` | `09170000004` | `seed_demo.py` |
+
+Legacy PIN login still works over the API — seeded customers also carry
+`pin_hash` (PIN `1234`):
 
 ```json
 POST /api/v1/auth/login
 { "contact_no": "<phone>", "pin": "1234" }
 ```
 
-| Customer | Contact No. | PIN | Email (receives OTP/order updates) | Source |
-|---|---|---|---|---|
-| Test Customer | `09123456789` | `1234` | `customer@sambast.com` | `seed_staff.py` |
-| Maria Santos | `09170000001` | `1234` | `maria.santos.demo@gmail.com` | `seed_demo.py` |
-| Jose Rizal | `09170000002` | `1234` | `jose.rizal.demo@gmail.com` | `seed_demo.py` |
-| Ana Reyes | `09170000003` | `1234` | `ana.reyes.demo@gmail.com` | `seed_demo.py` |
-| Adobo Free | `09170000004` | `1234` | `adobofree@gmail.com` (real inbox) | `seed_demo.py` |
-
 ## Self-registration flows (make new accounts at runtime)
 
-- **New customer:** `POST /auth/register` → `POST /auth/otp/verify`
-  (code sent via SMTP email) →
-  `POST /auth/pin/set` → then PIN login above.
+- **New customer:** `POST /auth/register` with
+  `{full_name, contact_no, email, password}` — returns tokens
+  immediately, signed in on success.
 - **New driver:** `POST /auth/register/driver` with
   `{email, password, name, license_no, ...}` — returns tokens
-  immediately, no OTP needed.
+  immediately.
+- The OTP/PIN endpoints (`/auth/otp/verify`, `/auth/otp/resend`,
+  `/auth/pin/set`) remain available but unused by the UI — retained for
+  the legacy contact_no + PIN login path.
 
 ## Non-working legacy rows (leftover from baseline seed)
 
@@ -54,8 +62,8 @@ the original colleague seed with unknown credentials:
 
 - `dispatch@sambast.local` (users, dispatcher) — rejects `testpass123`
 - `driver@sambast.local` (users, driver) — rejects `testpass123`
-- `dispatch@sambast.local` in `customers` (id=1, no phone/PIN) — leftover
-  row from the customer-split migration; unreachable via any login flow
+- `customer@sambast.local` in `customers` (dispatch seed placeholder, no
+  password/PIN) — unreachable via any login flow
 
 ## Email overrides
 

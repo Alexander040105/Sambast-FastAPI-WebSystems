@@ -8,9 +8,6 @@ function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [mode, setMode] = useState('customer');
-  const [contactNo, setContactNo] = useState('');
-  const [pin, setPin] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -19,47 +16,25 @@ function Login() {
 
   const successMessage = location.state?.message || '';
 
-  function switchMode(nextMode) {
-    setMode(nextMode);
-    setError('');
-  }
-
   async function handleSubmit(event) {
     event.preventDefault();
 
     setError('');
 
-    let payload;
+    const normalizedEmail = email.trim();
 
-    if (mode === 'customer') {
-      const normalizedContactNo = contactNo.trim();
-
-      if (!/^\d{11}$/.test(normalizedContactNo)) {
-        setError('Contact number must be exactly 11 digits.');
-        return;
-      }
-
-      if (!/^\d{4}$/.test(pin)) {
-        setError('PIN must be exactly 4 digits.');
-        return;
-      }
-
-      payload = { contact_no: normalizedContactNo, pin };
-    } else {
-      const normalizedEmail = email.trim();
-
-      if (!normalizedEmail || !password) {
-        setError('Email and password are required.');
-        return;
-      }
-
-      payload = { email: normalizedEmail, password };
+    if (!normalizedEmail || !password) {
+      setError('Email and password are required.');
+      return;
     }
 
     setIsLoading(true);
 
     try {
-      const data = await api.post('/auth/login', payload);
+      const data = await api.post('/auth/login', {
+        email: normalizedEmail,
+        password,
+      });
 
       const authData = data?.data || data;
 
@@ -91,39 +66,12 @@ function Login() {
           </h1>
 
           <h2 className="mt-4 text-2xl font-bold text-gray-900">
-            {mode === 'customer' ? 'Customer Login' : 'Staff Login'}
+            Sign In
           </h2>
 
           <p className="mt-2 text-sm text-gray-600">
-            {mode === 'customer'
-              ? 'Enter your contact number and 4-digit PIN.'
-              : 'Enter your work email and password.'}
+            Enter your email and password.
           </p>
-        </div>
-
-        <div className="mt-6 grid grid-cols-2 rounded-lg bg-gray-100 p-1 text-sm font-medium">
-          <button
-            type="button"
-            onClick={() => switchMode('customer')}
-            className={
-              mode === 'customer'
-                ? 'rounded-md bg-white py-2 text-indigo-600 shadow-sm'
-                : 'rounded-md py-2 text-gray-500 hover:text-gray-700'
-            }
-          >
-            Customer
-          </button>
-          <button
-            type="button"
-            onClick={() => switchMode('staff')}
-            className={
-              mode === 'staff'
-                ? 'rounded-md bg-white py-2 text-indigo-600 shadow-sm'
-                : 'rounded-md py-2 text-gray-500 hover:text-gray-700'
-            }
-          >
-            Staff
-          </button>
         </div>
 
         {successMessage && (
@@ -146,121 +94,53 @@ function Login() {
           onSubmit={handleSubmit}
           className="mt-6 space-y-5"
         >
-          {mode === 'customer' ? (
-            <>
-              <div>
-                <label
-                  htmlFor="contactNo"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
-                  Contact Number
-                </label>
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-2 block text-sm font-medium text-gray-700"
+            >
+              Email Address
+            </label>
 
-                <input
-                  id="contactNo"
-                  name="contactNo"
-                  type="tel"
-                  inputMode="numeric"
-                  maxLength="11"
-                  value={contactNo}
-                  onChange={(event) => {
-                    const value = event.target.value
-                      .replace(/\D/g, '')
-                      .slice(0, 11);
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="username"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setError('');
+              }}
+              required
+              placeholder="you@example.com"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            />
+          </div>
 
-                    setContactNo(value);
-                    setError('');
-                  }}
-                  required
-                  placeholder="09123456789"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                />
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-2 block text-sm font-medium text-gray-700"
+            >
+              Password
+            </label>
 
-                <p className="mt-1 text-xs text-gray-500">
-                  Enter exactly 11 digits.
-                </p>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="pin"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
-                  4-Digit PIN
-                </label>
-
-                <input
-                  id="pin"
-                  name="pin"
-                  type="password"
-                  inputMode="numeric"
-                  maxLength="4"
-                  value={pin}
-                  onChange={(event) => {
-                    const value = event.target.value
-                      .replace(/\D/g, '')
-                      .slice(0, 4);
-
-                    setPin(value);
-                    setError('');
-                  }}
-                  required
-                  placeholder="••••"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
-                  Work Email
-                </label>
-
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="username"
-                  value={email}
-                  onChange={(event) => {
-                    setEmail(event.target.value);
-                    setError('');
-                  }}
-                  required
-                  placeholder="you@sambast.ph"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="password"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
-                  Password
-                </label>
-
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(event) => {
-                    setPassword(event.target.value);
-                    setError('');
-                  }}
-                  required
-                  placeholder="••••••••"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                />
-              </div>
-            </>
-          )}
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setError('');
+              }}
+              required
+              placeholder="••••••••"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+            />
+          </div>
 
           <button
             type="submit"

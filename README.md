@@ -117,12 +117,12 @@ npm run build        # production build
 
 ## Demo flow
 
-Demo credentials are in `DEMO_ACCOUNTS.md` — `testpass123` for staff,
-`1234` for customer PINs.
+Demo credentials are in `DEMO_ACCOUNTS.md` — everyone signs in with
+email + `testpass123` (staff and customers alike).
 
-1. Customer logs in (contact no. + PIN) → storefront → cart → checkout
+1. Customer logs in (email + password) → storefront → cart → checkout
    (delivery address + time window) → order placed (`READY_FOR_DISPATCH`).
-2. Dispatcher logs in (staff tab, email + password) → `/dispatcher/queue`
+2. Dispatcher logs in → `/dispatcher/queue`
    shows the new order → auto-assign or manual assign → create/optimize a
    route.
 3. Driver logs in → `/driver` shows today's manifest → start → arrive →
@@ -138,8 +138,9 @@ All endpoints are under `/api/v1` with JWT bearer auth and a consistent
 error envelope `{ "error": { "code", "message" } }`. Full interactive docs at
 `/docs` when the backend is running.
 
-- `auth` — register, OTP verify/resend, PIN set, staff + customer login,
-  refresh, logout
+- `auth` — register, login (staff + customer, email + password),
+  refresh, logout; OTP verify/resend + PIN set retained for the legacy
+  contact_no + PIN login path
 - `products`, `categories` — catalog browse; admin CRUD
 - `orders` — quote, create, list, detail, status, cancel
 - `dispatch` — queue, manual assign, auto-assign
