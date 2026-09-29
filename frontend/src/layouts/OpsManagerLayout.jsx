@@ -1,56 +1,54 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import '../css/shared-layout.css';
+import '../css/ops-dashboard.css';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { auth } from '../api';
+
+function OverviewIcon() {
+  return <svg aria-hidden="true" className="dispatcher-nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4">
+    <rect x="2.5" y="2.5" width="6" height="6" rx="1" />
+    <rect x="11.5" y="2.5" width="6" height="6" rx="1" />
+    <rect x="2.5" y="11.5" width="6" height="6" rx="1" />
+    <rect x="11.5" y="11.5" width="6" height="6" rx="1" />
+  </svg>;
+}
 
 export function OpsManagerLayout() {
   const navigate = useNavigate();
+  const role = auth.getRole();
 
-  const handleLogout = () => {
+  function handleLogout() {
     auth.clearAuth();
     navigate('/login');
-  };
-
-  const navItems = [
-    { path: '/ops', label: 'Dashboard' },
-    { path: '/ops/drivers', label: 'Driver Performance' },
-    { path: '/ops/costs', label: 'Delivery Costs' },
-    { path: '/ops/failures', label: 'Failed Deliveries' },
-  ];
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Ops Manager Dashboard</h1>
-          <div className="flex items-center gap-4">
-            <nav className="hidden md:flex gap-6">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </nav>
-            <button
-              onClick={handleLogout}
-              className="px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-            >
-              Logout
-            </button>
-          </div>
+    <div className="ops-shell dispatcher-layout routes-figma-view">
+      <aside className="dispatcher-sidebar ops-sidebar">
+        <div className="dispatcher-brand-lockup">
+          <span className="dispatcher-brand-mark" aria-hidden="true">D</span>
+          <span className="dispatcher-brand-name">DeliverEase</span>
         </div>
-      </header>
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <Outlet />
-      </main>
+        <p className="dispatcher-sidebar-caption">Operations Management</p>
+        <nav className="dispatcher-nav ops-navigation" aria-label="Operations management">
+          <NavLink to="/ops" end className={({ isActive }) => `dispatcher-nav-link${isActive ? ' active' : ''}`}>
+            <OverviewIcon />
+            <span className="dispatcher-nav-text">Overview</span>
+          </NavLink>
+        </nav>
+        <div className="ops-sidebar-footer">
+          <div className="ops-account-row">
+            <span className="ops-user-avatar" aria-hidden="true">OM</span>
+            <span className="ops-user-copy"><strong>Operations Manager</strong><small>{role ? role.replaceAll('_', ' ') : 'Operations'}</small></span>
+          </div>
+          <button onClick={handleLogout} aria-label="Logout" title="Logout" className="btn btn-ghost btn-sm dispatcher-logout">
+            <svg aria-hidden="true" className="dispatcher-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10 4H5v16h5M14 8l4 4-4 4M8 12h10" />
+            </svg>
+            <span className="dispatcher-nav-text">Logout</span>
+          </button>
+        </div>
+      </aside>
+      <main className="ops-workspace"><Outlet /></main>
     </div>
   );
 }
