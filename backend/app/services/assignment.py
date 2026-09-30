@@ -63,12 +63,32 @@ def get_auto_assign_suggestion(order_id: int, db: Session) -> dict:
             Driver.status == "active",
         ).all()
 
+    is_fallback = False
+    if not active_shifts:
+        # Fallback: Drivers on duty with active/scheduled shift
+        active_shifts = db.query(DriverShift, Driver, Vehicle)\
+            .join(Driver, DriverShift.driver_id == Driver.id)\
+            .outerjoin(Vehicle, DriverShift.vehicle_id == Vehicle.id)\
+            .filter(
+                DriverShift.status.in_(["active", "scheduled"]),
+                Driver.status == "active",
+            ).order_by(DriverShift.ends_at.desc()).all()
+        is_fallback = bool(active_shifts)
+
     if not active_shifts:
         return {"driver_id": None, "vehicle_id": None, "reason": "No drivers currently on active shift"}
 
+    # Deduplicate candidate driver shifts (keep latest)
+    seen_driver_ids = set()
+    unique_candidates = []
+    for s, d, v in active_shifts:
+        if d.id not in seen_driver_ids:
+            seen_driver_ids.add(d.id)
+            unique_candidates.append((s, d, v))
+
     candidates = []
     
-    for shift, driver, vehicle in active_shifts:
+    for shift, driver, vehicle in unique_candidates:
         # Filter Capacity (Current load + new order <= max_weight_kg)
         if not vehicle or not vehicle.is_active:
             continue
@@ -94,7 +114,7 @@ def get_auto_assign_suggestion(order_id: int, db: Session) -> dict:
             continue
 
         # Filter Time Window
-        if order.delivery_window_start and order.delivery_window_end:
+        if not is_fallback and order.delivery_window_start and order.delivery_window_end:
             w_start = order.delivery_window_start
             w_end = order.delivery_window_end
             if w_start.tzinfo is None:
@@ -111,7 +131,7 @@ def get_auto_assign_suggestion(order_id: int, db: Session) -> dict:
                     continue
             else:
                 # Order window has passed (needs urgent dispatch): allow driver if shift is active today
-                if shift_end < w_start:
+                if shift_end < w_start and abs((now - shift_end).total_seconds()) > 86400:
                     continue
                 
         # Score proximity

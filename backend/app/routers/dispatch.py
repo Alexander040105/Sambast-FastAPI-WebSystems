@@ -7,6 +7,7 @@ from typing import List
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.core.deps import require_role
 from app.db.session import get_db
@@ -17,7 +18,11 @@ from app.models.products import Product
 from app.models.driver import Driver
 from app.models.delivery import Delivery
 from app.models.delivery_status import DeliveryStatus
+from app.models.route import Route
+from app.models.delivery_stop import DeliveryStop
+from app.models.driver_shift import DriverShift
 from app.models.user import User
+from app.services.routing import recompute_route_metrics
 
 from app.schemas.dispatch import (
     DispatchQueueResponse,
@@ -136,17 +141,65 @@ def manual_assign(
     past_deliveries = db.query(Delivery).filter(Delivery.order_id == order.id).all()
     attempt_no = len(past_deliveries) + 1 if past_deliveries else 1
 
-    # Create Delivery
+    # Look up or create driver's active/planned route for today
+    route = (
+        db.query(Route)
+        .filter(
+            Route.driver_id == driver.id,
+            Route.status.in_(["planned", "active"]),
+        )
+        .order_by(Route.id.desc())
+        .first()
+    )
+    if not route:
+        shift = (
+            db.query(DriverShift)
+            .filter(DriverShift.driver_id == driver.id)
+            .order_by(DriverShift.id.desc())
+            .first()
+        )
+        route = Route(
+            driver_id=driver.id,
+            vehicle_id=shift.vehicle_id if shift else None,
+            shift_id=shift.id if shift else None,
+            date=datetime.now(timezone.utc).date(),
+            status="active",
+        )
+        db.add(route)
+        db.flush()
+
+    # Create Delivery attached to route
     delivery = Delivery(
         order_id=order.id,
         driver_id=driver.id,
+        route_id=route.id,
         status="PENDING",
         attempt_no=attempt_no,
         assigned_at=datetime.now(timezone.utc),
     )
     db.add(delivery)
+    db.flush()
+
+    # Create DeliveryStop on the route
+    max_seq = (
+        db.query(func.max(DeliveryStop.sequence_no))
+        .filter(DeliveryStop.route_id == route.id)
+        .scalar()
+        or 0
+    )
+    stop = DeliveryStop(
+        route_id=route.id,
+        delivery_id=delivery.id,
+        location_id=order.delivery_location_id,
+        sequence_no=max_seq + 1,
+        status="PENDING",
+    )
+    db.add(stop)
     db.commit()
     db.refresh(delivery)
+
+    # Recompute route metrics (distance, duration, planned ETAs)
+    recompute_route_metrics(db, route.id)
     
     # Create DeliveryStatus event row
     event = DeliveryStatus(

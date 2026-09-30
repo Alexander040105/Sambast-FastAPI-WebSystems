@@ -134,7 +134,7 @@ def seed():
                 driver_id=driver.id,
                 vehicle_id=vehicles[i % len(vehicles)].id,
                 starts_at=datetime.now(timezone.utc) - timedelta(hours=2),
-                ends_at=datetime.now(timezone.utc) + timedelta(hours=10),
+                ends_at=datetime.now(timezone.utc) + timedelta(days=7),
                 status="active"
             )
             db.add(shift)

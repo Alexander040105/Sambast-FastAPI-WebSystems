@@ -3,6 +3,7 @@ import uuid
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from datetime import datetime, timezone
 
 from app.db.session import get_db
@@ -21,6 +22,7 @@ from app.models.delivery_status import DeliveryStatus
 from app.schemas.route import DriverManifestResponse, StopFailRequest
 from app.routers.routes import build_stop_responses
 from app.services.notifications import notify_order_status
+from app.services.routing import recompute_route_metrics
 from app.services.sse import broadcaster
 
 router = APIRouter(tags=["Driver Workflow"])
@@ -103,13 +105,61 @@ def get_my_route(
             Route.date == today_date,
         ).order_by(Route.id.desc()).first()
 
+    # Auto-reconcile: attach any pending deliveries assigned to this driver that lack a route
+    unrouted = (
+        db.query(Delivery)
+        .filter(
+            Delivery.driver_id == driver.id,
+            Delivery.route_id == None,
+            Delivery.status == "PENDING",
+        )
+        .all()
+    )
+    if unrouted:
+        if not route:
+            shift_rec = (
+                db.query(DriverShift)
+                .filter(DriverShift.driver_id == driver.id)
+                .order_by(DriverShift.id.desc())
+                .first()
+            )
+            route = Route(
+                driver_id=driver.id,
+                vehicle_id=shift_rec.vehicle_id if shift_rec else None,
+                shift_id=shift_rec.id if shift_rec else None,
+                date=datetime.now(timezone.utc).date(),
+                status="active",
+            )
+            db.add(route)
+            db.flush()
+
+        max_seq = (
+            db.query(func.max(DeliveryStop.sequence_no))
+            .filter(DeliveryStop.route_id == route.id)
+            .scalar()
+            or 0
+        )
+        for idx, ud in enumerate(unrouted):
+            ud.route_id = route.id
+            ord_row = db.query(Order).filter(Order.id == ud.order_id).first()
+            loc_id = ord_row.delivery_location_id if ord_row else None
+            new_stop = DeliveryStop(
+                route_id=route.id,
+                delivery_id=ud.id,
+                location_id=loc_id,
+                sequence_no=max_seq + idx + 1,
+                status="PENDING",
+            )
+            db.add(new_stop)
+        db.commit()
+        recompute_route_metrics(db, route.id)
+
     stops = []
     route_started = False
 
     if route:
         if route.status in ["active", "completed"]:
             route_started = True
-
 
         stop_records = db.query(DeliveryStop).filter(
             DeliveryStop.route_id == route.id
