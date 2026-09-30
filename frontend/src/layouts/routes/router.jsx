@@ -9,6 +9,7 @@ import Register from '../../pages/auth/Register';
 import OtpVerification from '../../pages/auth/OtpVerification';
 import SetPin from '../../pages/auth/SetPin';
 import Login from '../../pages/auth/Login';
+import StaffRegister from '../../pages/auth/StaffRegister';
 
 import Storefront from '../../pages/storefront/Storefront';
 import ProductDetail from '../../pages/storefront/ProductDetail';
@@ -55,6 +56,12 @@ const routes = [
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    // Hidden demo URL — intentionally not linked from /register or nav.
+    // Driver self-registers publicly; staff roles need an admin session.
+    path: '/staff/register',
+    element: <StaffRegister />,
   },
 
   // --------------------------------
