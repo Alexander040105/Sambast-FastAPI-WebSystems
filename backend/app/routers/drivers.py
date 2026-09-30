@@ -42,7 +42,7 @@ def list_drivers(
     db: Session = Depends(get_db),
     _user: User = Depends(require_role("dispatcher", "admin", "ops_manager")),
 ):
-    q = db.query(Driver)
+    q = db.query(Driver, User).outerjoin(User, Driver.user_id == User.id)
     if status_filter:
         q = q.filter(Driver.status == status_filter)
 
@@ -50,8 +50,16 @@ def list_drivers(
     total_pages = max(1, math.ceil(total_items / page_size))
     items = q.offset((page - 1) * page_size).limit(page_size).all()
 
+    driver_outs = []
+    for d, u in items:
+        dout = DriverOut.model_validate(d).model_dump()
+        if u:
+            dout["name"] = u.name
+            dout["email"] = u.email
+        driver_outs.append(dout)
+
     return {
-        "data": [DriverOut.model_validate(d).model_dump() for d in items],
+        "data": driver_outs,
         "pagination": Pagination(
             page=page,
             page_size=page_size,
@@ -67,10 +75,15 @@ def get_driver(
     db: Session = Depends(get_db),
     _user: User = Depends(require_role("dispatcher", "admin", "ops_manager")),
 ):
-    driver = db.query(Driver).filter(Driver.id == driver_id).first()
-    if not driver:
+    res = db.query(Driver, User).outerjoin(User, Driver.user_id == User.id).filter(Driver.id == driver_id).first()
+    if not res:
         raise HTTPException(status_code=404, detail="Driver not found")
-    return driver
+    d, u = res
+    dout = DriverOut.model_validate(d)
+    if u:
+        dout.name = u.name
+        dout.email = u.email
+    return dout
 
 
 @router.post("", response_model=DriverOut, status_code=status.HTTP_201_CREATED)

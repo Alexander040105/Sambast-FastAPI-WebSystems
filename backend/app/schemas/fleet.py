@@ -53,6 +53,8 @@ class DriverOut(BaseModel):
     status: str
     home_location_id: Optional[int] = None
     created_at: datetime
+    name: Optional[str] = None
+    email: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

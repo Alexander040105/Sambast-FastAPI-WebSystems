@@ -24,6 +24,8 @@ _app_url = settings.DATABASE_URL_DIRECT or settings.DATABASE_URL
 engine = create_engine(
     _fix_url(_app_url),
     pool_pre_ping=True,
+    pool_size=20,
+    max_overflow=20,
     pool_recycle=280,  # Neon drops idle connections; recycle before that bites
     echo=False,
 )

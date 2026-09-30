@@ -68,9 +68,9 @@ function getErrorMessage(error, action) {
 }
 
 function driverLabel(driver) {
-  return driver.license_no
-    ? `Driver #${driver.id} · License ${driver.license_no}`
-    : `Driver #${driver.id}`;
+  const namePart = driver.name ? ` · ${driver.name}` : '';
+  const emailPart = driver.email ? ` (${driver.email})` : '';
+  return `Driver #${driver.id}${namePart}${emailPart}`;
 }
 
 function recommendationDriverLabel(recommendation, drivers) {

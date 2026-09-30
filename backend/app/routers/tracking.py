@@ -89,29 +89,31 @@ def _payload(event: DeliveryStatus, order: Order) -> dict:
 
 def _order_stream(order_id: int):
     """Yield every delivery_statuses row for the order, then poll for new
-    ones. Opens its own session — the request-scoped get_db session must not
-    outlive the handler."""
-    with SessionLocal() as db:
-        delivery = db.query(Delivery).filter(Delivery.order_id == order_id).first()
-        if not delivery:
-            return
-        order = db.query(Order).filter(Order.id == order_id).first()
+    ones. Opens short-lived sessions per poll so connection pool is not starved."""
+    watermark = 0
+    sent = 0
+    while sent < MAX_EVENTS:
+        batch = []
+        with SessionLocal() as db:
+            delivery = db.query(Delivery).filter(Delivery.order_id == order_id).first()
+            if not delivery:
+                break
+            order = db.query(Order).filter(Order.id == order_id).first()
+            if order:
+                events = db.query(DeliveryStatus).filter(
+                    DeliveryStatus.delivery_id == delivery.id,
+                    DeliveryStatus.id > watermark,
+                ).order_by(DeliveryStatus.id.asc()).all()
 
-        watermark = 0
-        sent = 0
-        while sent < MAX_EVENTS:
-            events = db.query(DeliveryStatus).filter(
-                DeliveryStatus.delivery_id == delivery.id,
-                DeliveryStatus.id > watermark,
-            ).order_by(DeliveryStatus.id.asc()).all()
+                for event in events:
+                    watermark = event.id
+                    sent += 1
+                    batch.append(_sse(_payload(event, order)))
 
-            for event in events:
-                watermark = event.id
-                sent += 1
-                yield _sse(_payload(event, order))
+        for item in batch:
+            yield item
 
-            db.commit()  # release the read transaction before sleeping
-            time.sleep(POLL_SECONDS)
+        time.sleep(POLL_SECONDS)
 
 
 @router.get("/track/{order_no}/stream")
@@ -133,14 +135,17 @@ def stream_order(
 
 def _fleet_stream():
     """Staff view — every new delivery_statuses row system-wide."""
+    watermark = 0
     with SessionLocal() as db:
         latest_id = db.query(DeliveryStatus.id).order_by(
             DeliveryStatus.id.desc()
         ).first()
         watermark = latest_id[0] if latest_id else 0
 
-        sent = 0
-        while sent < MAX_EVENTS:
+    sent = 0
+    while sent < MAX_EVENTS:
+        batch = []
+        with SessionLocal() as db:
             events = db.query(DeliveryStatus).filter(
                 DeliveryStatus.id > watermark
             ).order_by(DeliveryStatus.id.asc()).all()
@@ -156,10 +161,12 @@ def _fleet_stream():
                     if delivery else None
                 )
                 if order:
-                    yield _sse(_payload(event, order))
+                    batch.append(_sse(_payload(event, order)))
 
-            db.commit()
-            time.sleep(POLL_SECONDS)
+        for item in batch:
+            yield item
+
+        time.sleep(POLL_SECONDS)
 
 
 @router.get("/fleet/stream")
