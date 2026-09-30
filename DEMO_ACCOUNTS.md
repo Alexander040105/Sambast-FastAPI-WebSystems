@@ -45,12 +45,20 @@ POST /api/v1/auth/login
 
 ## Self-registration flows (make new accounts at runtime)
 
-- **New customer:** `POST /auth/register` with
-  `{full_name, contact_no, email, password}` — returns tokens
+- **New customer:** `/register` in the UI (or `POST /auth/register` with
+  `{full_name, contact_no, email, password}`) — returns tokens
   immediately, signed in on success.
-- **New driver:** `POST /auth/register/driver` with
-  `{email, password, name, license_no, ...}` — returns tokens
-  immediately.
+- **New driver / staff:** hidden page **`/staff/register`** — type the URL
+  directly; it is intentionally not linked from `/register` or anywhere
+  in nav.
+  - **Driver** — public self-serve (no login needed). Anonymous visitors
+    are signed in and land on `/driver`; admins creating a driver keep
+    their admin session.
+  - **Admin / Dispatcher / Ops Manager** — requires an admin session
+    (sign in first, then return to `/staff/register`). Calls
+    `POST /api/v1/admin/users` behind the scenes.
+- `POST /auth/register/driver` and `POST /admin/users` remain available
+  via `/docs` for API-level demos.
 - The OTP/PIN endpoints (`/auth/otp/verify`, `/auth/otp/resend`,
   `/auth/pin/set`) remain available but unused by the UI — retained for
   the legacy contact_no + PIN login path.
