@@ -94,6 +94,7 @@ export function RouteDetailPage() {
   useEffect(() => {
     let active = true;
     if (!routeParam) {
+      if (active) setLoading(false);
       return () => { active = false; };
     }
     getRouteDetail(routeId)
