@@ -1,13 +1,10 @@
 import { createContext, useContext, useMemo, useState } from 'react';
+import { getItemPrice } from './pricing';
 
 const CartContext = createContext(null);
 
 function getUnitValue(unit) {
   return unit?.value ?? null;
-}
-
-function getItemPrice(item) {
-  return Number(item.product?.base_price ?? 0);
 }
 
 function getItemKey(product, unit) {

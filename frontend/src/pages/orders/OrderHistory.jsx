@@ -93,6 +93,15 @@ function OrderHistory() {
     return `₱${Number(value ?? 0).toFixed(2)}`;
   }
 
+  function formatStatus(status) {
+    if (!status) return 'UNKNOWN';
+
+    return status
+      .replaceAll('_', ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-8">
@@ -162,7 +171,7 @@ function OrderHistory() {
 
                   <div className="flex flex-col items-start gap-2 md:items-end">
                     <span className="rounded-full bg-ruby-100 px-3 py-1 text-xs font-semibold text-ruby-700">
-                      {order.status || 'UNKNOWN'}
+                      {formatStatus(order.status)}
                     </span>
 
                     <p className="text-xl font-bold text-gray-900">

@@ -22,6 +22,55 @@ function formatStatus(status) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function describeNotification(notification) {
+  const fallbackTitle = notification.template
+    ? formatStatus(notification.template)
+    : 'Notification';
+
+  let payload = notification.payload;
+  if (typeof payload === 'string') {
+    try {
+      payload = JSON.parse(payload);
+    } catch {
+      return { title: fallbackTitle, lines: [payload], error: null, rawPayload: null };
+    }
+  }
+  if (!payload || typeof payload !== 'object') {
+    return { title: fallbackTitle, lines: [], error: null, rawPayload: null };
+  }
+
+  const {
+    order_no: orderNo,
+    status: orderStatus,
+    note,
+    message,
+    error,
+  } = payload;
+
+  const lines = [];
+  if (orderStatus) {
+    lines.push(
+      orderNo
+        ? `Your order ${orderNo} is now ${formatStatus(orderStatus)}.`
+        : `Order status: ${formatStatus(orderStatus)}.`
+    );
+  }
+  if (message) lines.push(message);
+  if (note) lines.push(`Note: ${note}`);
+
+  return {
+    title: orderNo ? `Order ${orderNo}` : fallbackTitle,
+    lines,
+    error: error || null,
+    // Keep raw JSON only for payloads we couldn't turn into a message,
+    // so unexpected shapes stay visible instead of disappearing.
+    rawPayload:
+      lines.length === 0 && !error && Object.keys(payload).length > 0
+        ? payload
+        : null,
+  };
+}
+
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [pagination, setPagination] = useState(null);
@@ -116,58 +165,73 @@ export default function Notifications() {
 
       {!loading && !error && notifications.length > 0 && (
         <div className="space-y-4">
-          {notifications.map((notification) => (
-            <div
-              key={notification.id}
-              className="rounded-lg border bg-white p-5 shadow-sm"
-            >
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="font-semibold">
-                    {formatStatus(notification.channel)}
+          {notifications.map((notification) => {
+            const view = describeNotification(notification);
+
+            return (
+              <div
+                key={notification.id}
+                className="rounded-lg border bg-white p-5 shadow-sm"
+              >
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="font-semibold">
+                      {view.title}
+                    </p>
+
+                    <p className="mt-0.5 text-xs uppercase tracking-wide text-gray-400">
+                      {formatStatus(notification.channel)}
+                    </p>
+                  </div>
+
+                  <span className="text-sm text-gray-500">
+                    {formatStatus(notification.status)}
+                  </span>
+                </div>
+
+                {view.lines.length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    {view.lines.map((line, index) => (
+                      <p
+                        key={index}
+                        className="text-sm text-gray-700"
+                      >
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {view.error && (
+                  <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                    {view.error}
+                  </p>
+                )}
+
+                {view.rawPayload && (
+                  <div className="mt-3 rounded-lg bg-gray-50 p-3">
+                    <pre className="whitespace-pre-wrap break-words text-xs text-gray-700">
+                      {JSON.stringify(view.rawPayload, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                <div className="mt-3 text-xs text-gray-500">
+                  <p>
+                    Created:{' '}
+                    {formatDate(notification.created_at)}
                   </p>
 
-                  {notification.template && (
-                    <p className="mt-1 text-sm text-gray-700">
-                      {notification.template}
+                  {notification.sent_at && (
+                    <p>
+                      Sent:{' '}
+                      {formatDate(notification.sent_at)}
                     </p>
                   )}
                 </div>
-
-                <span className="text-sm text-gray-500">
-                  {formatStatus(notification.status)}
-                </span>
               </div>
-
-              {notification.payload && (
-                <div className="mt-3 rounded-lg bg-gray-50 p-3">
-                  <pre className="whitespace-pre-wrap break-words text-xs text-gray-700">
-                    {typeof notification.payload === 'string'
-                      ? notification.payload
-                      : JSON.stringify(
-                          notification.payload,
-                          null,
-                          2
-                        )}
-                  </pre>
-                </div>
-              )}
-
-              <div className="mt-3 text-xs text-gray-500">
-                <p>
-                  Created:{' '}
-                  {formatDate(notification.created_at)}
-                </p>
-
-                {notification.sent_at && (
-                  <p>
-                    Sent:{' '}
-                    {formatDate(notification.sent_at)}
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

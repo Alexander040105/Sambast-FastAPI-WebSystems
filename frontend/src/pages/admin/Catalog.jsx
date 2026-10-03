@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   createCategory,
   createProduct,
@@ -512,8 +512,8 @@ function CategoryManager({ categories, onRefresh }) {
 
           <button
             type="submit"
-            disabled={saving}
-            className="rounded-xl bg-ruby-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-ruby-700 disabled:opacity-50"
+            disabled={saving || !name.trim()}
+            className="rounded-xl bg-ruby-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-ruby-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? 'Adding...' : '+ Add Category'}
           </button>
@@ -628,6 +628,7 @@ export default function Catalog() {
 
   const [editingProduct, setEditingProduct] = useState(null);
   const [showProductForm, setShowProductForm] = useState(false);
+  const productFormRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -689,6 +690,15 @@ export default function Catalog() {
     sortBy,
     sortOrder,
   ]);
+
+  useEffect(() => {
+    if (showProductForm) {
+      productFormRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  }, [showProductForm]);
 
   async function handleSearch(event) {
     event.preventDefault();
@@ -771,6 +781,10 @@ export default function Catalog() {
           onClick={() => {
             setEditingProduct(null);
             setShowProductForm(true);
+            productFormRef.current?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            });
           }}
           className="inline-flex items-center justify-center rounded-xl bg-ruby-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-ruby-700"
         >
@@ -827,7 +841,10 @@ export default function Catalog() {
         </div>
 
         {showProductForm && (
-          <div className="border-b border-slate-200 bg-slate-50 p-6">
+          <div
+            ref={productFormRef}
+            className="scroll-mt-28 border-b border-slate-200 bg-slate-50 p-6"
+          >
             <div className="mb-5">
               <h3 className="text-xl font-bold text-slate-900">
                 {editingProduct
@@ -1116,6 +1133,12 @@ export default function Catalog() {
                                     product
                                   );
                                   setShowProductForm(true);
+                                  productFormRef.current?.scrollIntoView(
+                                    {
+                                      behavior: 'smooth',
+                                      block: 'start',
+                                    }
+                                  );
                                 }}
                                 className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                               >

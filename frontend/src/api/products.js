@@ -16,7 +16,7 @@ export async function getProducts({
   }
 
   if (category) {
-    params.set('category', category);
+    params.set('category_id', category);
   }
 
   return api.get(`/products?${params.toString()}`);

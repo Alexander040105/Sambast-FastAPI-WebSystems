@@ -72,6 +72,11 @@ function Storefront() {
     loadProducts();
   }, [page, search, category]);
 
+  function handleSearchChange(event) {
+    setSearch(event.target.value);
+    setPage(1);
+  }
+
   function handleSearchSubmit(event) {
     event.preventDefault();
     setPage(1);
@@ -141,9 +146,7 @@ function Storefront() {
               id="search"
               type="search"
               value={search}
-              onChange={(event) =>
-                setSearch(event.target.value)
-              }
+              onChange={handleSearchChange}
               placeholder="Search products..."
               className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-ruby-500 focus:ring-2 focus:ring-ruby-200"
             />

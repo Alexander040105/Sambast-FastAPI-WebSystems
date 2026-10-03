@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../cart/CartContext';
+import { getItemPrice } from '../../cart/pricing';
 import { api } from '../../api/client';
 
 function Checkout() {
@@ -33,11 +34,7 @@ function Checkout() {
 
   const subtotal = useMemo(() => {
     return items.reduce((total, item) => {
-      const price = Number(
-        item.product?.base_price ?? 0
-      );
-
-      return total + price * item.quantity;
+      return total + getItemPrice(item) * item.quantity;
     }, 0);
   }, [items]);
 
@@ -448,9 +445,7 @@ function Checkout() {
 
           <div className="mt-5 space-y-4">
             {items.map((item) => {
-              const price = Number(
-                item.product?.base_price ?? 0
-              );
+              const price = getItemPrice(item);
 
               const unitLabel =
                 item.unit?.label ||

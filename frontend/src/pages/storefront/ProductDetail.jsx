@@ -122,6 +122,9 @@ function ProductDetail() {
 
   const basePrice = Number(product.base_price || 0);
   const unitOptions = product.unit_options || [];
+  const selectedMultiplier =
+    Number(selectedUnit?.multiplier ?? 1) || 1;
+  const displayPrice = basePrice * selectedMultiplier;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -160,12 +163,22 @@ function ProductDetail() {
 
           <div className="mt-6">
             <p className="text-sm text-gray-500">
-              Base Price
+              Price
+              {selectedUnit?.label
+                ? ` per ${selectedUnit.label}`
+                : ''}
             </p>
 
             <p className="text-3xl font-bold text-ruby-600">
-              ₱{basePrice.toFixed(2)}
+              ₱{displayPrice.toFixed(2)}
             </p>
+
+            {selectedMultiplier !== 1 && (
+              <p className="mt-1 text-xs text-gray-400">
+                ₱{basePrice.toFixed(2)} base ×{' '}
+                {selectedMultiplier}
+              </p>
+            )}
           </div>
 
           {unitOptions.length > 0 && (

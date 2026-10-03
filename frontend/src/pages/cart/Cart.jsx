@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../../cart/CartContext';
+import { getItemPrice } from '../../cart/pricing';
 
 function Cart() {
   const {
@@ -58,9 +59,7 @@ function Cart() {
 
       <div className="space-y-4">
         {items.map((item) => {
-          const price = Number(
-            item.product?.base_price ?? 0
-          );
+          const price = getItemPrice(item);
 
           const unitValue = item.unit?.value ?? null;
           const unitLabel = item.unit?.label ?? null;
